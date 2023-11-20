@@ -1,0 +1,15 @@
+.DS_Store
+*.pyc
+#pyproject.toml
+*.swp
+dist/*
+MANIFEST
+__pycache__/
+*.py[cod]
+build/*
+*.egg-info
+
+*.lprof
+
+.ipynb_checkpoints/*
+.ipynb_checkpoints

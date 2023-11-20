@@ -1,0 +1,30 @@
+[project]
+name = "rowan-python"
+version = "0.0.1"
+description = "Rowan Python Library"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Corin Wagen", email = "corin@rowansci.com" },
+]
+
+dependencies = [
+    "cctk>=0.2.18",
+    "httpx>=0.25",
+    "numpy>=1.24",
+    "stjames>=0.0.5",
+]
+
+[build-system]
+# maybe will want to move away from setuptools eventually
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+"Homepage" = "https://github.com/rowansci/rowan-client"
+"Bug Tracker" = "https://github.com/rowansci/rowan-client/issues"
+
+[tool.ruff]
+line-length = 160
+select = ["E", "F"]
+ignore = ["E741"]
