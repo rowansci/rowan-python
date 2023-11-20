@@ -1,5 +1,7 @@
 # Rowan Python Library
 
+[![pypi](https://img.shields.io/pypi/v/rowan-python.svg)](https://pypi.python.org/pypi/rowan-python)
+
 The Rowan Python library provides convenient access to the Rowan API from applications written in the Python language.
 
 ## Documentation
