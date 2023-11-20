@@ -12,7 +12,7 @@ To install, run `pip install rowan-python`.
 
 ## Usage
 
-Rowan can be run in either blocking (wait until job is complete) or non-blocking modes.
+Rowan can be run in either blocking (wait until job is complete) or non-blocking (don't wait) modes.
 Both modes require generation of an API key at [labs.rowansci.com](https://labs.rowansci.com/account/api-keys).
 
 For now, molecules are specified through [*cctk*](cctk.rtfd.io). Additional ways to specify molecules will be added in the future.
@@ -32,7 +32,6 @@ molecule = cctk.Molecule.new_from_name("cyclobutane")
 
 # run calculation remotely and return result
 result = client.compute(molecule, name="opt cyclobutane", method="b97-3c", tasks=["optimize", "charge"])
-
 print(result)
 ```
 
