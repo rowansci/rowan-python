@@ -1,5 +1,7 @@
 # Rowan Python Library
 
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
+
 The Rowan Python library provides convenient access to the Rowan API from applications written in the Python language.
 
 ## Documentation
