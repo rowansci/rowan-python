@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "0.0.1"
+version = "0.0.2"
 description = "Rowan Python Library"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -12,7 +12,7 @@ dependencies = [
     "cctk>=0.2.18",
     "httpx>=0.25",
     "numpy>=1.24",
-    "stjames>=0.0.5",
+    "stjames>=0.0.23",
 ]
 
 [build-system]
