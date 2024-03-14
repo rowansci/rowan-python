@@ -3,22 +3,21 @@ from __future__ import annotations
 import cctk
 import httpx
 from typing import Optional
-import numpy as np
 import stjames
 from dataclasses import dataclass, field
 import time
 
 import rowan
 
-API_URL = "https://api.rowansci.com/calculation"
+API_URL = "https://api.rowansci.com"
 
-# cf. /opt/miniconda3/envs/openai/lib/python3.9/site-packages/openai/__init__.py
 
 @dataclass
 class Client:
     blocking: bool = True
     print: bool = True
     ping_interval: int = 5
+    delete_when_finished: bool = False
 
     headers: dict = field(init=False)
 
@@ -27,81 +26,124 @@ class Client:
 
     def compute(
         self,
-        input_molecule: cctk.Molecule,
+        type: Optional[str] = "calculation",
+        input_mol: Optional[cctk.Molecule] = None,
+        input_smiles: Optional[str] = None,
         name: Optional[str] = None,
         folder_id: Optional[str] = None,
         **options,
-    ) -> stjames.Calculation | int:
-        atomic_numbers = input_molecule.atomic_numbers.view(np.ndarray)
-        geometry = input_molecule.geometry.view(np.ndarray)
+    ) -> dict | str:
+        if (input_mol is None) == (input_smiles is None):
+            raise ValueError("Must specify exactly one of ``input_smiles`` and ``input_molecule``!")
 
-        atoms = list()
-        for i in range(input_molecule.num_atoms()):
-            atoms.append(
-                stjames.Atom(atomic_number=atomic_numbers[i], position=geometry[i])
-            )
+        if input_mol is None:
+            input_mol = cctk.Molecule.new_from_smiles(input_smiles)
 
-        molecule = stjames.Molecule(
-            atoms=atoms,
-            charge=input_molecule.charge,
-            multiplicity=input_molecule.multiplicity,
-        )
-        settings = stjames.Settings(**options)
-        calc = stjames.Calculation(molecules=[molecule], name=name, settings=settings)
+        molecule = rowan.utils.cctk_to_stjames(input_mol)
 
         with httpx.Client() as client:
-            response = client.post(
-                f"{API_URL}",
-                headers=self.headers,
-                json={
-                    "json_data": calc.model_dump(mode="json"),
-                    "folder_id": folder_id,
-                },
-            )
+            if type == "calculation":
+                settings = stjames.Settings(**options)
+                calc = stjames.Calculation(molecules=[molecule], name=name, settings=settings)
+
+                response = client.post(
+                    f"{API_URL}/calculation",
+                    headers=self.headers,
+                    json={
+                        "json_data": calc.model_dump(mode="json"),
+                        "folder_id": folder_id,
+                    },
+                )
+
+            elif type == "pka":
+                response = client.post(
+                    f"{API_URL}/pka",
+                    headers=self.headers,
+                    json={
+                        "initial_molecule": molecule.model_dump(mode="json"),
+                        "name": name,
+                        "folder_id": folder_id,
+                        "workflow_data": options,
+                    },
+                )
+
             response.raise_for_status()
             response_dict = response.json()
-            calc_id = response_dict["id"]
+            calc_id = response_dict["uuid"]
 
-            if self.print:
-                print(f"Calculation {calc_id} submitted")
+        if self.blocking:
+            while not self.is_finished(calc_id, type):
+                time.sleep(self.ping_interval)
+            result = self.get(calc_id, type)
 
-            if self.blocking:
-                while not response_dict["is_finished"]:
-                    time.sleep(self.ping_interval)
-                    response = client.get(f"{API_URL}/{calc_id}", headers=self.headers)
-                    response_dict = response.json()
-                    if not response.status_code == 200:
-                        raise ValueError(
-                            f"Error {response.status_code}: {response.reason}"
-                        )
+            if self.delete_when_finished:
+                self.delete(calc_id, type)
 
-                # we finished! get proper schema
-                response = client.get(
-                    f"{API_URL}/{calc_id}/stjames", headers=self.headers
-                )
+            return result
+
+        else:
+            return calc_id
+
+    def is_finished(self, calc_id: str, type: str = "calculation") -> bool:
+        with httpx.Client() as client:
+            if type == "calculation":
+                response = client.get(f"{API_URL}/calculation/{calc_id}", headers=self.headers)
+                response.raise_for_status()
                 response_dict = response.json()
+                status = response_dict["status"]
 
-                if self.print:
-                    print(
-                        f"Calculation {calc_id} completed after {response_dict['elapsed']:.1f} s of CPU time"
-                    )
-                    print(
-                        f"(View the results at labs.rowansci.com/calculations/{calc_id})"
-                    )
-
-                return stjames.Calculation.model_validate(response_dict)
+            elif type == "pka":
+                response = client.get(f"{API_URL}/pka/{calc_id}", headers=self.headers)
+                response.raise_for_status()
+                response_dict = response.json()
+                status = response_dict["object_status"]
 
             else:
-                return calc_id
+                raise ValueError(f"Unknown type ``{type}``!")
 
-    def get(self, calc_id: int) -> stjames.Calculation:
-        with httpx.Client() as client:
-            response = client.get(f"{API_URL}/{calc_id}/stjames", headers=self.headers)
-            response.raise_for_status()
-            response_dict = response.json()
-            return stjames.Calculation.model_validate(response_dict)
+        return status in [2, 3, 4]
 
-    def stop(self, calc_id: int) -> None:
+    def get(self, calc_id: str, type: str = "calculation") -> dict:
         with httpx.Client() as client:
-            response = client.post(f"{API_URL}/{calc_id}/stop", headers=self.headers)
-            response.raise_for_status()
+            if type == "calculation":
+                response = client.get(f"{API_URL}/calculation/{calc_id}/stjames", headers=self.headers)
+                response.raise_for_status()
+                response_dict = response.json()
+                return response_dict
+
+            elif type == "pka":
+                response = client.get(f"{API_URL}/pka/{calc_id}", headers=self.headers)
+                response.raise_for_status()
+                response_dict = response.json()
+                return response_dict["object_data"]
+
+            else:
+                raise ValueError(f"Unknown type ``{type}``!")
+
+    def stop(self, calc_id: str, type: str = "calculation") -> None:
+        with httpx.Client() as client:
+            if type == "calculation":
+                response = client.post(f"{API_URL}/calculation/{calc_id}/stop", headers=self.headers)
+                response.raise_for_status()
+
+            elif type == "pka":
+                response = client.post(f"{API_URL}/pka/{calc_id}/stop", headers=self.headers)
+                response.raise_for_status()
+
+            else:
+                raise ValueError(f"Unknown type ``{type}``!")
+
+
+    def delete(self, calc_id: str, type: str = "calculation") -> None:
+        with httpx.Client() as client:
+            if type == "calculation":
+                response = client.delete(f"{API_URL}/calculation/{calc_id}", headers=self.headers)
+                response.raise_for_status()
+
+            elif type == "pka":
+                response = client.delete(f"{API_URL}/folder/{calc_id}", headers=self.headers)
+                response.raise_for_status()
+
+            else:
+                raise ValueError(f"Unknown type ``{type}``!")
+
