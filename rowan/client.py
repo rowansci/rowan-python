@@ -111,16 +111,31 @@ class Client:
     def get(self, calc_uuid: str, type: str = "calculation") -> dict:
         with httpx.Client() as client:
             if type == "calculation":
-                response = client.get(f"{API_URL}/calculation/{calc_uuid}/stjames", headers=self.headers)
+                stj_response = client.get(f"{API_URL}/calculation/{calc_uuid}/stjames", headers=self.headers)
+                stj_response.raise_for_status()
+                stj_dict = stj_response.json()
+
+                response = client.get(f"{API_URL}/calculation/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
+
+                # reformat
+                del response_dict["settings"]
+                response_dict["data"] = stj_dict
+
                 return response_dict
 
             elif type in ["pka", "conformers", "tautomers"]:
                 response = client.get(f"{API_URL}/workflow/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
-                return response_dict["object_data"]
+
+                # reformat
+                response_dict["data"] = response_dict["object_data"]
+                del response_dict["object_data"]
+                del response_dict["status"]
+
+                return response_dict
 
             else:
                 raise ValueError(f"Unknown type ``{type}``!")
