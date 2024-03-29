@@ -65,7 +65,7 @@ class Client:
                     headers=self.headers,
                     json={
                         "initial_molecule": molecule.model_dump(mode="json"),
-                        "workflow_type", type,
+                        "workflow_type": type,
                         "name": name,
                         "folder_uuid": folder_uuid,
                         "workflow_data": options,
@@ -144,7 +144,7 @@ class Client:
                 response = client.delete(f"{API_URL}/calculation/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
 
-            elif type in "pka", "conformers", "tautomers"]:
+            elif type in ["pka", "conformers", "tautomers"]:
                 response = client.delete(f"{API_URL}/folder/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
 
