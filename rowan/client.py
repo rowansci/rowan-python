@@ -59,12 +59,13 @@ class Client:
                     },
                 )
 
-            elif type == "pka":
+            elif type in ["pka", "conformers", "tautomers"]:
                 response = client.post(
-                    f"{API_URL}/pka",
+                    f"{API_URL}/workflow",
                     headers=self.headers,
                     json={
                         "initial_molecule": molecule.model_dump(mode="json"),
+                        "workflow_type", type,
                         "name": name,
                         "folder_uuid": folder_uuid,
                         "workflow_data": options,
@@ -96,8 +97,8 @@ class Client:
                 response_dict = response.json()
                 status = response_dict["status"]
 
-            elif type == "pka":
-                response = client.get(f"{API_URL}/pka/{calc_uuid}", headers=self.headers)
+            elif type in ["pka", "conformers", "tautomers"]:
+                response = client.get(f"{API_URL}/workflow/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
                 status = response_dict["object_status"]
@@ -115,8 +116,8 @@ class Client:
                 response_dict = response.json()
                 return response_dict
 
-            elif type == "pka":
-                response = client.get(f"{API_URL}/pka/{calc_uuid}", headers=self.headers)
+            elif type in ["pka", "conformers", "tautomers"]:
+                response = client.get(f"{API_URL}/workflow/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
                 return response_dict["object_data"]
@@ -130,8 +131,8 @@ class Client:
                 response = client.post(f"{API_URL}/calculation/{calc_uuid}/stop", headers=self.headers)
                 response.raise_for_status()
 
-            elif type == "pka":
-                response = client.post(f"{API_URL}/pka/{calc_uuid}/stop", headers=self.headers)
+            elif type in ["pka", "conformers", "tautomers"]:
+                response = client.post(f"{API_URL}/workflow/{calc_uuid}/stop", headers=self.headers)
                 response.raise_for_status()
 
             else:
@@ -143,7 +144,7 @@ class Client:
                 response = client.delete(f"{API_URL}/calculation/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
 
-            elif type == "pka":
+            elif type in "pka", "conformers", "tautomers"]:
                 response = client.delete(f"{API_URL}/folder/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
 
