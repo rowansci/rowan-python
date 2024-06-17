@@ -59,7 +59,7 @@ class Client:
                     },
                 )
 
-            elif type in ["pka", "conformers", "tautomers"]:
+            else:
                 response = client.post(
                     f"{API_URL}/workflow",
                     headers=self.headers,
@@ -97,14 +97,11 @@ class Client:
                 response_dict = response.json()
                 status = response_dict["status"]
 
-            elif type in ["pka", "conformers", "tautomers"]:
+            else:
                 response = client.get(f"{API_URL}/workflow/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
                 status = response_dict["object_status"]
-
-            else:
-                raise ValueError(f"Unknown type ``{type}``!")
 
         return status in [2, 3, 4]
 
@@ -125,7 +122,7 @@ class Client:
 
                 return response_dict
 
-            elif type in ["pka", "conformers", "tautomers"]:
+            else:
                 response = client.get(f"{API_URL}/workflow/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
                 response_dict = response.json()
@@ -137,21 +134,15 @@ class Client:
 
                 return response_dict
 
-            else:
-                raise ValueError(f"Unknown type ``{type}``!")
-
     def stop(self, calc_uuid: str, type: str = "calculation") -> None:
         with httpx.Client() as client:
             if type == "calculation":
                 response = client.post(f"{API_URL}/calculation/{calc_uuid}/stop", headers=self.headers)
                 response.raise_for_status()
 
-            elif type in ["pka", "conformers", "tautomers"]:
+            else:
                 response = client.post(f"{API_URL}/workflow/{calc_uuid}/stop", headers=self.headers)
                 response.raise_for_status()
-
-            else:
-                raise ValueError(f"Unknown type ``{type}``!")
 
     def delete(self, calc_uuid: str, type: str = "calculation") -> None:
         with httpx.Client() as client:
@@ -159,9 +150,6 @@ class Client:
                 response = client.delete(f"{API_URL}/calculation/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
 
-            elif type in ["pka", "conformers", "tautomers"]:
+            else:
                 response = client.delete(f"{API_URL}/folder/{calc_uuid}", headers=self.headers)
                 response.raise_for_status()
-
-            else:
-                raise ValueError(f"Unknown type ``{type}``!")
