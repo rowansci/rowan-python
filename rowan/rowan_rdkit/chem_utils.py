@@ -183,6 +183,8 @@ def tautomers(mol: RdkitMol,
 def energy(
     mol: RdkitMol,
     method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
 ):
@@ -216,20 +218,20 @@ def energy(
         post = rowan.Workflow.submit(
             name=name,
             workflow_type="basic_calculation",
-            initial_molecule=rdkit_to_stjames(mol),
+            initial_molecule=stjames_mol,
             workflow_data={
             "settings": {
-                        "method": "aimnet2_wb97md3",
+                        "method": method.value,
                         "corrections": [],
                         "tasks": [
                             "energy"
                         ],
-                        "mode": "auto",
+                        "mode": mode,
                         "opt_settings": {
                             "constraints": []
                         }
                     },
-            "engine": "aimnet2"
+            "engine": engine
                 },
         )
         
@@ -250,6 +252,8 @@ def energy(
 def optimize(
     mol: RdkitMol,
     method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    mode: str = "auto",
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
@@ -288,20 +292,20 @@ def optimize(
         post = rowan.Workflow.submit(
             name=name,
             workflow_type="basic_calculation",
-            initial_molecule=rdkit_to_stjames(mol),
+            initial_molecule=stjames_mol,
             workflow_data={
                 "settings": {
-                    "method": "aimnet2_wb97md3",
+                    "method": method.value,
                     "corrections": [],
                     "tasks": [
                         "optimize"
                     ],
-                    "mode": "auto",
+                    "mode": mode,
                     "opt_settings": {
                         "constraints": []
                     }
                 },
-                "engine": "aimnet2"
+                "engine": engine
             },
         )
         
@@ -332,9 +336,10 @@ def optimize(
 
 def conformers(mol: RdkitMol, num_conformers=10,
                method: str = "aimnet2_wb97md3",
-                return_energies: bool = False,
-                timeout: int = 600,
-                name: str = "Conformer API Workflow"):
+               mode: str = "rapid",
+               return_energies: bool = False,
+               timeout: int = 600,
+               name: str = "Conformer API Workflow"):
     """
     Generate conformers for a molecule.
     :param mol: RDKit molecule object
@@ -362,13 +367,13 @@ def conformers(mol: RdkitMol, num_conformers=10,
         initial_molecule=rdkit_to_stjames(mol),
         workflow_data={
         "conf_gen_mode": "rapid",
-        "mode": "rapid",
+        "mode": mode,
         "mso_mode": "manual",
         "multistage_opt_settings": {
             "mode": "manual",
             "optimization_settings": [
                 {
-                    "method": "aimnet2_wb97md3",
+                    "method": method.value,
                     "tasks": [
                         "optimize"
                     ],
