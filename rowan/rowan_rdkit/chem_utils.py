@@ -118,7 +118,6 @@ def pka(mol: RdkitMol,
             raise TimeoutError("Workflow timed out")
         
     result = rowan.Workflow.retrieve(post["uuid"])
-    print(f"Res: {result}")
     
     acidic_pkas = []
     for microstate in result["object_data"]["conjugate_bases"]:
@@ -397,7 +396,6 @@ def conformers(mol: RdkitMol, num_conformers=10,
     # Extract the UUIDs of the lowest n energies
     lowest_n_uuids = [item[1][0] for item in sorted_data[:num_conformers]]
     lowest_energies = [item[0] for item in sorted_data[:num_conformers]]
-    print(lowest_energies)
     
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)
     
