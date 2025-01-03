@@ -1,6 +1,6 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from typing import Literal, TypeAlias
+from typing import Literal, TypeAlias, Optional
 import rowan
 import copy
 import math
@@ -23,14 +23,10 @@ class ConversionError(ValueError):
     pass
 
 class NoConformersError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-        self.message = message
+    pass
 
 class MethodTooSlowError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-        self.message = message
+    pass
 
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
     stjames_mol_dict = rowan.Calculation.retrieve(calculation_uuid)["molecules"][-1]
@@ -90,7 +86,8 @@ def pka(mol: RdkitMol,
         name: str = "pKa API Workflow",
         pka_range: tuple[int, int] = (2, 12),
         deprotonate_elements: list[int] = [7, 8, 16],
-        protonate_elements: list[int] = [7]) -> tuple[dict[int, float], dict[int, float]]:
+        protonate_elements: list[int] = [7],
+        folder_uuid: Optional[stjames.UUID] = None) -> tuple[dict[int, float], dict[int, float]]:
     """
     Calculate the pKa of a molecule.
     :param mol: RDKit molecule object
@@ -109,6 +106,7 @@ def pka(mol: RdkitMol,
             "protonate_atoms": [],
             "mode": mode,
         },
+        folder_uuid=folder_uuid
     )
     
     start = time.time()
@@ -144,7 +142,8 @@ def pka(mol: RdkitMol,
 def tautomers(mol: RdkitMol,
               mode: TautomerMode = "reckless",
               timeout: int = 600,
-              name: str = "Tautomers API Workflow") -> list[tuple[RdkitMol, float]]:
+              name: str = "Tautomers API Workflow",
+              folder_uuid: Optional[stjames.UUID] = None) -> list[tuple[RdkitMol, float]]:
     """
     Generate possible tautomers of a molecule.
     :param mol: RDKit molecule object
@@ -158,6 +157,7 @@ def tautomers(mol: RdkitMol,
         workflow_data={
             "mode": mode,
         },
+        folder_uuid=folder_uuid
     )
     
     start = time.time()
@@ -187,6 +187,7 @@ def energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None
 ):
     """
     Computes the energy for the given molecule.
@@ -233,6 +234,7 @@ def energy(
                     },
             "engine": engine
                 },
+            folder_uuid=folder_uuid
         )
         
         workflow_uuids.append(post["uuid"])
@@ -257,6 +259,7 @@ def optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None
 ) -> RdkitMol | tuple[RdkitMol, dict[int, float]]:
     """
     Optimize each of a molecule's conformers and then return the molecule.
@@ -307,6 +310,7 @@ def optimize(
                 },
                 "engine": engine
             },
+            folder_uuid=folder_uuid
         )
         
         workflow_uuids.append(post["uuid"])
@@ -339,7 +343,8 @@ def conformers(mol: RdkitMol, num_conformers=10,
                mode: str = "rapid",
                return_energies: bool = False,
                timeout: int = 600,
-               name: str = "Conformer API Workflow"):
+               name: str = "Conformer API Workflow",
+               folder_uuid: Optional[stjames.UUID] = None):
     """
     Generate conformers for a molecule.
     :param mol: RDKit molecule object
@@ -386,6 +391,7 @@ def conformers(mol: RdkitMol, num_conformers=10,
             "constraints": []
         }
     },
+        folder_uuid=folder_uuid
     )
     
     start = time.time()
