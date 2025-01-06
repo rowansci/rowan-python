@@ -3757,9 +3757,9 @@ packages:
   timestamp: 1687519707123
 - kind: pypi
   name: rowan-python
-  version: 1.0.0
+  version: 1.1.0
   path: .
-  sha256: 7c8c3a821a00598e2de0f72ccd86d3dd934c1e9f1271a4711bfbc06cc8906fa3
+  sha256: 2ca8824daa1ccae3f6d8bf3b047f07c8e2ce8ec60ec83f7388fda8d853620b58
   requires_python: '>=3.8'
   editable: true
 - kind: conda
