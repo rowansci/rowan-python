@@ -44,7 +44,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.0.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-75.1-he02047a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.10-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.4.5-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.5.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-4.23.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-specifications-2024.10.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/keyutils-1.6.1-h166bdaf_0.tar.bz2
@@ -145,7 +145,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/26/3e1bbe954fde7ee22a6e7d31582c642aad9e84ffe4b5fb61e63b87cd326f/pydantic-2.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/8d/f0/49129b27c43396581a635d8710dae54a791b17dfc50c70164866bbf865e3/pydantic_core-2.27.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/9e/c2/f80c5f3d91a7e1da7ddc0545493726a22060aa1f26f5f300dc096132f1a5/stjames-0.0.46-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/cd/4c/d2bec5035d0c101ec8a703c778e9c15a3cf7b6bb905b7c719a7911ecd6aa/stjames-0.0.47-py3-none-any.whl
       - pypi: .
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.8.0-pyhd8ed1ab_0.conda
@@ -183,7 +183,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.0.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-75.1-hfee45f7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.10-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.4.5-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.5.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-4.23.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-specifications-2024.10.1-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/kiwisolver-1.4.7-py312h6142ec9_0.conda
@@ -272,7 +272,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/26/3e1bbe954fde7ee22a6e7d31582c642aad9e84ffe4b5fb61e63b87cd326f/pydantic-2.10.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d3/f3/c97e80721735868313c58b89d2de85fa80fe8dfeeed84dc51598b92a135e/pydantic_core-2.27.2-cp312-cp312-macosx_11_0_arm64.whl
-      - pypi: https://files.pythonhosted.org/packages/9e/c2/f80c5f3d91a7e1da7ddc0545493726a22060aa1f26f5f300dc096132f1a5/stjames-0.0.46-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/cd/4c/d2bec5035d0c101ec8a703c778e9c15a3cf7b6bb905b7c719a7911ecd6aa/stjames-0.0.47-py3-none-any.whl
       - pypi: .
 packages:
 - kind: conda
@@ -1219,25 +1219,23 @@ packages:
   timestamp: 1733211921194
 - kind: conda
   name: importlib_resources
-  version: 6.4.5
-  build: pyhd8ed1ab_1
-  build_number: 1
+  version: 6.5.2
+  build: pyhd8ed1ab_0
   subdir: noarch
   noarch: python
-  url: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.4.5-pyhd8ed1ab_1.conda
-  sha256: 461199e429a3db01f0a673f8beaac5e0be75b88895952fb9183f2ab01c5c3c24
-  md5: 15798fa69312d433af690c8c42b3fb36
+  url: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-6.5.2-pyhd8ed1ab_0.conda
+  sha256: acc1d991837c0afb67c75b77fdc72b4bf022aac71fedd8b9ea45918ac9b08a80
+  md5: c85c76dc67d75619a92f51dfbce06992
   depends:
   - python >=3.9
   - zipp >=3.1.0
   constrains:
-  - importlib-resources >=6.4.5,<6.4.6.0a0
+  - importlib-resources >=6.5.2,<6.5.3.0a0
   license: Apache-2.0
-  license_family: APACHE
   purls:
   - pkg:pypi/importlib-resources?source=hash-mapping
-  size: 32701
-  timestamp: 1733231441973
+  size: 33781
+  timestamp: 1736252433366
 - kind: conda
   name: jsonschema
   version: 4.23.0
@@ -1797,6 +1795,7 @@ packages:
   - libgcc >=13
   - ncurses >=6.5,<7.0a0
   license: BSD-2-Clause
+  license_family: BSD
   purls: []
   size: 134657
   timestamp: 1736191912705
@@ -1813,6 +1812,7 @@ packages:
   - __osx >=11.0
   - ncurses >=6.5,<7.0a0
   license: BSD-2-Clause
+  license_family: BSD
   purls: []
   size: 107634
   timestamp: 1736192034117
@@ -2364,6 +2364,7 @@ packages:
   - libgcc >=13
   - libstdcxx >=13
   license: BSD-3-Clause
+  license_family: BSD
   purls: []
   size: 8581512
   timestamp: 1736096097093
@@ -2382,6 +2383,7 @@ packages:
   - libboost >=1.86.0,<1.87.0a0
   - libcxx >=18
   license: BSD-3-Clause
+  license_family: BSD
   purls: []
   size: 6394406
   timestamp: 1736096289303
@@ -3563,6 +3565,7 @@ packages:
   - reportlab
   - sqlalchemy
   license: BSD-3-Clause
+  license_family: BSD
   purls:
   - pkg:pypi/rdkit?source=hash-mapping
   size: 19836609
@@ -3595,6 +3598,7 @@ packages:
   - reportlab
   - sqlalchemy
   license: BSD-3-Clause
+  license_family: BSD
   purls:
   - pkg:pypi/rdkit?source=hash-mapping
   size: 18523747
@@ -3757,9 +3761,9 @@ packages:
   timestamp: 1687519707123
 - kind: pypi
   name: rowan-python
-  version: 1.1.1
+  version: 1.1.2
   path: .
-  sha256: 3dde2ca599cde358e919526f776a1c5854e235152f6465b60ed1bb0b13dcbc70
+  sha256: 93e92c09a03fcce0fdad13ed38af8fc022695d9e093c292a0618470c024e0cb5
   requires_python: '>=3.8'
   editable: true
 - kind: conda
@@ -3956,9 +3960,9 @@ packages:
   timestamp: 1729066546472
 - kind: pypi
   name: stjames
-  version: 0.0.46
-  url: https://files.pythonhosted.org/packages/9e/c2/f80c5f3d91a7e1da7ddc0545493726a22060aa1f26f5f300dc096132f1a5/stjames-0.0.46-py3-none-any.whl
-  sha256: 0307c3fc6912a74cefd208db7e278fb7010180fd20ebd9e8453bf1e381d27515
+  version: 0.0.47
+  url: https://files.pythonhosted.org/packages/cd/4c/d2bec5035d0c101ec8a703c778e9c15a3cf7b6bb905b7c719a7911ecd6aa/stjames-0.0.47-py3-none-any.whl
+  sha256: dc15a6fbe7a676d7f5678012be62e94a0cf7c63f05d297181f0aba582744ae15
   requires_dist:
   - pydantic>=2.4
   - numpy
