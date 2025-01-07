@@ -36,7 +36,7 @@ def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
     rdkm = Chem.MolFromXYZBlock(stjames_mol.to_xyz())
     return rdkm
 
-def embed_rdkit_mol(rdkm: RdkitMol):
+def _embed_rdkit_mol(rdkm: RdkitMol):
     try:
         AllChem.SanitizeMol(rdkm)
     except Exception as e:
@@ -58,9 +58,9 @@ def embed_rdkit_mol(rdkm: RdkitMol):
     
     return rdkm
 
-def rdkit_to_cctk(rdkm: RdkitMol, cid: int = 0) -> cctk.Molecule:
+def _rdkit_to_cctk(rdkm: RdkitMol, cid: int = 0) -> cctk.Molecule:
     if len(rdkm.GetConformers()) == 0:
-        rdkm = embed_rdkit_mol(rdkm)
+        rdkm = _embed_rdkit_mol(rdkm)
     try:
         nums = [atom.GetAtomicNum() for atom in rdkm.GetAtoms()]
         geom = rdkm.GetConformers()[cid].GetPositions()
@@ -68,7 +68,7 @@ def rdkit_to_cctk(rdkm: RdkitMol, cid: int = 0) -> cctk.Molecule:
     except IndexError as e:
         raise ConversionError("RDKit molecule does not have a conformer with the given ID") from e
     
-def cctk_to_stjames(cmol: cctk.Molecule) -> stjames.Molecule:
+def _cctk_to_stjames(cmol: cctk.Molecule) -> stjames.Molecule:
     atomic_numbers = cmol.atomic_numbers.view(np.ndarray)
     geometry = cmol.geometry.view(np.ndarray)
     atoms = []
@@ -77,11 +77,11 @@ def cctk_to_stjames(cmol: cctk.Molecule) -> stjames.Molecule:
 
     return stjames.Molecule(atoms=atoms, charge=cmol.charge, multiplicity=cmol.multiplicity)
 
-def rdkit_to_stjames(rdkm: RdkitMol, cid: int = 0) -> stjames.Molecule:
-    cmol = rdkit_to_cctk(rdkm, cid)
-    return cctk_to_stjames(cmol)
+def _rdkit_to_stjames(rdkm: RdkitMol, cid: int = 0) -> stjames.Molecule:
+    cmol = _rdkit_to_cctk(rdkm, cid)
+    return _cctk_to_stjames(cmol)
 
-def pka(mol: RdkitMol,
+def run_pka(mol: RdkitMol,
         mode: pKaMode = "rapid",
         timeout: int = 600,
         name: str = "pKa API Workflow",
@@ -91,7 +91,7 @@ def pka(mol: RdkitMol,
         folder_uuid: Optional[stjames.UUID] = None)-> tuple[dict[int, float], dict[int, float]]:
     return asyncio.run(_single_pka(mol, mode, timeout, name, pka_range, deprotonate_elements, protonate_elements, folder_uuid))
 
-def batch_pka(mols: List[RdkitMol],
+def run_batch_pka(mols: List[RdkitMol],
         mode: pKaMode = "rapid",
         timeout: int = 600,
         name: str = "pKa API Workflow",
@@ -126,7 +126,7 @@ async def _single_pka(mol: RdkitMol,
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="pka",
-        initial_molecule=rdkit_to_stjames(mol),
+        initial_molecule=_rdkit_to_stjames(mol),
         workflow_data={
             "pka_range": pka_range,
             "deprotonate_elements": deprotonate_elements,
@@ -168,7 +168,7 @@ async def _single_pka(mol: RdkitMol,
     return {"acidic_pkas": acidic_pkas, "basic_pkas": basic_pkas}
 
 
-def tautomers(mol: RdkitMol,
+def run_tautomers(mol: RdkitMol,
               mode: TautomerMode = "reckless",
               timeout: int = 600,
               name: str = "Tautomers API Workflow",
@@ -180,7 +180,7 @@ def tautomers(mol: RdkitMol,
     """
     return asyncio.run(_single_tautomers(mol, mode, timeout, name, folder_uuid))
 
-def batch_tautomers(mols: List[RdkitMol],
+def run_batch_tautomers(mols: List[RdkitMol],
               mode: TautomerMode = "reckless",
               timeout: int = 600,
               name: str = "Tautomers API Workflow",
@@ -211,7 +211,7 @@ async def _single_tautomers(mol: RdkitMol,
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="tautomers",
-        initial_molecule=rdkit_to_stjames(mol),
+        initial_molecule=_rdkit_to_stjames(mol),
         workflow_data={
             "mode": mode,
         },
@@ -238,7 +238,7 @@ async def _single_tautomers(mol: RdkitMol,
     #return relative weights too 
     return tautomers
 
-def energy(
+def run_energy(
     mol: RdkitMol,
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -257,7 +257,7 @@ def energy(
     """
     return asyncio.run(_single_energy(mol, method, engine, mode, timeout, name, folder_uuid))
 
-def batch_energy(
+def run_batch_energy(
     mols: List[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -302,7 +302,7 @@ async def _single_energy(
     method = stjames.Method(method)
 
     if mol.GetNumConformers() == 0:
-        mol = embed_rdkit_mol(mol)
+        mol = _embed_rdkit_mol(mol)
         if mol.GetNumConformers() == 0:
             raise NoConformersError("This molecule has no conformers")
 
@@ -314,7 +314,7 @@ async def _single_energy(
     workflow_uuids = []
     for conformer in mol.GetConformers():
         cid = conformer.GetId()
-        stjames_mol = rdkit_to_stjames(mol, cid)
+        stjames_mol = _rdkit_to_stjames(mol, cid)
         get_api_key()
         post = rowan.Workflow.submit(
             name=name,
@@ -351,7 +351,7 @@ async def _single_energy(
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
         
         
-def optimize(
+def run_optimize(
     mol: RdkitMol,
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -373,7 +373,7 @@ def optimize(
     """
     return asyncio.run(_single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid))
 
-def batch_optimize(
+def run_batch_optimize(
     mols: List[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -424,7 +424,7 @@ async def _single_optimize(
     method = stjames.Method(method)
     
     if mol.GetNumConformers() == 0:
-        mol = embed_rdkit_mol(mol)
+        mol = _embed_rdkit_mol(mol)
         if mol.GetNumConformers() == 0:
             raise NoConformersError("This molecule has no conformers")
 
@@ -438,7 +438,7 @@ async def _single_optimize(
     workflow_uuids = []
     for conformer in mol.GetConformers():
         cid = conformer.GetId()
-        stjames_mol = rdkit_to_stjames(mol, cid)
+        stjames_mol = _rdkit_to_stjames(mol, cid)
         get_api_key()
         post = rowan.Workflow.submit(
             name=name,
@@ -486,7 +486,7 @@ async def _single_optimize(
 
     return return_dict
 
-def conformers(mol: RdkitMol, num_conformers=10,
+def run_conformers(mol: RdkitMol, num_conformers=10,
                method: str = "aimnet2_wb97md3",
                mode: str = "rapid",
                return_energies: bool = False,
@@ -501,7 +501,7 @@ def conformers(mol: RdkitMol, num_conformers=10,
     """
     return asyncio.run(_single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid))
 
-def batch_conformers(mols: List[RdkitMol], num_conformers=10,
+def run_batch_conformers(mols: List[RdkitMol], num_conformers=10,
                method: str = "aimnet2_wb97md3",
                mode: str = "rapid",
                return_energies: bool = False,
@@ -540,7 +540,7 @@ async def _single_conformers(mol: RdkitMol, num_conformers=10,
     method = stjames.Method(method)
     
     if mol.GetNumConformers() == 0:
-        mol = embed_rdkit_mol(mol)
+        mol = _embed_rdkit_mol(mol)
         if mol.GetNumConformers() == 0:
             raise NoConformersError("This molecule has no conformers")
 
@@ -552,7 +552,7 @@ async def _single_conformers(mol: RdkitMol, num_conformers=10,
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="conformer_search",
-        initial_molecule=rdkit_to_stjames(mol),
+        initial_molecule=_rdkit_to_stjames(mol),
         workflow_data={
         "conf_gen_mode": "rapid",
         "mode": mode,
