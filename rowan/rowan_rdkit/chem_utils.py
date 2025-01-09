@@ -5,7 +5,6 @@ import rowan
 import copy
 import asyncio
 import logging
-import math
 from rowan.utils import get_api_key
 import stjames
 import time
@@ -91,7 +90,7 @@ def run_pka(mol: RdkitMol,
         folder_uuid: Optional[stjames.UUID] = None)-> tuple[dict[int, float], dict[int, float]]:
     return asyncio.run(_single_pka(mol, mode, timeout, name, pka_range, deprotonate_elements, protonate_elements, folder_uuid))
 
-def run_batch_pka(mols: List[RdkitMol],
+def batch_pka(mols: List[RdkitMol],
         mode: pKaMode = "rapid",
         timeout: int = 600,
         name: str = "pKa API Workflow",
@@ -180,7 +179,7 @@ def run_tautomers(mol: RdkitMol,
     """
     return asyncio.run(_single_tautomers(mol, mode, timeout, name, folder_uuid))
 
-def run_batch_tautomers(mols: List[RdkitMol],
+def batch_tautomers(mols: List[RdkitMol],
               mode: TautomerMode = "reckless",
               timeout: int = 600,
               name: str = "Tautomers API Workflow",
@@ -257,7 +256,7 @@ def run_energy(
     """
     return asyncio.run(_single_energy(mol, method, engine, mode, timeout, name, folder_uuid))
 
-def run_batch_energy(
+def batch_energy(
     mols: List[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -373,7 +372,7 @@ def run_optimize(
     """
     return asyncio.run(_single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid))
 
-def run_batch_optimize(
+def batch_optimize(
     mols: List[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
@@ -501,7 +500,7 @@ def run_conformers(mol: RdkitMol, num_conformers=10,
     """
     return asyncio.run(_single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid))
 
-def run_batch_conformers(mols: List[RdkitMol], num_conformers=10,
+def batch_conformers(mols: List[RdkitMol], num_conformers=10,
                method: str = "aimnet2_wb97md3",
                mode: str = "rapid",
                return_energies: bool = False,
@@ -608,3 +607,119 @@ async def _single_conformers(mol: RdkitMol, num_conformers=10,
         return_dict["energies"] = lowest_energies
 
     return return_dict
+
+def run_charges(
+    mol: RdkitMol,
+    method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    mode: str = "auto",
+    timeout: int = 600,
+    name: str = "Charges API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None
+):
+    """
+    Computes atom-centered charges for the given molecule.
+
+    :param mol: the input molecule
+    :param method: the method with which to compute the molecule's energy
+    :raises: MethodTooSlowError if the method is invalid
+    :returns: a dictionary with the charges and the conformer index
+    """
+    return asyncio.run(_single_charges(mol, method, engine, mode, timeout, name, folder_uuid))
+
+def batch_charges(
+    mols: List[RdkitMol],
+    method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    mode: str = "auto",
+    timeout: int = 600,
+    name: str = "Charges API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None
+):
+    """
+    Computes the energy for the given molecule.
+
+    :param mol: the input molecule
+    :param method: the method with which to compute the molecule's energy
+    :raises: MethodTooSlowError if the method is invalid
+    :returns: a list of dictionaries with the charges and the conformer index
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    tasks = [_single_charges(mol, method, engine, mode, timeout, name, folder_uuid) for mol in mols]
+    results = loop.run_until_complete(asyncio.gather(*tasks))
+    return results
+
+async def _single_charges(
+    mol: RdkitMol,
+    method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    mode: str = "auto",
+    timeout: int = 600,
+    name: str = "Energy API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None
+):
+    """
+    Computes the energy for the given molecule.
+
+    :param mol: the input molecule
+    :param method: the method with which to compute the molecule's energy
+    :param engine: the engine
+    :param mode:
+    :param timeout: the timeout in seconds
+    :raises: MethodTooSlowError if the method is invalid
+    :returns: a dictionary with the charges and the conformer index
+    """
+    get_api_key()
+
+    method = stjames.Method(method)
+
+    if mol.GetNumConformers() == 0:
+        mol = _embed_rdkit_mol(mol)
+        if mol.GetNumConformers() == 0:
+            raise NoConformersError("This molecule has no conformers")
+
+    if method not in FAST_METHODS:
+        raise MethodTooSlowError(
+            "This method is too slow; try running this through our web interface."
+        )
+
+    workflow_uuids = []
+    for conformer in mol.GetConformers():
+        cid = conformer.GetId()
+        stjames_mol = _rdkit_to_stjames(mol, cid)
+        get_api_key()
+        post = rowan.Workflow.submit(
+            name=name,
+            workflow_type="basic_calculation",
+            initial_molecule=stjames_mol,
+            workflow_data={
+            "settings": {
+                        "method": method.value,
+                        "corrections": [],
+                        "tasks": [
+                            "charge"
+                        ],
+                        "mode": mode,
+                        "opt_settings": {
+                            "constraints": []
+                        }
+                    },
+            "engine": engine
+                },
+            folder_uuid=folder_uuid
+        )
+        
+        workflow_uuids.append(post["uuid"])
+        
+    start = time.time()
+    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+        await asyncio.sleep(5)
+        if time.time() - start > timeout:
+            raise TimeoutError("Workflow timed out")
+        
+    workflow_results = [rowan.Workflow.retrieve(uuid) for uuid in workflow_uuids]
+    charges_list = [rowan.Calculation.retrieve(workflow["object_data"]["calculation_uuid"])["molecules"][-1]["mulliken_charges"] for workflow in workflow_results]
+
+    return [{"conformer_index": index, "charges": charges} for index, charges in enumerate(charges_list)]
+ 
