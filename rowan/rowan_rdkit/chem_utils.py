@@ -98,14 +98,14 @@ def batch_pka(mols: List[RdkitMol],
         deprotonate_elements: list[int] = [7, 8, 16],
         protonate_elements: list[int] = [7],
         folder_uuid: Optional[stjames.UUID] = None)-> tuple[dict[int, float], dict[int, float]]:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [
-        _single_pka(mol, mode, timeout, name, pka_range, deprotonate_elements, protonate_elements, folder_uuid)
-        for mol in mols
-    ]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_pka(mol, mode, timeout, name, pka_range, 
+                        deprotonate_elements, protonate_elements, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 
 async def _single_pka(mol: RdkitMol,
@@ -189,11 +189,13 @@ def batch_tautomers(mols: List[RdkitMol],
     :param mol: RDKit molecule object
     :return: A list of lists of tautomer dictionaries which include the RDKit molecule object, the relative energy, and the weight
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [_single_tautomers(mol, mode, timeout, name, folder_uuid) for mol in mols]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_tautomers(mol, mode, timeout, name, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 
 async def _single_tautomers(mol: RdkitMol,
@@ -273,11 +275,13 @@ def batch_energy(
     :raises: MethodTooSlowError if the method is invalid
     :returns: a list of dictionaries with the energy in Hartree and the conformer index
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [_single_energy(mol, method, engine, mode, timeout, name, folder_uuid) for mol in mols]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_energy(mol, method, engine, mode, timeout, name, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 async def _single_energy(
     mol: RdkitMol,
@@ -392,11 +396,13 @@ def batch_optimize(
     :returns: a list of dictionaries with the molecule, with optimized conformers, and optionally a list of energies per conformer too
 
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [_single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid) for mol in mols]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 async def _single_optimize(
     mol: RdkitMol,
@@ -513,11 +519,13 @@ def batch_conformers(mols: List[RdkitMol], num_conformers=10,
     :param num_conformers: Number of conformers to generate
     :return: A list of dictonaries with the RDKit molecule with num_conformers lowest energy conformers and optional energies
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [_single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid) for mol in mols]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 
 async def _single_conformers(mol: RdkitMol, num_conformers=10,
@@ -644,11 +652,13 @@ def batch_charges(
     :raises: MethodTooSlowError if the method is invalid
     :returns: a list of dictionaries with the charges and the conformer index
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    tasks = [_single_charges(mol, method, engine, mode, timeout, name, folder_uuid) for mol in mols]
-    results = loop.run_until_complete(asyncio.gather(*tasks))
-    return results
+    async def _run():
+        tasks = [
+            _single_charges(mol, method, engine, mode, timeout, name, folder_uuid)
+            for mol in mols
+        ]
+        return await asyncio.gather(*tasks)
+    return asyncio.run(_run())
 
 async def _single_charges(
     mol: RdkitMol,
