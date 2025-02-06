@@ -1114,7 +1114,6 @@ packages:
   constrains:
   - importlib-resources >=6.5.2,<6.5.3.0a0
   license: Apache-2.0
-  license_family: APACHE
   purls:
   - pkg:pypi/importlib-resources?source=hash-mapping
   size: 33781
