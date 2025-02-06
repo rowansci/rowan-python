@@ -3226,9 +3226,8 @@ packages:
   requires_python: '>=3.8'
 - pypi: .
   name: rowan-python
-  version: 1.1.2
-  path: .
-  sha256: 93e92c09a03fcce0fdad13ed38af8fc022695d9e093c292a0618470c024e0cb5
+  version: 1.1.5
+  sha256: eb3bb7b2c06bc24dda6e9440c594c4dc29bf808de3d8d75973cc0f816a32c6fb
   requires_python: '>=3.8'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.22.3-py312h12e396e_0.conda
