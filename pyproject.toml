@@ -11,6 +11,9 @@ dependencies = [
     "cctk",
     "httpx",
     "stjames",
+    "nest-asyncio"
+    "rdkit"
+    "setuptools"
 ]
 
 [project.urls]
