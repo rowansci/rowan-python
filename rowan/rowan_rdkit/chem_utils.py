@@ -29,6 +29,22 @@ class NoConformersError(Exception):
 class MethodTooSlowError(Exception):
     pass
 
+
+def apply_nest_asyncio():
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    try:
+        import nest_asyncio
+        nest_asyncio.apply()
+    except ImportError:
+        pass
+    
+# actually apply it
+apply_nest_asyncio()
+    
+    
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
     stjames_mol_dict = rowan.Calculation.retrieve(calculation_uuid)["molecules"][-1]
     stjames_mol = stjames.Molecule(**stjames_mol_dict)
