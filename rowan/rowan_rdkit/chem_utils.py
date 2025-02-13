@@ -3,10 +3,9 @@ from rdkit.Chem import AllChem
 from typing import Literal, TypeAlias, Optional, List
 import rowan
 import copy
-import periodictable
 import asyncio
 import logging
-from rowan.utils import get_api_key
+from rowan.utils import get_api_key, ATOMIC_NUMBER_TO_ATOMIC_SYMBOL
 import stjames
 import time
 import numpy as np
@@ -144,7 +143,7 @@ async def _single_pka(mol: RdkitMol,
     acidic_pkas = []
     for microstate in result["object_data"]["conjugate_bases"]:
         atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
-        symbol = periodictable.elements[atomic_number].symbol
+        symbol = ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)]
         acidic_pkas.append({
             "element": symbol,
             "index": microstate["atom_index"],
@@ -155,7 +154,7 @@ async def _single_pka(mol: RdkitMol,
     basic_pkas = []
     for microstate in result["object_data"]["conjugate_acids"]:
         atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
-        symbol = periodictable.elements[atomic_number].symbol
+        symbol = ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)]
         basic_pkas.append({
             "element": symbol,
             "index": microstate["atom_index"],
