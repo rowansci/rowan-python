@@ -1,14 +1,13 @@
-import cctk
 import rowan
+import stjames 
 
 rowan.api_key = "rowan-sk..."
-client = rowan.Client()
 
-# load molecule by name (cctk can also load in a variety of file formats)
-molecule = cctk.Molecule.new_from_name("cyclobutane")
+# load molecule by smiles (stjames can also load in a variety of file formats)
+molecule = stjames.Molecule.from_smiles("C1CCC1") # cyclobutane
 
 # run calculation remotely and return result
-result = client.compute(
+result = rowan.compute(
     molecule,
     name="opt cyclobutane",
     method="b97-3c",

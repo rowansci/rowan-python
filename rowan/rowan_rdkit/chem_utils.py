@@ -3,13 +3,13 @@ from rdkit.Chem import AllChem
 from typing import Literal, TypeAlias, Optional, List
 import rowan
 import copy
+import periodictable
 import asyncio
 import logging
 from rowan.utils import get_api_key
 import stjames
 import time
 import numpy as np
-import cctk
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 pKaMode = Literal["reckless", "rapid", "careful"]
@@ -73,28 +73,8 @@ def _embed_rdkit_mol(rdkm: RdkitMol):
     
     return rdkm
 
-def _rdkit_to_cctk(rdkm: RdkitMol, cid: int = 0) -> cctk.Molecule:
-    if len(rdkm.GetConformers()) == 0:
-        rdkm = _embed_rdkit_mol(rdkm)
-    try:
-        nums = [atom.GetAtomicNum() for atom in rdkm.GetAtoms()]
-        geom = rdkm.GetConformers()[cid].GetPositions()
-        return cctk.Molecule(nums, geom, charge=Chem.GetFormalCharge(rdkm))
-    except IndexError as e:
-        raise ConversionError("RDKit molecule does not have a conformer with the given ID") from e
-    
-def _cctk_to_stjames(cmol: cctk.Molecule) -> stjames.Molecule:
-    atomic_numbers = cmol.atomic_numbers.view(np.ndarray)
-    geometry = cmol.geometry.view(np.ndarray)
-    atoms = []
-    for i in range(cmol.num_atoms()):
-        atoms.append(stjames.Atom(atomic_number=atomic_numbers[i], position=geometry[i]))
-
-    return stjames.Molecule(atoms=atoms, charge=cmol.charge, multiplicity=cmol.multiplicity)
-
 def _rdkit_to_stjames(rdkm: RdkitMol, cid: int = 0) -> stjames.Molecule:
-    cmol = _rdkit_to_cctk(rdkm, cid)
-    return _cctk_to_stjames(cmol)
+    return stjames.Molecule.from_rdkit(rdkm)
 
 def run_pka(mol: RdkitMol,
         mode: pKaMode = "rapid",
@@ -163,7 +143,8 @@ async def _single_pka(mol: RdkitMol,
     
     acidic_pkas = []
     for microstate in result["object_data"]["conjugate_bases"]:
-        symbol = cctk.helper_functions.get_symbol(result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"])
+        atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
+        symbol = periodictable.elements[atomic_number].symbol
         acidic_pkas.append({
             "element": symbol,
             "index": microstate["atom_index"],
@@ -173,7 +154,8 @@ async def _single_pka(mol: RdkitMol,
 
     basic_pkas = []
     for microstate in result["object_data"]["conjugate_acids"]:
-        symbol = cctk.helper_functions.get_symbol(result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"])
+        atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
+        symbol = periodictable.elements[atomic_number].symbol
         basic_pkas.append({
             "element": symbol,
             "index": microstate["atom_index"],

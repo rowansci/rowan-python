@@ -8,9 +8,8 @@ authors = [
     { name = "Corin Wagen", email = "corin@rowansci.com" },
 ]
 dependencies = [
-    "cctk",
     "httpx",
-    "stjames>=0.0.42",
+    "stjames>=0.0.62",
     "setuptools",
     "rdkit",
     "nest-asyncio",
@@ -34,11 +33,11 @@ rowan-python = { path = ".", editable = true }
 [tool.pixi.tasks]
 
 [tool.pixi.dependencies]
-cctk = ">=0.2.25,<0.3"
 httpx = ">=0.27.2,<0.28"
 setuptools = ">=73.0.1,<74"
 rdkit = ">=2024.09.4"
 nest-asyncio = "*"
+periodictable = "*"
 
 [tool.hatch.build.targets.wheel]
 packages = ["rowan"]

@@ -1,5 +1,4 @@
 import os
-import cctk
 import stjames
 import numpy as np
 from contextlib import contextmanager
@@ -22,26 +21,9 @@ def get_api_key() -> str:
         )
 
 
-def cctk_to_stjames(molecule: cctk.Molecule) -> stjames.Molecule:
-    atomic_numbers = molecule.atomic_numbers.view(np.ndarray)
-    geometry = molecule.geometry.view(np.ndarray)
-
-    atoms = list()
-    for i in range(molecule.num_atoms()):
-        atoms.append(
-            stjames.Atom(atomic_number=atomic_numbers[i], position=geometry[i])
-        )
-
-    return stjames.Molecule(
-        atoms=atoms,
-        charge=molecule.charge,
-        multiplicity=molecule.multiplicity,
-    )
-
 
 def smiles_to_stjames(smiles: str) -> stjames.Molecule:
-    cmol = cctk.Molecule.new_from_smiles(smiles)
-    return cctk_to_stjames(cmol)
+    return stjames.Molecule.from_smiles(smiles)
 
 
 @contextmanager
