@@ -651,7 +651,7 @@ async def _single_optimize(
     energies = [cacluation["molecules"][-1]["energy"] for cacluation in calculations]
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
-        conformer.SetPositions(np.array(optimized_positions[i]))  # type: ignore [attr-defined]  # TODO: fix this
+        conformer.SetPositions(np.array(optimized_positions[i]))  # type: ignore [attr-defined]
 
     return {
         "molecule": mol,
@@ -828,7 +828,7 @@ async def _single_conformers(
     for i, conformer in enumerate(mol.GetConformers()):
         atoms = rowan.Calculation.retrieve(lowest_n_uuids[i])["molecules"][-1]["atoms"]
         pos = [atom["position"] for atom in atoms]
-        conformer.SetPositions(np.array(pos))  # type: ignore [attr-defined]  # TODO: fix this
+        conformer.SetPositions(np.array(pos))  # type: ignore [attr-defined]
 
     return {
         "molecule": mol,
