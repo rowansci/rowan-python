@@ -1,6 +1,6 @@
-import stjames
-from typing import Optional
+from typing import Any, Optional
 
+import stjames
 
 from .utils import api_client
 
@@ -11,10 +11,10 @@ class Workflow:
         cls,
         workflow_type: str,
         initial_molecule: dict | stjames.Molecule,
-        workflow_data: dict,
+        workflow_data: dict[str, Any],
         name: Optional[str] = None,
         folder_uuid: Optional[stjames.UUID] = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         if isinstance(initial_molecule, stjames.Molecule):
             molecule_dict = initial_molecule.model_dump()
         elif isinstance(initial_molecule, dict):
@@ -22,22 +22,20 @@ class Workflow:
         else:
             raise ValueError("Invalid type for `initial_molecule`")
 
+        data = {
+            "name": name,
+            "folder_uuid": folder_uuid,
+            "initial_molecule": molecule_dict,
+            "workflow_type": workflow_type,
+            "workflow_data": workflow_data,
+        }
         with api_client() as client:
-            response = client.post(
-                "/workflow",
-                json={
-                    "name": name,
-                    "folder_uuid": folder_uuid,
-                    "initial_molecule": molecule_dict,
-                    "workflow_type": workflow_type,
-                    "workflow_data": workflow_data,
-                },
-            )
+            response = client.post("/workflow", json=data)
             response.raise_for_status()
             return response.json()
 
     @classmethod
-    def retrieve(cls, uuid: stjames.UUID) -> dict:
+    def retrieve(cls, uuid: stjames.UUID) -> dict[str, Any]:
         with api_client() as client:
             response = client.get(f"/workflow/{uuid}")
             response.raise_for_status()
@@ -77,12 +75,12 @@ class Workflow:
 
     @classmethod
     def status(cls, uuid: stjames.UUID) -> int:
-        data = cls.retrieve(uuid)
-        return data["object_status"]
+        return cls.retrieve(uuid)["object_status"]
 
     @classmethod
     def is_finished(cls, uuid: stjames.UUID) -> bool:
         status = cls.status(uuid)
+
         return status in {
             stjames.Status.COMPLETED_OK.value,
             stjames.Status.FAILED.value,
@@ -112,8 +110,8 @@ class Workflow:
         object_type: Optional[str] = None,
         page: int = 0,
         size: int = 10,
-    ):
-        params = {"page": page, "size": size}
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"page": page, "size": size}
 
         if parent_uuid is not None:
             params["parent_uuid"] = parent_uuid
