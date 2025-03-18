@@ -1,14 +1,16 @@
+import asyncio
+import copy
+import logging
+import time
+from typing import Iterable, Literal, Optional, TypeAlias, TypedDict
+
+import numpy as np
+import stjames
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from typing import Literal, TypeAlias, Optional, List
+
 import rowan
-import copy
-import asyncio
-import logging
-from rowan.utils import get_api_key, ATOMIC_NUMBER_TO_ATOMIC_SYMBOL
-import stjames
-import time
-import numpy as np
+from rowan.utils import ATOMIC_NUMBER_TO_ATOMIC_SYMBOL, get_api_key
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 pKaMode = Literal["reckless", "rapid", "careful"]
@@ -19,104 +21,221 @@ FAST_METHODS: list[stjames.Method] = [
     *stjames.method.NNP_METHODS,
 ]
 
+
 class ConversionError(ValueError):
     pass
 
+
 class NoConformersError(Exception):
     pass
+
 
 class MethodTooSlowError(Exception):
     pass
 
 
-def apply_nest_asyncio():
+class ChargesResult(TypedDict):
+    conformer_index: int
+    charges: list[float]
+
+
+ChargesResults = list[ChargesResult]
+
+
+class ConformerResult(TypedDict):
+    molecule: RdkitMol
+    energies: list[float]
+
+
+class PKaResult(TypedDict):
+    element: str
+    index: int
+    pKa: float
+
+
+class PKaResults(TypedDict):
+    acidic_pkas: list[PKaResult]
+    basic_pkas: list[PKaResult]
+
+
+class TautomerResult(TypedDict):
+    molecule: RdkitMol
+    predicted_relative_energy: float
+    weight: float
+
+
+TautomerResults = list[TautomerResult]
+
+
+class ConformerEnergyResult(TypedDict):
+    conformer_index: int
+    energy: float
+
+
+class OptimizeResult(TypedDict):
+    molecule: RdkitMol
+    energies: list[float]
+
+
+def apply_nest_asyncio() -> None:
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
         return
     try:
-        import nest_asyncio
+        import nest_asyncio  # type: ignore [import-untyped]
+
         nest_asyncio.apply()
     except ImportError:
         pass
-    
+
+
 # actually apply it
 apply_nest_asyncio()
-    
-    
+
+
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
     stjames_mol_dict = rowan.Calculation.retrieve(calculation_uuid)["molecules"][-1]
-    stjames_mol = stjames.Molecule(**stjames_mol_dict)
-    rdkm = Chem.MolFromXYZBlock(stjames_mol.to_xyz())
-    return rdkm
 
-def _embed_rdkit_mol(rdkm: RdkitMol):
+    return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())  # type: ignore [attr-defined]
+
+
+def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
     try:
         AllChem.SanitizeMol(rdkm)
     except Exception as e:
-        raise ValueError(f"Molecule could not be generated -- invalid chemistry!\n{e}")
+        raise ValueError("Molecule could not be generated -- invalid chemistry!") from e
 
     rdkm = AllChem.AddHs(rdkm)
     try:
-        status1 = AllChem.EmbedMolecule(rdkm, maxAttempts=200)
-        assert status1 >= 0
-    except Exception as e:
+        assert AllChem.EmbedMolecule(rdkm, maxAttempts=200) >= 0
+    except AssertionError as e:
         status1 = AllChem.EmbedMolecule(rdkm, maxAttempts=200, useRandomCoords=True)
         if status1 < 0:
-            raise ValueError(f"Cannot embed molecule! Error: {e}")
+            raise ValueError("Cannot embed molecule!") from e
     try:
-        status2 = AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200)
-        assert status2 >= 0
+        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0  # type: ignore [call-arg]
     except AssertionError:
         pass
-    
+
     return rdkm
 
+
 def _rdkit_to_stjames(rdkm: RdkitMol, cid: int = 0) -> stjames.Molecule:
-    return stjames.Molecule.from_rdkit(rdkm)
+    return stjames.Molecule.from_rdkit(rdkm, cid=cid)
 
-def run_pka(mol: RdkitMol,
-        mode: pKaMode = "rapid",
-        timeout: int = 600,
-        name: str = "pKa API Workflow",
-        pka_range: tuple[int, int] = (2, 12),
-        deprotonate_elements: list[int] = [7, 8, 16],
-        protonate_elements: list[int] = [7],
-        folder_uuid: Optional[stjames.UUID] = None)-> tuple[dict[int, float], dict[int, float]]:
-    return asyncio.run(_single_pka(mol, mode, timeout, name, pka_range, deprotonate_elements, protonate_elements, folder_uuid))
 
-def batch_pka(mols: List[RdkitMol],
-        mode: pKaMode = "rapid",
-        timeout: int = 600,
-        name: str = "pKa API Workflow",
-        pka_range: tuple[int, int] = (2, 12),
-        deprotonate_elements: list[int] = [7, 8, 16],
-        protonate_elements: list[int] = [7],
-        folder_uuid: Optional[stjames.UUID] = None)-> tuple[dict[int, float], dict[int, float]]:
+def run_pka(
+    mol: RdkitMol,
+    mode: pKaMode = "rapid",
+    timeout: int = 600,
+    name: str = "pKa API Workflow",
+    pka_range: tuple[int, int] = (2, 12),
+    deprotonate_elements: list[int] | None = None,
+    protonate_elements: list[int] | None = None,
+    folder_uuid: stjames.UUID | None = None,
+) -> PKaResults:
+    """
+    Calculate the pKa of a Molecule.
+
+    :param mol: RDKit Molecule
+    :param mode: pKa calculation Mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param pka_range: range of pKa values to calculate
+    :param deprotonate_elements: elements to deprotonate
+    :param protonate_elements: elements to protonate
+    :param folder_uuid: folder UUID
+    :return: dictionary of pKa values indexed by atom
+    """
+    protonate_elements = protonate_elements or [7]
+    deprotonate_elements = deprotonate_elements or [7, 8, 16]
+
+    return asyncio.run(
+        _single_pka(
+            mol,
+            mode,
+            timeout,
+            name,
+            pka_range,
+            deprotonate_elements,
+            protonate_elements,
+            folder_uuid,
+        )
+    )
+
+
+def batch_pka(
+    mols: Iterable[RdkitMol],
+    mode: pKaMode = "rapid",
+    timeout: int = 600,
+    name: str = "pKa API Workflow",
+    pka_range: tuple[int, int] = (2, 12),
+    deprotonate_elements: list[int] | None = None,
+    protonate_elements: list[int] | None = None,
+    folder_uuid: stjames.UUID | None = None,
+) -> list[PKaResults]:
+    """
+    Calculate the pKa of a batch of Molecules.
+
+    :param mols: list of RDKit Molecules
+    :param mode: pKa calculation mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param pka_range: range of pKa values to calculate
+    :param deprotonate_elements: elements to deprotonate
+    :param protonate_elements: elements to protonate
+    :return: list of dictionary of pKa values indexed by atom
+    """
+    protonate_elements = protonate_elements or [7]
+    deprotonate_elements = deprotonate_elements or [7, 8, 16]
+
     async def _run():
         tasks = [
-            _single_pka(mol, mode, timeout, name, pka_range, 
-                        deprotonate_elements, protonate_elements, folder_uuid)
+            _single_pka(
+                mol,
+                mode,
+                timeout,
+                name,
+                pka_range,
+                deprotonate_elements,
+                protonate_elements,
+                folder_uuid,
+            )
             for mol in mols
         ]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
 
 
-async def _single_pka(mol: RdkitMol,
-        mode: pKaMode = "rapid",
-        timeout: int = 600,
-        name: str = "pKa API Workflow",
-        pka_range: tuple[int, int] = (2, 12),
-        deprotonate_elements: list[int] = [7, 8, 16],
-        protonate_elements: list[int] = [7],
-        folder_uuid: Optional[stjames.UUID] = None) -> tuple[dict[int, float], dict[int, float]]:
+async def _single_pka(
+    mol: RdkitMol,
+    mode: pKaMode = "rapid",
+    timeout: int = 600,
+    name: str = "pKa API Workflow",
+    pka_range: tuple[int, int] = (2, 12),
+    deprotonate_elements: list[int] | None = None,
+    protonate_elements: list[int] | None = None,
+    folder_uuid: stjames.UUID | None = None,
+) -> PKaResults:
     """
-    Calculate the pKa of a molecule.
-    :param mol: RDKit molecule object
+    Calculate the pKa of a Molecule.
+
+    :param mol: RDKit Molecule
+    :param mode: pKa calculation mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param pka_range: range of pKa values to calculate
+    :param deprotonate_elements: elements to deprotonate
+    :param protonate_elements: elements to protonate
+    :param folder_uuid: folder UUID
     :return: dictionary of pKa values
     """
     get_api_key()
+    protonate_elements = protonate_elements or [7]
+    deprotonate_elements = deprotonate_elements or [7, 8, 16]
+
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="pka",
@@ -129,112 +248,136 @@ async def _single_pka(mol: RdkitMol,
             "protonate_atoms": [],
             "mode": mode,
         },
-        folder_uuid=folder_uuid
+        folder_uuid=folder_uuid,
     )
-    
+
     start = time.time()
     while not rowan.Workflow.is_finished(post["uuid"]):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    result = rowan.Workflow.retrieve(post["uuid"])
-    
-    acidic_pkas = []
-    for microstate in result["object_data"]["conjugate_bases"]:
-        atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
-        symbol = ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)]
-        acidic_pkas.append({
-            "element": symbol,
-            "index": microstate["atom_index"],
-            "pKa": round(microstate["pka"], 2)
-        })
-        
 
-    basic_pkas = []
-    for microstate in result["object_data"]["conjugate_acids"]:
-        atomic_number = result["object_data"]["initial_molecule"]["atoms"][microstate["atom_index"]-1]["atomic_number"]
-        symbol = ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)]
-        basic_pkas.append({
-            "element": symbol,
-            "index": microstate["atom_index"],
-            "pKa": round(microstate["pka"], 2)
-        })
+    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+
+    acidic_pkas: list[PKaResult] = []
+    for microstate in data["conjugate_bases"]:
+        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+            "atomic_number"
+        ]
+        acidic_pkas.append(
+            {
+                "element": ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)],
+                "index": microstate["atom_index"],
+                "pKa": round(microstate["pka"], 2),
+            }
+        )
+
+    basic_pkas: list[PKaResult] = []
+    for microstate in data["conjugate_acids"]:
+        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+            "atomic_number"
+        ]
+
+        basic_pkas.append(
+            {
+                "element": ATOMIC_NUMBER_TO_ATOMIC_SYMBOL[str(atomic_number)],
+                "index": microstate["atom_index"],
+                "pKa": round(microstate["pka"], 2),
+            }
+        )
 
     return {"acidic_pkas": acidic_pkas, "basic_pkas": basic_pkas}
 
 
-def run_tautomers(mol: RdkitMol,
-              mode: TautomerMode = "reckless",
-              timeout: int = 600,
-              name: str = "Tautomers API Workflow",
-              folder_uuid: Optional[stjames.UUID] = None) -> list[tuple[RdkitMol, float]]:
+def run_tautomers(
+    mol: RdkitMol,
+    mode: TautomerMode = "reckless",
+    timeout: int = 600,
+    name: str = "Tautomers API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> TautomerResults:
     """
-    Generate possible tautomers of a molecule.
-    :param mol: RDKit molecule object
-    :return: A list of tautomer dictionaries which include the RDKit molecule object, the relative energy, and the weight
+    Generate possible tautomers of a Molecule.
+
+    :param mol: RDKit Molecule
+    :param mode: Tautomer mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :return: list of dictionaries containing RDKit Molecule, relative energies, and weights
     """
     return asyncio.run(_single_tautomers(mol, mode, timeout, name, folder_uuid))
 
-def batch_tautomers(mols: List[RdkitMol],
-              mode: TautomerMode = "reckless",
-              timeout: int = 600,
-              name: str = "Tautomers API Workflow",
-              folder_uuid: Optional[stjames.UUID] = None) -> list[tuple[RdkitMol, float]]:
+
+def batch_tautomers(
+    mols: Iterable[RdkitMol],
+    mode: TautomerMode = "reckless",
+    timeout: int = 600,
+    name: str = "Tautomers API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[TautomerResults]:
     """
-    Generate possible tautomers of a molecule.
-    :param mol: RDKit molecule object
-    :return: A list of lists of tautomer dictionaries which include the RDKit molecule object, the relative energy, and the weight
+    Generate possible tautomers of a Molecule.
+
+    :param mol: RDKit Molecule
+    :param mode: Tautomer mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :return: list of lists of dictionaries containing RDKit Molecule, relative energies, and weights
     """
+
     async def _run():
-        tasks = [
-            _single_tautomers(mol, mode, timeout, name, folder_uuid)
-            for mol in mols
-        ]
+        tasks = [_single_tautomers(mol, mode, timeout, name, folder_uuid) for mol in mols]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
 
 
-async def _single_tautomers(mol: RdkitMol,
-              mode: TautomerMode = "reckless",
-              timeout: int = 600,
-              name: str = "Tautomers API Workflow",
-              folder_uuid: Optional[stjames.UUID] = None) -> list[tuple[RdkitMol, float]]:
+async def _single_tautomers(
+    mol: RdkitMol,
+    mode: TautomerMode = "reckless",
+    timeout: int = 600,
+    name: str = "Tautomers API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> TautomerResults:
     """
-    Generate possible tautomers of a molecule.
-    :param mol: RDKit molecule object
-    :return: A list of tautomer dictionaries which include the RDKit molecule object, the relative energy, and the weight
+    Generate possible tautomers of a Molecule.
+
+    :param mol: RDKit Molecule
+    :param mode: Tautomer mode
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :return: dictionaries containing RDKit Molecule, relative energy, and weight
     """
     get_api_key()
+
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="tautomers",
         initial_molecule=_rdkit_to_stjames(mol),
-        workflow_data={
-            "mode": mode,
-        },
-        folder_uuid=folder_uuid
+        workflow_data={"mode": mode},
+        folder_uuid=folder_uuid,
     )
-    
+
     start = time.time()
     while not rowan.Workflow.is_finished(post["uuid"]):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    result = rowan.Workflow.retrieve(post["uuid"])
-    
-    tautomers = []
-    for tautomer in result["object_data"]["tautomers"]:
-        rdkit_mol = _get_rdkit_mol_from_uuid(tautomer["structures"][0]["uuid"])
-        tautomers.append({
-            "molecule": rdkit_mol,
+
+    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+
+    return [
+        {
+            "molecule": _get_rdkit_mol_from_uuid(tautomer["structures"][0]["uuid"]),
             "predicted_relative_energy": round(tautomer["predicted_relative_energy"], 2),
-            "weight": round(tautomer["weight"], 5)
-        })
-        
-    #return relative weights too 
-    return tautomers
+            "weight": round(tautomer["weight"], 5),
+        }
+        for tautomer in data["tautomers"]
+    ]
+
 
 def run_energy(
     mol: RdkitMol,
@@ -243,42 +386,55 @@ def run_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the energy
+    :param mode: Mode to run the energy
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the energy in Hartree and the conformer index
+    :return: dictionary with the energy in Hartree and the conformer index
     """
     return asyncio.run(_single_energy(mol, method, engine, mode, timeout, name, folder_uuid))
 
+
 def batch_energy(
-    mols: List[RdkitMol],
+    mols: Iterable[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[list[ConformerEnergyResult]]:
     """
     Computes the energy for the given molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the energy
+    :param mode: Mode to run the energy
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a list of dictionaries with the energy in Hartree and the conformer index
+    :return: list of dictionaries with the energy in Hartree and the conformer index
     """
+
     async def _run():
         tasks = [
-            _single_energy(mol, method, engine, mode, timeout, name, folder_uuid)
-            for mol in mols
+            _single_energy(mol, method, engine, mode, timeout, name, folder_uuid) for mol in mols
         ]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
+
 
 async def _single_energy(
     mol: RdkitMol,
@@ -287,23 +443,27 @@ async def _single_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the energy
+    :param mode: Mode to run the energy
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the energy in Hartree and the conformer index
+    :return: dictionary with the energy in Hartree and the conformer index
     """
     get_api_key()
-
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -313,44 +473,43 @@ async def _single_energy(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
+        cid = conformer.GetId()  # type: ignore [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
-        get_api_key()
         post = rowan.Workflow.submit(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=stjames_mol,
             workflow_data={
-            "settings": {
-                        "method": method.value,
-                        "corrections": [],
-                        "tasks": [
-                            "energy"
-                        ],
-                        "mode": mode,
-                        "opt_settings": {
-                            "constraints": []
-                        }
-                    },
-            "engine": engine
+                "settings": {
+                    "method": method.value,
+                    "corrections": [],
+                    "tasks": ["energy"],
+                    "mode": mode,
+                    "opt_settings": {"constraints": []},
                 },
-            folder_uuid=folder_uuid
+                "engine": engine,
+            },
+            folder_uuid=folder_uuid,
         )
-        
+
         workflow_uuids.append(post["uuid"])
-        
+
     start = time.time()
     while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    workflow_results = [rowan.Workflow.retrieve(uuid) for uuid in workflow_uuids]
-    energies = [rowan.Calculation.retrieve(workflow["object_data"]["calculation_uuid"])["molecules"][-1]["energy"] for workflow in workflow_results]
+
+    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
+
+    energies = [
+        rowan.Calculation.retrieve(data["calculation_uuid"])["molecules"][-1]["energy"]
+        for data in results
+    ]
 
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
-        
-        
+
+
 def run_optimize(
     mol: RdkitMol,
     method: str = "aimnet2_wb97md3",
@@ -359,47 +518,61 @@ def run_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-) -> RdkitMol | tuple[RdkitMol, dict[int, float]]:
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the optimization
     :param return_energies: whether to return energies in Hartree too
+    :param mode: Mode to run the optimization
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the molecule, with optimized conformers, and optionally a list of energies per conformer too
-
+    :return: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
-    return asyncio.run(_single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid))
+    return asyncio.run(
+        _single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid)
+    )
+
 
 def batch_optimize(
-    mols: List[RdkitMol],
+    mols: Iterable[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
     mode: str = "auto",
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-) -> RdkitMol | tuple[RdkitMol, dict[int, float]]:
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[OptimizeResult]:
     """
-    Optimize each of a molecule's conformers and then return the molecule.
+    Optimize each of a Molecule's conformers and then return the Molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: input Molecule
+    :param method: Method with which to compute the Molecule's energy
+    :param engine: Engine to run the optimization
+    :param mode: Mode to run the optimization
     :param return_energies: whether to return energies in Hartree too
-    :raises: MethodTooSlowError if the method is invalid
-    :returns: a list of dictionaries with the molecule, with optimized conformers, and optionally a list of energies per conformer too
-
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :raises: MethodTooSlowError if the Method is invalid
+    :return: dictionaries with optimized conformer(s) and optional list of energies per conformer
     """
+
     async def _run():
         tasks = [
             _single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid)
             for mol in mols
         ]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
+
 
 async def _single_optimize(
     mol: RdkitMol,
@@ -409,25 +582,28 @@ async def _single_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-) -> RdkitMol | tuple[RdkitMol, dict[int, float]]:
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the optimization
+    :param mode: Mode to run the optimization
     :param return_energies: whether to return energies in Hartree too
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the molecule, with optimized conformers, and optionally a list of energies per conformer too
-
+    :return: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
     get_api_key()
-
     method = stjames.Method(method)
-    
-    if mol.GetNumConformers() == 0:
+
+    if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -436,12 +612,12 @@ async def _single_optimize(
         )
 
     optimized_mol = copy.deepcopy(mol)
-    
+
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
+        cid = conformer.GetId()  # type: ignore [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
-        get_api_key()
+
         post = rowan.Workflow.submit(
             name=name,
             workflow_type="basic_calculation",
@@ -450,168 +626,215 @@ async def _single_optimize(
                 "settings": {
                     "method": method.value,
                     "corrections": [],
-                    "tasks": [
-                        "optimize"
-                    ],
+                    "tasks": ["optimize"],
                     "mode": mode,
-                    "opt_settings": {
-                        "constraints": []
-                    }
+                    "opt_settings": {"constraints": []},
                 },
-                "engine": engine
+                "engine": engine,
             },
-            folder_uuid=folder_uuid
+            folder_uuid=folder_uuid,
         )
-        
+
         workflow_uuids.append(post["uuid"])
-        
+
     start = time.time()
     while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    workflow_results = [rowan.Workflow.retrieve(uuid) for uuid in workflow_uuids]
-    calculations = [rowan.Calculation.retrieve(workflow["object_data"]["calculation_uuid"]) for workflow in workflow_results]
+
+    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
+    calculations = [rowan.Calculation.retrieve(data["calculation_uuid"]) for data in results]
     optimization_atoms = [cacluation["molecules"][-1]["atoms"] for cacluation in calculations]
     optimized_positions = [[atom["position"] for atom in atoms] for atoms in optimization_atoms]
-    
+
     energies = [cacluation["molecules"][-1]["energy"] for cacluation in calculations]
-    
+
     for i, conformer in enumerate(optimized_mol.GetConformers()):
-        conformer.SetPositions(np.array(optimized_positions[i]))
-        
-    return_dict = {"rdkit_molecule": mol}
-    
-    if return_energies:
-        return_dict["energies"] = energies
+        conformer.SetPositions(np.array(optimized_positions[i]))  # type: ignore [attr-defined]
 
-    return return_dict
+    return {
+        "molecule": mol,
+        "energies": energies if return_energies else [],
+    }
 
-def run_conformers(mol: RdkitMol, num_conformers=10,
-               method: str = "aimnet2_wb97md3",
-               mode: str = "rapid",
-               return_energies: bool = False,
-               timeout: int = 600,
-               name: str = "Conformer API Workflow",
-               folder_uuid: Optional[stjames.UUID] = None):
+
+def run_conformers(
+    mol: RdkitMol,
+    num_conformers=10,
+    method: str = "aimnet2_wb97md3",
+    mode: str = "rapid",
+    return_energies: bool = False,
+    timeout: int = 600,
+    name: str = "Conformer API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> ConformerResult:
     """
-    Generate conformers for a molecule.
+    Generate conformers for a Molecule.
+
+    :param mol: RDKit Molecule
+    :param num_conformers: number of conformers to generate
+    :param method: Method with which to compute the molecule's energy
+    :param mode: Mode for conformer generation
+    :param return_energies: whether to return energies in Hartree too
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :return: dictionary with the RDKit Molecule and energies
+    """
+    return asyncio.run(
+        _single_conformers(
+            mol,
+            num_conformers,
+            method,
+            mode,
+            return_energies,
+            timeout,
+            name,
+            folder_uuid,
+        )
+    )
+
+
+def batch_conformers(
+    mols: Iterable[RdkitMol],
+    num_conformers=10,
+    method: str = "aimnet2_wb97md3",
+    mode: str = "rapid",
+    return_energies: bool = False,
+    timeout: int = 600,
+    name: str = "Conformer API Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> list[ConformerResult]:
+    """
+    Generate conformers for a Molecule.
+
     :param mol: RDKit molecule object
-    :param num_conformers: Number of conformers to generate
-    :return: A dictonary with the RDKit molecule with num_conformers lowest energy conformers and optional energies
+    :param num_conformers: number of conformers to generate
+    :param method: method with which to compute the molecule's energy
+    :param mode: conformer generation mode
+    :param return_energies: whether to return energies in Hartree too
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :return: list of dictonaries with RDKit Molecule and energies
     """
-    return asyncio.run(_single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid))
 
-def batch_conformers(mols: List[RdkitMol], num_conformers=10,
-               method: str = "aimnet2_wb97md3",
-               mode: str = "rapid",
-               return_energies: bool = False,
-               timeout: int = 600,
-               name: str = "Conformer API Workflow",
-               folder_uuid: Optional[stjames.UUID] = None):
-    """
-    Generate conformers for a molecule.
-    :param mol: RDKit molecule object
-    :param num_conformers: Number of conformers to generate
-    :return: A list of dictonaries with the RDKit molecule with num_conformers lowest energy conformers and optional energies
-    """
     async def _run():
         tasks = [
-            _single_conformers(mol, num_conformers, method, mode, return_energies, timeout, name, folder_uuid)
+            _single_conformers(
+                mol,
+                num_conformers,
+                method,
+                mode,
+                return_energies,
+                timeout,
+                name,
+                folder_uuid,
+            )
             for mol in mols
         ]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
 
 
-async def _single_conformers(mol: RdkitMol, num_conformers=10,
-               method: str = "aimnet2_wb97md3",
-               mode: str = "rapid",
-               return_energies: bool = False,
-               timeout: int = 600,
-               name: str = "Conformer API Workflow",
-               folder_uuid: Optional[stjames.UUID] = None):
+async def _single_conformers(
+    mol: RdkitMol,
+    num_conformers=10,
+    method: str = "aimnet2_wb97md3",
+    mode: str = "rapid",
+    return_energies: bool = False,
+    timeout: int = 600,
+    name: str = "Conformer API Workflow",
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> ConformerResult:
     """
     Generate conformers for a molecule.
-    :param mol: RDKit molecule object
-    :param num_conformers: Number of conformers to generate
-    :return: A dictonary with the RDKit molecule with num_conformers lowest energy conformers and optional energies
-    """
-    
-    get_api_key()
 
+    :param mol: RDKit Molecule
+    :param num_conformers: number of conformers to generate
+    :param method: method with which to compute the molecule's energy
+    :param mode: conformer generation mode
+    :param return_energies: whether to return energies in Hartree too
+    :param timeout: time in seconds before the Workflow times out
+    :param name: name for the job
+    :param folder_uuid: folder UUID
+    :return: dictionary with RDKit molecule and energies
+    """
+    get_api_key()
     method = stjames.Method(method)
-    
-    if mol.GetNumConformers() == 0:
+
+    if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
         raise MethodTooSlowError(
             "This method is too slow; try running this through our web interface."
         )
-    
+
     post = rowan.Workflow.submit(
         name=name,
         workflow_type="conformer_search",
         initial_molecule=_rdkit_to_stjames(mol),
         workflow_data={
-        "conf_gen_mode": "rapid",
-        "mode": mode,
-        "mso_mode": "manual",
-        "multistage_opt_settings": {
-            "mode": "manual",
-            "optimization_settings": [
-                {
-                    "method": method.value,
-                    "tasks": [
-                        "optimize"
-                    ],
-                    "corrections": [],
-                    "mode": "auto"
-                }
-            ],
-            "solvent": None,
-            "transition_state": False,
-            "constraints": []
-        }
-    },
-        folder_uuid=folder_uuid
+            "conf_gen_mode": "rapid",
+            "mode": mode,
+            "mso_mode": "manual",
+            "multistage_opt_settings": {
+                "mode": "manual",
+                "optimization_settings": [
+                    {
+                        "method": method.value,
+                        "tasks": ["optimize"],
+                        "corrections": [],
+                        "mode": "auto",
+                    }
+                ],
+                "solvent": None,
+                "transition_state": False,
+                "constraints": [],
+            },
+        },
+        folder_uuid=folder_uuid,
     )
-    
+
     start = time.time()
     while not rowan.Workflow.is_finished(post["uuid"]):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    result = rowan.Workflow.retrieve(post["uuid"])
-    
-    sorted_data = sorted(zip(result["object_data"]["energies"], result["object_data"]["conformer_uuids"]), key=lambda x: x[0])
+
+    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+
+    sorted_data = sorted(
+        zip(data["energies"], data["conformer_uuids"]),
+        key=lambda x: x[0],
+    )
 
     if len(sorted_data) < num_conformers:
-        logging.warning("Number of conformers requested is greater than number of conformers available")
+        logging.warning(
+            "Number of conformers requested is greater than number of conformers available"
+        )
     num_conformers = min(num_conformers, len(sorted_data))
-    
+
     # Extract the UUIDs of the lowest n energies
     lowest_n_uuids = [item[1][0] for item in sorted_data[:num_conformers]]
     lowest_energies = [item[0] for item in sorted_data[:num_conformers]]
-    
+
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)
-    
+
     for i, conformer in enumerate(mol.GetConformers()):
         atoms = rowan.Calculation.retrieve(lowest_n_uuids[i])["molecules"][-1]["atoms"]
         pos = [atom["position"] for atom in atoms]
-        conformer.SetPositions(np.array(pos))
-        
-    return_dict = {"rdkit_molecule": mol}
-    
-    if return_energies:
-        return_dict["energies"] = lowest_energies
+        conformer.SetPositions(np.array(pos))  # type: ignore [attr-defined]
 
-    return return_dict
+    return {
+        "molecule": mol,
+        "energies": lowest_energies if return_energies else [],
+    }
+
 
 def run_charges(
     mol: RdkitMol,
@@ -620,42 +843,55 @@ def run_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> ChargesResults:
     """
-    Computes atom-centered charges for the given molecule.
+    Computes atom-centered charges for the given Molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the charges
+    :param mode:  Mode to run the charges
+    :param timeout: timeout in seconds
+    :param name: name of the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the charges and the conformer index
+    :return: dictionary with the charges and the conformer index
     """
     return asyncio.run(_single_charges(mol, method, engine, mode, timeout, name, folder_uuid))
 
+
 def batch_charges(
-    mols: List[RdkitMol],
+    mols: Iterable[RdkitMol],
     method: str = "aimnet2_wb97md3",
     engine: str = "aimnet2",
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> list[ChargesResults]:
     """
-    Computes the energy for the given molecule.
+    Computes atom-centered charges for the given Molecules.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the charges
+    :param mode:  Mode to run the charges
+    :param timeout: timeout in seconds
+    :param name: name of the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a list of dictionaries with the charges and the conformer index
+    :return: list of dictionaries with the charges and the conformer index
     """
+
     async def _run():
         tasks = [
-            _single_charges(mol, method, engine, mode, timeout, name, folder_uuid)
-            for mol in mols
+            _single_charges(mol, method, engine, mode, timeout, name, folder_uuid) for mol in mols
         ]
         return await asyncio.gather(*tasks)
+
     return asyncio.run(_run())
+
 
 async def _single_charges(
     mol: RdkitMol,
@@ -664,26 +900,27 @@ async def _single_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None
-):
+    folder_uuid: Optional[stjames.UUID] = None,
+) -> ChargesResults:
     """
-    Computes the energy for the given molecule.
+    Computes atom-centered charges for the given Molecule.
 
-    :param mol: the input molecule
-    :param method: the method with which to compute the molecule's energy
-    :param engine: the engine
-    :param mode:
-    :param timeout: the timeout in seconds
+    :param mol: RDKit Molecule
+    :param method: Method with which to compute the molecule's energy
+    :param engine: Engine to run the charges
+    :param mode:  Mode to run the charges
+    :param timeout: timeout in seconds
+    :param name: name of the job
+    :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :returns: a dictionary with the charges and the conformer index
+    :return: dictionary with the charges and the conformer index
     """
     get_api_key()
-
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -693,40 +930,37 @@ async def _single_charges(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
-        stjames_mol = _rdkit_to_stjames(mol, cid)
-        get_api_key()
+        cid = conformer.GetId()  # type: ignore [call-arg]
+
         post = rowan.Workflow.submit(
             name=name,
             workflow_type="basic_calculation",
-            initial_molecule=stjames_mol,
+            initial_molecule=_rdkit_to_stjames(mol, cid),
             workflow_data={
-            "settings": {
-                        "method": method.value,
-                        "corrections": [],
-                        "tasks": [
-                            "charge"
-                        ],
-                        "mode": mode,
-                        "opt_settings": {
-                            "constraints": []
-                        }
-                    },
-            "engine": engine
+                "settings": {
+                    "method": method.value,
+                    "corrections": [],
+                    "tasks": ["charge"],
+                    "mode": mode,
+                    "opt_settings": {"constraints": []},
                 },
-            folder_uuid=folder_uuid
+                "engine": engine,
+            },
+            folder_uuid=folder_uuid,
         )
-        
+
         workflow_uuids.append(post["uuid"])
-        
+
     start = time.time()
     while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
-        
-    workflow_results = [rowan.Workflow.retrieve(uuid) for uuid in workflow_uuids]
-    charges_list = [rowan.Calculation.retrieve(workflow["object_data"]["calculation_uuid"])["molecules"][-1]["mulliken_charges"] for workflow in workflow_results]
 
-    return [{"conformer_index": index, "charges": charges} for index, charges in enumerate(charges_list)]
- 
+    def grab_charges(uuid: str) -> list[float]:
+        """Grab mulliken charges by UUID of workflow."""
+        data = rowan.Workflow.retrieve(uuid)["object_data"]
+        calc = rowan.Calculation.retrieve(data["calculation_uuid"])
+        return calc["molecules"][-1]["mulliken_charges"]
+
+    return [{"conformer_index": i, "charges": grab_charges(uuid)} for i, uuid in workflow_uuids]

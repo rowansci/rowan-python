@@ -12,6 +12,11 @@ The Rowan Python library provides convenient access to the Rowan API from applic
 
 The documentation is available [here](https://docs.rowansci.com/python-api).
 
+## Running examples
+
+To run the examples, you will need to set your ROWAN_API_KEY environment variable or set it directly in the script.
+If running the examples in a cloned version of the repository, you can add your api key to a local `.env` file, which will automatically be loaded into the environment by direnv (if installed).
+
 
 ## Issues
 
