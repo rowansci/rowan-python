@@ -8,3 +8,4 @@ from . import constants
 from .folder import Folder
 from .workflow import Workflow
 from .calculation import Calculation
+from .protein import Protein
