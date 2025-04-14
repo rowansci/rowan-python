@@ -21,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Skip if running with act
+      if: ${{ env.ACT == 'true' }}
+      run: |
+        echo "Skipping job because we're in act"
+        exit 1
+
     - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
