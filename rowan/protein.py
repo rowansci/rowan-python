@@ -1,6 +1,6 @@
-import stjames
-from typing import Optional
+from typing import Any, Optional
 
+import stjames
 
 from .utils import api_client
 
@@ -49,7 +49,7 @@ class Protein:
         page: int = 0,
         size: int = 20,
     ):
-        params = {"page": page, "size": size}
+        params: dict[str, Any] = {"page": page, "size": size}
 
         if ancestor_uuid is not None:
             params["ancestor_uuid"] = ancestor_uuid
