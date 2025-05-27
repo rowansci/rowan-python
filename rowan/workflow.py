@@ -10,25 +10,29 @@ class Workflow:
     def submit(
         cls,
         workflow_type: str,
-        initial_molecule: dict | stjames.Molecule,
         workflow_data: dict[str, Any],
-        name: Optional[str] = None,
-        folder_uuid: Optional[stjames.UUID] = None,
+        initial_molecule: dict | stjames.Molecule | None = None,
+        initial_smiles: str | None = None,
+        name: str | None = None,
+        folder_uuid: stjames.UUID | None = None,
     ) -> dict[str, Any]:
-        if isinstance(initial_molecule, stjames.Molecule):
-            molecule_dict = initial_molecule.model_dump()
-        elif isinstance(initial_molecule, dict):
-            molecule_dict = initial_molecule
-        else:
-            raise ValueError("Invalid type for `initial_molecule`")
-
         data = {
             "name": name,
             "folder_uuid": folder_uuid,
-            "initial_molecule": molecule_dict,
             "workflow_type": workflow_type,
             "workflow_data": workflow_data,
         }
+
+        if initial_smiles is not None:
+            data["initial_smiles"] = initial_smiles
+        elif isinstance(initial_molecule, stjames.Molecule):
+            data["initial_molecule"] = initial_molecule.model_dump()
+        elif isinstance(initial_molecule, dict):
+            data["initial_molecule"] = initial_molecule
+        else:
+            raise ValueError("You must provide either `initial_smiles` "
+                             "or a valid `initial_molecule`.")
+
         with api_client() as client:
             response = client.post("/workflow", json=data)
             response.raise_for_status()
@@ -97,6 +101,11 @@ class Workflow:
     def delete(cls, uuid: stjames.UUID) -> None:
         with api_client() as client:
             response = client.delete(f"/workflow/{uuid}")
+            response.raise_for_status()
+    @classmethod
+    def delete_data(cls, uuid: stjames.UUID) -> None:
+        with api_client() as client:
+            response = client.delete(f"/workflow/{uuid}/delete_workflow_data")
             response.raise_for_status()
 
     @classmethod
