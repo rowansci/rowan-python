@@ -10,14 +10,14 @@ def submit_protein_cofolding_workflow(
         initial_smiles_list: list[str] | None = None,
         ligand_binding_affinity_index: int | None = None,
         use_msa_server: bool = True,
-        use_potenitals: bool = False,
+        use_potentials: bool = False,
         name: str = "Cofolding Workflow",
         model: str = stjames.CofoldingModel.BOLTZ_2.value,
         folder_uuid: stjames.UUID | None = None,
     ) -> dict[str, Any]:
         workflow_data = {
             "use_msa_server": use_msa_server,
-            "use_potentials": use_potenitals,
+            "use_potentials": use_potentials,
             "model": model,
             "ligand_binding_affinity_index": ligand_binding_affinity_index,
             "initial_smiles_list": initial_smiles_list,
