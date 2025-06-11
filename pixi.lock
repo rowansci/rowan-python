@@ -1262,11 +1262,11 @@ packages:
   requires_python: '>=3.8'
 - pypi: .
   name: rowan-python
-  version: 1.1.10
-  sha256: 0ac75c58fe2eabc1ac7589bd4e3dce0c5942f29157666a207bcd7707e7b31a2f
+  version: 1.1.11
+  sha256: 9ab0219e8354f47e6b4b0c5d60bb17803d91276f36566e73fd70b8838fa6ca8c
   requires_dist:
   - httpx
-  - stjames>=0.0.76
+  - stjames>=0.0.83
   - setuptools
   - rdkit
   - nest-asyncio
