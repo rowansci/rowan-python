@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "1.1.10"
+version = "1.1.11"
 description = "Rowan Python Library"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "httpx",
-    "stjames>=0.0.76",
+    "stjames>=0.0.83",
     "setuptools",
     "rdkit",
     "nest-asyncio",
