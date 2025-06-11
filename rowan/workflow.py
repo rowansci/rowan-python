@@ -30,8 +30,9 @@ class Workflow:
         elif isinstance(initial_molecule, dict):
             data["initial_molecule"] = initial_molecule
         else:
-            raise ValueError("You must provide either `initial_smiles` "
-                             "or a valid `initial_molecule`.")
+            raise ValueError(
+                "You must provide either `initial_smiles` or a valid `initial_molecule`."
+            )
 
         with api_client() as client:
             response = client.post("/workflow", json=data)
@@ -102,6 +103,7 @@ class Workflow:
         with api_client() as client:
             response = client.delete(f"/workflow/{uuid}")
             response.raise_for_status()
+
     @classmethod
     def delete_data(cls, uuid: stjames.UUID) -> None:
         with api_client() as client:

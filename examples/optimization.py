@@ -1,7 +1,7 @@
 """
 Run an optimization calculation on a molecule using Rowan.
 
-See documentation at: https://docs.rowansci.com/science/workflows/bond-dissociation-energy
+See documentation at: https://docs.rowansci.com/science/quantum-chemistry/geometry-optimization
 """
 
 import json
