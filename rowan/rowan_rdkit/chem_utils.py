@@ -95,7 +95,7 @@ apply_nest_asyncio()
 
 
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
-    stjames_mol_dict = rowan.Calculation.retrieve(calculation_uuid)["molecules"][-1]
+    stjames_mol_dict = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
 
     return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())
 
@@ -236,7 +236,7 @@ async def _single_pka(
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="pka",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -252,16 +252,19 @@ async def _single_pka(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not rowan.is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if not data:
+        raise Exception("Could not retrieve workflow data")
 
     acidic_pkas: list[PKaResult] = []
-    for microstate in data["conjugate_bases"]:
-        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+    for microstate in data.get("conjugate_bases", []):
+        atomic_number = data.get("initial_molecule", {})["atoms"][microstate["atom_index"] - 1][
             "atomic_number"
         ]
         acidic_pkas.append(
@@ -273,8 +276,8 @@ async def _single_pka(
         )
 
     basic_pkas: list[PKaResult] = []
-    for microstate in data["conjugate_acids"]:
-        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+    for microstate in data.get("conjugate_bases", []):
+        atomic_number = data.get("initial_molecule", {})["atoms"][microstate["atom_index"] - 1][
             "atomic_number"
         ]
 
@@ -353,7 +356,7 @@ async def _single_tautomers(
     """
     get_api_key()
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="tautomers",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -362,12 +365,15 @@ async def _single_tautomers(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not rowan.is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if not data:
+        raise Exception("Could not retrieve workflow data")
 
     return [
         {
@@ -375,7 +381,7 @@ async def _single_tautomers(
             "predicted_relative_energy": round(tautomer["predicted_relative_energy"], 2),
             "weight": round(tautomer["weight"], 5),
         }
-        for tautomer in data["tautomers"]
+        for tautomer in data.get("tautomers", [])
     ]
 
 
@@ -475,7 +481,7 @@ async def _single_energy(
     for conformer in mol.GetConformers():
         cid = conformer.GetId()
         stjames_mol = _rdkit_to_stjames(mol, cid)
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=stjames_mol,
@@ -492,19 +498,20 @@ async def _single_energy(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
+    results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
 
     energies = [
-        rowan.Calculation.retrieve(data["calculation_uuid"])["molecules"][-1]["energy"]
+        rowan.retrieve_calculation_molecules(data["calculation_uuid"])[-1]["energy"]
         for data in results
+        if data is not None
     ]
 
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
@@ -618,7 +625,7 @@ async def _single_optimize(
         cid = conformer.GetId()
         stjames_mol = _rdkit_to_stjames(mol, cid)
 
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=stjames_mol,
@@ -635,20 +642,24 @@ async def _single_optimize(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
-    calculations = [rowan.Calculation.retrieve(data["calculation_uuid"]) for data in results]
-    optimization_atoms = [cacluation["molecules"][-1]["atoms"] for cacluation in calculations]
+    results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
+    calculations = [
+        rowan.retrieve_calculation_molecules(data["calculation_uuid"])
+        for data in results
+        if data is not None
+    ]
+    optimization_atoms = [cacluation[-1]["atoms"] for cacluation in calculations]
     optimized_positions = [[atom["position"] for atom in atoms] for atoms in optimization_atoms]
 
-    energies = [cacluation["molecules"][-1]["energy"] for cacluation in calculations]
+    energies = [cacluation[-1]["energy"] for cacluation in calculations]
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
         conformer.SetPositions(np.array(optimized_positions[i]))
@@ -774,7 +785,7 @@ async def _single_conformers(
             "This method is too slow; try running this through our web interface."
         )
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="conformer_search",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -801,12 +812,15 @@ async def _single_conformers(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not rowan.is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if data is None:
+        raise NoConformersError("This molecule has no conformers")
 
     sorted_data = sorted(
         zip(data["energies"], data["conformer_uuids"]),
@@ -826,7 +840,7 @@ async def _single_conformers(
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)  # type: ignore [attr-defined]
 
     for i, conformer in enumerate(mol.GetConformers()):
-        atoms = rowan.Calculation.retrieve(lowest_n_uuids[i])["molecules"][-1]["atoms"]
+        atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
         pos = [atom["position"] for atom in atoms]
         conformer.SetPositions(np.array(pos))
 
@@ -932,7 +946,7 @@ async def _single_charges(
     for conformer in mol.GetConformers():
         cid = conformer.GetId()
 
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=_rdkit_to_stjames(mol, cid),
@@ -949,18 +963,23 @@ async def _single_charges(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
     def grab_charges(uuid: str) -> list[float]:
         """Grab mulliken charges by UUID of workflow."""
-        data = rowan.Workflow.retrieve(uuid)["object_data"]
-        calc = rowan.Calculation.retrieve(data["calculation_uuid"])
-        return calc["molecules"][-1]["mulliken_charges"]
+        data = rowan.retrieve_workflow(uuid).data
+        if data is None:
+            raise KeyError("Workflow data not found")
+        molecules = rowan.retrieve_calculation_molecules(data["calculation_uuid"])
+        return molecules[-1]["mulliken_charges"]
 
-    return [{"conformer_index": i, "charges": grab_charges(uuid)} for i, uuid in workflow_uuids]
+    return [
+        {"conformer_index": i, "charges": grab_charges(uuid)}
+        for i, uuid in enumerate(workflow_uuids)
+    ]

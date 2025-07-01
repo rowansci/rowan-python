@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Optional
 
 import stjames
@@ -9,18 +10,30 @@ class Protein:
     def __init__(
         self,
         uuid: stjames.UUID,
-        name: Optional[str] = None,
-        data: Optional[dict] = None,
-        public: Optional[bool] = None,
-        pocket: Optional[list[list[float]]] = None,
+        created_at: datetime | None = None,
+        used_in_workflow: bool | None = None,
+        ancestor_uuid: stjames.UUID | None = None,
+        sanitized: bool | None = None,
+        name: str | None = None,
+        data: dict | None = None,
+        public: bool | None = None,
+        pocket: list[list[float]] | None = None,
+        **kwargs,
     ):
         self.uuid = uuid
         self.name = name
         self.data = data
         self.public = public
         self.pocket = pocket
+        self.created_at = created_at
+        self.used_in_workflow = used_in_workflow
+        self.ancestor_uuid = ancestor_uuid
+        self.sanitized = sanitized
 
-    def retrieve(self) -> "Protein":
+    def __repr__(self):
+        return f"<Protein name='{self.name}' created_at='{self.created_at}'>"
+
+    def load_data(self) -> "Protein":
         with api_client() as client:
             response = client.get(f"/protein/{self.uuid}")
             response.raise_for_status()
@@ -64,6 +77,7 @@ class Protein:
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
 
+
 def list_proteins(
     ancestor_uuid: Optional[stjames.UUID] = None,
     name_contains: Optional[str] = None,
@@ -79,6 +93,6 @@ def list_proteins(
     with api_client() as client:
         response = client.get("/protein", params=params)
         response.raise_for_status()
-        results = response.json()["items"]
+        results = response.json()["proteins"]
 
     return [Protein(**item) for item in results]

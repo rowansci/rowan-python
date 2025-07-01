@@ -1,42 +1,23 @@
-from typing import Optional
+from datetime import datetime
+from typing import Any, Optional
 
 import stjames
+from pydantic import BaseModel
 
 from .utils import api_client
 
 
-class Folder:
-    def __init__(
-        self,
-        uuid: stjames.UUID,
-        name: Optional[str] = None,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: Optional[str] = "",
-        starred: Optional[bool] = False,
-        public: Optional[bool] = False,
-    ):
-        """
-        Initialize a Folder object.
+class Folder(BaseModel):
+    uuid: stjames.UUID
+    name: str | None = None
+    parent_uuid: stjames.UUID | None = None
+    notes: str = ""
+    starred: bool = False
+    public: bool = False
+    created_at: datetime | None = None
 
-        :param uuid: Unique identifier for the folder.
-        :type uuid: UUID
-        :param name: Name of the folder.
-        :type name: str or None
-        :param parent_uuid: UUID of the parent folder.
-        :type parent_uuid: UUID or None
-        :param notes: Optional notes about the folder.
-        :type notes: str
-        :param starred: Whether the folder is starred.
-        :type starred: bool
-        :param public: Whether the folder is public.
-        :type public: bool
-        """
-        self.uuid = uuid
-        self.name = name
-        self.parent_uuid = parent_uuid
-        self.notes = notes
-        self.starred = starred
-        self.public = public
+    def __repr__(self):
+        return f"<Folder name='{self.name}' created_at='{self.created_at}'>"
 
     def retrieve(self) -> "Folder":
         """
@@ -119,11 +100,12 @@ class Folder:
             response = client.delete(f"/folder/{self.uuid}")
             response.raise_for_status()
 
+
 def list_folders(
-    parent_uuid: Optional[stjames.UUID] = None,
-    name_contains: Optional[str] = None,
-    public: Optional[bool] = None,
-    starred: Optional[bool] = None,
+    parent_uuid: str | None = None,
+    name_contains: str | None = None,
+    public: bool | None = None,
+    starred: bool | None = None,
     page: int = 0,
     size: int = 10,
 ) -> list["Folder"]:
@@ -140,7 +122,7 @@ def list_folders(
     :raises: HTTPError if the request to the API fails.
     """
 
-    params = {
+    params: dict[str, Any] = {
         "page": page,
         "size": size,
     }
@@ -157,36 +139,37 @@ def list_folders(
     with api_client() as client:
         response = client.get("/folder", params=params)
         response.raise_for_status()
-        items = response.json()["items"]
+        items = response.json()["folders"]
 
     return [Folder(**item) for item in items]
 
-def create_folder(
-        name: str,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: str = "",
-        starred: bool = False,
-        public: bool = False,
-    ) -> "Folder":
-        """
-        Create a new folder.
 
-        :param name: The name of the folder.
-        :param parent_uuid: The UUID of the parent folder.
-        :param notes: A description of the folder.
-        :param starred: Whether the folder is starred.
-        :param public: Whether the folder is public.
-        :return: The newly created folder.
-        """
-        data = {
-            "name": name,
-            "parent_uuid": parent_uuid,
-            "notes": notes,
-            "starred": starred,
-            "public": public,
-        }
-        with api_client() as client:
-            response = client.post("/folder", json=data)
-            response.raise_for_status()
-            folder_data = response.json()
-        return Folder(**folder_data)
+def create_folder(
+    name: str,
+    parent_uuid: Optional[stjames.UUID] = None,
+    notes: str = "",
+    starred: bool = False,
+    public: bool = False,
+) -> "Folder":
+    """
+    Create a new folder.
+
+    :param name: The name of the folder.
+    :param parent_uuid: The UUID of the parent folder.
+    :param notes: A description of the folder.
+    :param starred: Whether the folder is starred.
+    :param public: Whether the folder is public.
+    :return: The newly created folder.
+    """
+    data = {
+        "name": name,
+        "parent_uuid": parent_uuid,
+        "notes": notes,
+        "starred": starred,
+        "public": public,
+    }
+    with api_client() as client:
+        response = client.post("/folder", json=data)
+        response.raise_for_status()
+        folder_data = response.json()
+    return Folder(**folder_data)

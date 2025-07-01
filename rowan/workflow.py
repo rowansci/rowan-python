@@ -1,63 +1,87 @@
-from dataclasses import dataclass
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Optional, TypeAlias
 
 import stjames
+from pydantic import BaseModel, Field
+from rdkit import Chem
 
 from .utils import api_client
 
+RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 
-@dataclass
-class Workflow:
-    uuid: str
+
+class Workflow(BaseModel):
     name: str
-    workflow_type: str
-    status: int | None
+    uuid: str
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    status: int | None = Field(default=None, alias="object_status")
+    parent_uuid: str
+    notes: str | None = None
+    starred: bool | None = None
+    public: bool | None = None
+    workflow_type: str | None = Field(default=None, alias="object_type")
+    data: dict | None = Field(default=None, alias="object_data")
+    email_when_complete: bool | None = None
+    max_credits: int | None = None
+    elapsed: float | None = None
+    credits_charged: float | None = None
 
-    def retrieve(self) -> "Workflow":
+    class Config:
+        """
+        Configuration for pydantic
+        """
+
+        validate_by_name = True
+
+    def __repr__(self) -> str:
+        return f"<Workflow name='{self.name}' created_at='{self.created_at}'>"
+
+    def load_data(self) -> "Workflow":
         with api_client() as client:
             response = client.get(f"/workflow/{self.uuid}")
             response.raise_for_status()
-            # TODO: return Workflow
-            return response.json()
+            self.data = response.json().get("object_data")
+            return Workflow(**response.json())
 
     def update(
         self,
-        uuid: stjames.UUID,
-        name: Optional[str] = None,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: Optional[str] = None,
-        starred: Optional[bool] = None,
-        email_when_complete: Optional[bool] = None,
-        public: Optional[bool] = None,
+        name: str | None = None,
+        parent_uuid: str | None = None,
+        notes: str | None = None,
+        starred: bool | None = None,
+        email_when_complete: bool | None = None,
+        public: bool | None = None,
     ) -> None:
-        old_data = self.retrieve()
+        old_data = self.load_data()
 
-        new_data = {}
-        new_data["name"] = name if name is not None else old_data["name"]
-        new_data["parent_uuid"] = (
-            parent_uuid if parent_uuid is not None else old_data["parent_uuid"]
-        )
-        new_data["notes"] = notes if notes is not None else old_data["notes"]
-        new_data["starred"] = starred if starred is not None else old_data["starred"]
-        new_data["email_when_complete"] = (
-            email_when_complete
+        new_data = {
+            "name": name if name is not None else old_data.name,
+            "parent_uuid": parent_uuid if parent_uuid is not None else old_data.parent_uuid,
+            "notes": notes if notes is not None else old_data.notes,
+            "starred": starred if starred is not None else old_data.starred,
+            "email_when_complete": email_when_complete
             if email_when_complete is not None
-            else old_data["email_when_complete"]
-        )
-        new_data["public"] = public if public is not None else old_data["public"]
+            else old_data.email_when_complete,
+            "public": public if public is not None else old_data.public,
+        }
 
         with api_client() as client:
-            response = client.post(f"/workflow/{uuid}", json=new_data)
+            response = client.post(f"/workflow/{self.uuid}", json=new_data)
             response.raise_for_status()
-            # TODO: return Workflow
-            return response.json()
+            updated = response.json()
 
-    def status(self) -> int:
-        # TODO: fix this access
-        return self.retrieve()["object_status"]
+        # Update self with new data
+        for key, value in updated.items():
+            setattr(self, key, value)
+
+    def get_status(self) -> str:
+        return stjames.Status(self.load_data().status or 0).name
 
     def is_finished(self) -> bool:
-        status = self.status()
+        status = self.get_status()
 
         return status in {
             stjames.Status.COMPLETED_OK.value,
@@ -80,6 +104,7 @@ class Workflow:
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
+
 def submit_workflow(
     workflow_type: str,
     workflow_data: dict[str, Any],
@@ -87,7 +112,7 @@ def submit_workflow(
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: stjames.UUID | None = None,
-) -> dict[str, Any]:
+) -> Workflow:
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
@@ -102,91 +127,105 @@ def submit_workflow(
     elif isinstance(initial_molecule, dict):
         data["initial_molecule"] = initial_molecule
     else:
-        raise ValueError(
-            "You must provide either `initial_smiles` or a valid `initial_molecule`."
-        )
+        raise ValueError("You must provide either `initial_smiles` or a valid `initial_molecule`.")
 
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        # TODO: return Workflow
-        return response.json()
+        return Workflow(**response.json())
 
-def retrieve_workflow(uuid: stjames.UUID) -> dict[str, Any]:
+
+def retrieve_workflow(uuid: stjames.UUID) -> Workflow:
     with api_client() as client:
         response = client.get(f"/workflow/{uuid}")
         response.raise_for_status()
-        # TODO: return Workflow
+        return Workflow(**response.json())
+
+
+def retrieve_calculation_molecules(uuid: stjames.UUID) -> list[dict[str, Any]]:
+    with api_client() as client:
+        response = client.get(f"/calculation/{uuid}/molecules")
+        response.raise_for_status()
         return response.json()
 
-def update(
-    uuid: stjames.UUID,
-    name: Optional[str] = None,
-    parent_uuid: Optional[stjames.UUID] = None,
-    notes: Optional[str] = None,
-    starred: Optional[bool] = None,
-    email_when_complete: Optional[bool] = None,
-    public: Optional[bool] = None,
-) -> None:
-    old_data = retrieve_workflow(uuid)
 
-    new_data = {}
-    new_data["name"] = name if name is not None else old_data["name"]
-    new_data["parent_uuid"] = (
-        parent_uuid if parent_uuid is not None else old_data["parent_uuid"]
-    )
-    new_data["notes"] = notes if notes is not None else old_data["notes"]
-    new_data["starred"] = starred if starred is not None else old_data["starred"]
-    new_data["email_when_complete"] = (
-        email_when_complete
-        if email_when_complete is not None
-        else old_data["email_when_complete"]
-    )
-    new_data["public"] = public if public is not None else old_data["public"]
+def update(
+    uuid: str,
+    name: str | None = None,
+    parent_uuid: str | None = None,
+    notes: str | None = None,
+    starred: bool | None = None,
+    email_when_complete: bool | None = None,
+    public: bool | None = None,
+) -> Workflow:
+    new_data: dict[str, Any] = {}
+
+    if name is not None:
+        new_data["name"] = name
+
+    if parent_uuid is not None:
+        new_data["parent_uuid"] = parent_uuid
+
+    if notes is not None:
+        new_data["notes"] = notes
+
+    if starred is not None:
+        new_data["starred"] = starred
+
+    if email_when_complete is not None:
+        new_data["email_when_complete"] = email_when_complete
+
+    if public is not None:
+        new_data["public"] = public
 
     with api_client() as client:
         response = client.post(f"/workflow/{uuid}", json=new_data)
         response.raise_for_status()
-        # TODO: return Workflow
-        return response.json()
+        return Workflow(**response.json())
 
-def get_status(uuid: stjames.UUID) -> int:
-    return retrieve_workflow(uuid)["object_status"]
+
+def get_status(uuid: stjames.UUID) -> str:
+    return stjames.Status(retrieve_workflow(uuid).status or 0).name
+
 
 def is_finished(uuid: stjames.UUID) -> bool:
     status = get_status(uuid)
 
     return status in {
-        stjames.Status.COMPLETED_OK.value,
-        stjames.Status.FAILED.value,
-        stjames.Status.STOPPED.value,
+        stjames.Status.COMPLETED_OK.name,
+        stjames.Status.FAILED.name,
+        stjames.Status.STOPPED.name,
     }
+
 
 def stop(uuid: stjames.UUID) -> None:
     with api_client() as client:
         response = client.post(f"/workflow/{uuid}/stop")
         response.raise_for_status()
 
+
 def delete(uuid: stjames.UUID) -> None:
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}")
         response.raise_for_status()
+
 
 def delete_data(uuid: stjames.UUID) -> None:
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}/delete_workflow_data")
         response.raise_for_status()
 
+
 def list_workflows(
     parent_uuid: Optional[stjames.UUID] = None,
     name_contains: Optional[str] = None,
     public: Optional[bool] = None,
     starred: Optional[bool] = None,
-    object_status: Optional[int] = None,
-    object_type: Optional[str] = None,
+    status: Optional[int] = None,
+    workflow_type: Optional[str] = None,
     page: int = 0,
     size: int = 10,
-) -> dict[str, Any]:
+) -> list[Workflow]:
     params: dict[str, Any] = {"page": page, "size": size}
 
     if parent_uuid is not None:
@@ -201,46 +240,273 @@ def list_workflows(
     if starred is not None:
         params["starred"] = starred
 
-    if object_status is not None:
-        params["object_status"] = object_status
+    if status is not None:
+        params["object_status"] = status
 
-    if object_type is not None:
-        params["object_type"] = object_type
+    if workflow_type is not None:
+        params["object_type"] = workflow_type
 
     with api_client() as client:
         response = client.get("/workflow", params=params)
         response.raise_for_status()
-        # TODO: return Workflows
-        return response.json()
+        return [Workflow(**item) for item in response.json()["workflows"]]
 
 
-def submit_protein_cofolding_workflow(
-        initial_protein_sequences: list[str],
-        initial_smiles_list: list[str] | None = None,
-        ligand_binding_affinity_index: int | None = None,
-        use_msa_server: bool = True,
-        use_potentials: bool = False,
-        name: str = "Cofolding Workflow",
-        model: str = stjames.CofoldingModel.BOLTZ_2.value,
-        folder_uuid: stjames.UUID | None = None,
-    ) -> dict[str, Any]:
-        workflow_data = {
-            "use_msa_server": use_msa_server,
-            "use_potentials": use_potentials,
-            "model": model,
-            "ligand_binding_affinity_index": ligand_binding_affinity_index,
-            "initial_smiles_list": initial_smiles_list,
-            "initial_protein_sequences": initial_protein_sequences
-        }
-        data = {
-            "name": name,
-            "folder_uuid": folder_uuid,
-            "workflow_type": "protein_cofolding",
-            "workflow_data": workflow_data,
-        }
+def submit_basic_calculation_workflow(
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    method: str = "egret_1",
+    corrections: list[str] | None = None,
+    tasks: list[str] | None = None,
+    opt_settings: dict[str, Any] | None = None,
+    basis_set: str | None = None,
+    mode: str = "auto",
+    engine: str = "egret",
+    name: str = "Basic Calculation Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> Workflow:
+    if not tasks:
+        tasks = ["optimize"]
 
-        with api_client() as client:
-            response = client.post("/workflow", json=data)
-            response.raise_for_status()
-            # TODO: return Workflow
-            return response.json()
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow_data = {
+        "settings": {
+            "method": method,
+            "corrections": corrections,
+            "tasks": tasks,
+            "mode": mode,
+            "opt_settings": opt_settings,
+            "basis_set": basis_set,
+        },
+        "engine": engine,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "basic_calculation",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_conformer_search_workflow(
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    conf_gen_mode: str = "rapid",
+    final_method: str = "aimnet2_wb97md3",
+    solvent: str | None = None,
+    transistion_state: bool = False,
+    name: str = "Conformer Search Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> Workflow:
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    solvent_model = None
+    if solvent:
+        solvent_model = "alpb" if stjames.Method(final_method) in stjames.XTB_METHODS else "cpcm"
+
+    opt_settings = stjames.Settings(
+        method=final_method,
+        tasks=["optimize"],
+        mode=stjames.Mode.AUTO,
+        solvent_settings={"solvent": solvent, "model": solvent_model} if solvent else None,
+        opt_settings={"transition_state": transistion_state, "constraints": []},
+    )
+
+    msos = stjames.MultiStageOptSettings(
+        mode=stjames.Mode.MANUAL,
+        xtb_preopt=True,
+        optimization_settings=[opt_settings],
+    )
+
+    workflow_data = {
+        "multistage_opt_settings": msos.model_dump(),
+        "conf_gen_mode": conf_gen_mode,
+        "mso_mode": "manual",
+        "solvent": solvent,
+        "transistion_state": transistion_state,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "conformer_search",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_pka_workflow(
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    pka_range: tuple[int, int] = (2, 12),
+    deprotonate_elements: list[int] | None = None,
+    protonate_elements: list[int] | None = None,
+    mode: str = "careful",
+    name: str = "pKa Search Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> Workflow:
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    protonate_elements = protonate_elements or [7]
+    deprotonate_elements = deprotonate_elements or [7, 8, 16]
+
+    workflow_data = {
+        "pka_range": pka_range,
+        "deprotonate_elements": deprotonate_elements,
+        "protonate_elements": protonate_elements,
+        "mode": mode,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "pka",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+# def submit_protein_cofolding_workflow(
+#         initial_protein_sequences: list[str],
+#         initial_smiles_list: list[str] | None = None,
+#         ligand_binding_affinity_index: int | None = None,
+#         use_msa_server: bool = True,
+#         use_potentials: bool = False,
+#         name: str = "Cofolding Workflow",
+#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
+#         folder_uuid: stjames.UUID | None = None,
+#     ) -> dict[str, Any]:
+#         workflow_data = {
+#             "use_msa_server": use_msa_server,
+#             "use_potentials": use_potentials,
+#             "model": model,
+#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
+#             "initial_smiles_list": initial_smiles_list,
+#             "initial_protein_sequences": initial_protein_sequences
+#         }
+#         data = {
+#             "name": name,
+#             "folder_uuid": folder_uuid,
+#             "workflow_type": "protein_cofolding",
+#             "workflow_data": workflow_data,
+#         }
+
+#         with api_client() as client:
+#             response = client.post("/workflow", json=data)
+#             response.raise_for_status()
+#             return Workflow(**response.json())
+
+
+# def submit_protein_cofolding_workflow(
+#         initial_protein_sequences: list[str],
+#         initial_smiles_list: list[str] | None = None,
+#         ligand_binding_affinity_index: int | None = None,
+#         use_msa_server: bool = True,
+#         use_potentials: bool = False,
+#         name: str = "Cofolding Workflow",
+#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
+#         folder_uuid: stjames.UUID | None = None,
+#     ) -> dict[str, Any]:
+#         workflow_data = {
+#             "use_msa_server": use_msa_server,
+#             "use_potentials": use_potentials,
+#             "model": model,
+#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
+#             "initial_smiles_list": initial_smiles_list,
+#             "initial_protein_sequences": initial_protein_sequences
+#         }
+#         data = {
+#             "name": name,
+#             "folder_uuid": folder_uuid,
+#             "workflow_type": "protein_cofolding",
+#             "workflow_data": workflow_data,
+#         }
+
+#         with api_client() as client:
+#             response = client.post("/workflow", json=data)
+#             response.raise_for_status()
+#             return Workflow(**response.json())
+
+# def submit_protein_cofolding_workflow(
+#         initial_protein_sequences: list[str],
+#         initial_smiles_list: list[str] | None = None,
+#         ligand_binding_affinity_index: int | None = None,
+#         use_msa_server: bool = True,
+#         use_potentials: bool = False,
+#         name: str = "Cofolding Workflow",
+#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
+#         folder_uuid: stjames.UUID | None = None,
+#     ) -> dict[str, Any]:
+#         workflow_data = {
+#             "use_msa_server": use_msa_server,
+#             "use_potentials": use_potentials,
+#             "model": model,
+#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
+#             "initial_smiles_list": initial_smiles_list,
+#             "initial_protein_sequences": initial_protein_sequences
+#         }
+#         data = {
+#             "name": name,
+#             "folder_uuid": folder_uuid,
+#             "workflow_type": "protein_cofolding",
+#             "workflow_data": workflow_data,
+#         }
+
+#         with api_client() as client:
+#             response = client.post("/workflow", json=data)
+#             response.raise_for_status()
+#             return Workflow(**response.json())
+
+# def submit_protein_cofolding_workflow(
+#         initial_protein_sequences: list[str],
+#         initial_smiles_list: list[str] | None = None,
+#         ligand_binding_affinity_index: int | None = None,
+#         use_msa_server: bool = True,
+#         use_potentials: bool = False,
+#         name: str = "Cofolding Workflow",
+#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
+#         folder_uuid: stjames.UUID | None = None,
+#     ) -> dict[str, Any]:
+#         workflow_data = {
+#             "use_msa_server": use_msa_server,
+#             "use_potentials": use_potentials,
+#             "model": model,
+#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
+#             "initial_smiles_list": initial_smiles_list,
+#             "initial_protein_sequences": initial_protein_sequences
+#         }
+#         data = {
+#             "name": name,
+#             "folder_uuid": folder_uuid,
+#             "workflow_type": "protein_cofolding",
+#             "workflow_data": workflow_data,
+#         }
+
+#         with api_client() as client:
+#             response = client.post("/workflow", json=data)
+#             response.raise_for_status()
+#             return Workflow(**response.json())
