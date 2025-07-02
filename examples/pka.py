@@ -13,18 +13,9 @@ import rowan
 
 # rowan.api_key = ""
 
-# Run calculation remotely
-result = rowan.compute(
-    Molecule.from_smiles("n1ccccc1"),
-    workflow_type="pka",
-    name="Pyridine pKa",
+result = rowan.submit_pka_workflow(
+    initial_molecule=Molecule.from_smiles("n1ccccc1"),
     mode="reckless",
-)
+    name="Pyridine pKa",)
 
-logfile = result["object_logfile"]
-strongest_base = result["object_data"]["strongest_base"]
-
-print(f"""\
-{logfile}
-
-pKa of conjugate acid: {strongest_base:.2f}""")
+print(result)

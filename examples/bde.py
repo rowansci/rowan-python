@@ -23,12 +23,14 @@ import rowan
 # rowan.api_key = ""
 
 # Run calculation remotely
-result = rowan.compute(
-    Molecule.from_smiles("CCCC"),
+result = rowan.submit_workflow(
+    initial_molecule=Molecule.from_smiles("CCCC"),
     workflow_type="bde",
     name="Butane BDE",
-    mode="reckless",
-    all_CH=True,
+    workflow_data={
+     "mode": "reckless",
+     "all_CH": "true",
+    },
 )
 
-print(json.dumps(result, indent=4))
+print(result)

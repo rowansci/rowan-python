@@ -108,7 +108,7 @@ class Workflow(BaseModel):
 def submit_workflow(
     workflow_type: str,
     workflow_data: dict[str, Any],
-    initial_molecule: dict | stjames.Molecule | None = None,
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: stjames.UUID | None = None,
@@ -126,6 +126,8 @@ def submit_workflow(
         data["initial_molecule"] = initial_molecule.model_dump()
     elif isinstance(initial_molecule, dict):
         data["initial_molecule"] = initial_molecule
+    elif isinstance(initial_molecule, RdkitMol):
+        data["initial_molecule"] = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
     else:
         raise ValueError("You must provide either `initial_smiles` or a valid `initial_molecule`.")
 
@@ -255,10 +257,7 @@ def list_workflows(
 def submit_basic_calculation_workflow(
     initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
     method: str = "egret_1",
-    corrections: list[str] | None = None,
     tasks: list[str] | None = None,
-    opt_settings: dict[str, Any] | None = None,
-    basis_set: str | None = None,
     mode: str = "auto",
     engine: str = "egret",
     name: str = "Basic Calculation Workflow",
@@ -275,11 +274,8 @@ def submit_basic_calculation_workflow(
     workflow_data = {
         "settings": {
             "method": method,
-            "corrections": corrections,
             "tasks": tasks,
             "mode": mode,
-            "opt_settings": opt_settings,
-            "basis_set": basis_set,
         },
         "engine": engine,
     }
@@ -358,7 +354,7 @@ def submit_pka_workflow(
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
     mode: str = "careful",
-    name: str = "pKa Search Workflow",
+    name: str = "pKa Workflow",
     folder_uuid: stjames.UUID | None = None,
 ) -> Workflow:
     if isinstance(initial_molecule, stjames.Molecule):
@@ -390,123 +386,72 @@ def submit_pka_workflow(
         return Workflow(**response.json())
 
 
-# def submit_protein_cofolding_workflow(
-#         initial_protein_sequences: list[str],
-#         initial_smiles_list: list[str] | None = None,
-#         ligand_binding_affinity_index: int | None = None,
-#         use_msa_server: bool = True,
-#         use_potentials: bool = False,
-#         name: str = "Cofolding Workflow",
-#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
-#         folder_uuid: stjames.UUID | None = None,
-#     ) -> dict[str, Any]:
-#         workflow_data = {
-#             "use_msa_server": use_msa_server,
-#             "use_potentials": use_potentials,
-#             "model": model,
-#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
-#             "initial_smiles_list": initial_smiles_list,
-#             "initial_protein_sequences": initial_protein_sequences
-#         }
-#         data = {
-#             "name": name,
-#             "folder_uuid": folder_uuid,
-#             "workflow_type": "protein_cofolding",
-#             "workflow_data": workflow_data,
-#         }
+def submit_scan_workflow(
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
+    calculation_engine: str = "egret",
+    calculation_method: str = "egret_1",
+    wavefront_propigation: bool = True,
+    name: str = "Scan Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> Workflow:
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
-#         with api_client() as client:
-#             response = client.post("/workflow", json=data)
-#             response.raise_for_status()
-#             return Workflow(**response.json())
+    workflow_data = {
+        "wavefront_propigation": wavefront_propigation,
+        "scan_settings": scan_settings,
+        "calc_engine": calculation_engine,
+        "calc_settings": {
+            "method": calculation_method,
+            "corrections": [],
+            "tasks": ["optimize"],
+            "mode": "auto",
+            "opt_settings": { "constraints": [] }
+        }
+    }
 
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "scan",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
 
-# def submit_protein_cofolding_workflow(
-#         initial_protein_sequences: list[str],
-#         initial_smiles_list: list[str] | None = None,
-#         ligand_binding_affinity_index: int | None = None,
-#         use_msa_server: bool = True,
-#         use_potentials: bool = False,
-#         name: str = "Cofolding Workflow",
-#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
-#         folder_uuid: stjames.UUID | None = None,
-#     ) -> dict[str, Any]:
-#         workflow_data = {
-#             "use_msa_server": use_msa_server,
-#             "use_potentials": use_potentials,
-#             "model": model,
-#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
-#             "initial_smiles_list": initial_smiles_list,
-#             "initial_protein_sequences": initial_protein_sequences
-#         }
-#         data = {
-#             "name": name,
-#             "folder_uuid": folder_uuid,
-#             "workflow_type": "protein_cofolding",
-#             "workflow_data": workflow_data,
-#         }
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
 
-#         with api_client() as client:
-#             response = client.post("/workflow", json=data)
-#             response.raise_for_status()
-#             return Workflow(**response.json())
+def submit_protein_cofolding_workflow(
+        initial_protein_sequences: list[str],
+        initial_smiles_list: list[str] | None = None,
+        ligand_binding_affinity_index: int | None = None,
+        use_msa_server: bool = True,
+        use_potentials: bool = False,
+        name: str = "Cofolding Workflow",
+        model: str = stjames.CofoldingModel.BOLTZ_2.value,
+        folder_uuid: stjames.UUID | None = None,
+    ) -> dict[str, Any]:
+        workflow_data = {
+            "use_msa_server": use_msa_server,
+            "use_potentials": use_potentials,
+            "model": model,
+            "ligand_binding_affinity_index": ligand_binding_affinity_index,
+            "initial_smiles_list": initial_smiles_list,
+            "initial_protein_sequences": initial_protein_sequences
+        }
+        data = {
+            "name": name,
+            "folder_uuid": folder_uuid,
+            "workflow_type": "protein_cofolding",
+            "workflow_data": workflow_data,
+        }
 
-# def submit_protein_cofolding_workflow(
-#         initial_protein_sequences: list[str],
-#         initial_smiles_list: list[str] | None = None,
-#         ligand_binding_affinity_index: int | None = None,
-#         use_msa_server: bool = True,
-#         use_potentials: bool = False,
-#         name: str = "Cofolding Workflow",
-#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
-#         folder_uuid: stjames.UUID | None = None,
-#     ) -> dict[str, Any]:
-#         workflow_data = {
-#             "use_msa_server": use_msa_server,
-#             "use_potentials": use_potentials,
-#             "model": model,
-#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
-#             "initial_smiles_list": initial_smiles_list,
-#             "initial_protein_sequences": initial_protein_sequences
-#         }
-#         data = {
-#             "name": name,
-#             "folder_uuid": folder_uuid,
-#             "workflow_type": "protein_cofolding",
-#             "workflow_data": workflow_data,
-#         }
-
-#         with api_client() as client:
-#             response = client.post("/workflow", json=data)
-#             response.raise_for_status()
-#             return Workflow(**response.json())
-
-# def submit_protein_cofolding_workflow(
-#         initial_protein_sequences: list[str],
-#         initial_smiles_list: list[str] | None = None,
-#         ligand_binding_affinity_index: int | None = None,
-#         use_msa_server: bool = True,
-#         use_potentials: bool = False,
-#         name: str = "Cofolding Workflow",
-#         model: str = stjames.CofoldingModel.BOLTZ_2.value,
-#         folder_uuid: stjames.UUID | None = None,
-#     ) -> dict[str, Any]:
-#         workflow_data = {
-#             "use_msa_server": use_msa_server,
-#             "use_potentials": use_potentials,
-#             "model": model,
-#             "ligand_binding_affinity_index": ligand_binding_affinity_index,
-#             "initial_smiles_list": initial_smiles_list,
-#             "initial_protein_sequences": initial_protein_sequences
-#         }
-#         data = {
-#             "name": name,
-#             "folder_uuid": folder_uuid,
-#             "workflow_type": "protein_cofolding",
-#             "workflow_data": workflow_data,
-#         }
-
-#         with api_client() as client:
-#             response = client.post("/workflow", json=data)
-#             response.raise_for_status()
-#             return Workflow(**response.json())
+        with api_client() as client:
+            response = client.post("/workflow", json=data)
+            response.raise_for_status()
+            return Workflow(**response.json())
