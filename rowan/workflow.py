@@ -427,6 +427,49 @@ def submit_scan_workflow(
         return Workflow(**response.json())
 
 
+def submit_irc_workflow(
+    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    method: str = "aimnet2_wb97md3",
+    engine: str = "aimnet2",
+    preopt: bool = True,
+    step_size: float = 0.05,
+    max_irc_steps: int = 30,
+    name: str = "IRC Workflow",
+    folder_uuid: stjames.UUID | None = None,
+) -> Workflow:
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow_data = {
+        "settings": {
+            "method": method,
+            "tasks": [],
+            "corrections": [],
+            "mode": "auto",
+        },
+        "engine": engine,
+        "preopt": preopt,
+        "step_size": step_size,
+        "max_irc_steps": max_irc_steps,
+        "mode": "manual",
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "irc",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
 def submit_protein_cofolding_workflow(
     initial_protein_sequences: list[str],
     initial_smiles_list: list[str] | None = None,
