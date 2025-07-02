@@ -4,8 +4,6 @@ Run an scan calculation on a molecule using Rowan.
 See documentation at: https://docs.rowansci.com/science/workflows/scan
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan

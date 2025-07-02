@@ -16,6 +16,7 @@ import rowan
 result = rowan.submit_pka_workflow(
     initial_molecule=Molecule.from_smiles("n1ccccc1"),
     mode="reckless",
-    name="Pyridine pKa",)
+    name="Pyridine pKa",
+)
 
 print(result)

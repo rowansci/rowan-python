@@ -1,5 +1,3 @@
-from pprint import pprint
-
 import stjames
 
 import rowan
@@ -8,11 +6,11 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 
 result = rowan.submit_workflow(
-    initial_molecule=stjames.Molecule.from_smiles("C1CCC1"), # cyclobutane
+    initial_molecule=stjames.Molecule.from_smiles("C1CCC1"),  # cyclobutane
     workflow_type="multistage_opt",
     name="Multistage optimization cyclobutane",
     workflow_data={
-     "mode": "reckless",
+        "mode": "reckless",
     },
 )
 

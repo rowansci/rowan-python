@@ -4,8 +4,6 @@ Run an optimization calculation on a molecule using Rowan.
 See documentation at: https://docs.rowansci.com/science/quantum-chemistry/geometry-optimization
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan
@@ -17,6 +15,7 @@ result = rowan.submit_basic_calculation_workflow(
     method="GFN2-xTB",
     tasks=["optimize"],
     engine="xtb",
-    name="Water Optimization",)
+    name="Water Optimization",
+)
 
 print(result)

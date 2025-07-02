@@ -14,8 +14,6 @@ Rapid is recommended for most work.
 See documentation at: https://docs.rowansci.com/science/workflows/bond-dissociation-energy
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan
@@ -28,8 +26,8 @@ result = rowan.submit_workflow(
     workflow_type="bde",
     name="Butane BDE",
     workflow_data={
-     "mode": "reckless",
-     "all_CH": "true",
+        "mode": "reckless",
+        "all_CH": "true",
     },
 )
 

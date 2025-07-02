@@ -17,8 +17,6 @@ Rapid is recommended for most work.
 See documentation at: https://docs.rowansci.com/science/workflows/conformers
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan
