@@ -7,12 +7,12 @@ from typing import Iterable, Literal, TypeAlias, TypedDict
 import numpy as np
 import stjames
 from rdkit import Chem
-from rdkit.Chem import AllChem  # type: ignore [attr-defined]
+from rdkit.Chem import AllChem
 
 import rowan
 from rowan.utils import ATOMIC_NUMBER_TO_ATOMIC_SYMBOL, get_api_key
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol  # type: ignore [name-defined]
+RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 pKaMode = Literal["reckless", "rapid", "careful"]
 TautomerMode = Literal["reckless", "rapid", "careful"]
 ConformerMode = Literal["reckless", "rapid"]
@@ -114,7 +114,7 @@ def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
         if status1 < 0:
             raise ValueError("Cannot embed molecule!") from e
     try:
-        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0
+        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0  # type: ignore    [call-arg]
     except AssertionError:
         pass
 
@@ -467,9 +467,9 @@ async def _single_energy(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -479,7 +479,7 @@ async def _single_energy(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
+        cid = conformer.GetId()  # type: ignore    [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
         post = rowan.submit_workflow(
             name=name,
@@ -608,9 +608,9 @@ async def _single_optimize(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -622,7 +622,7 @@ async def _single_optimize(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
+        cid = conformer.GetId()  # type: ignore    [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
 
         post = rowan.submit_workflow(
@@ -662,7 +662,7 @@ async def _single_optimize(
     energies = [cacluation[-1]["energy"] for cacluation in calculations]
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
-        conformer.SetPositions(np.array(optimized_positions[i]))
+        conformer.SetPositions(np.array(optimized_positions[i]))  # type: ignore  [attr-defined]
 
     return {
         "molecule": mol,
@@ -775,9 +775,9 @@ async def _single_conformers(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -842,7 +842,7 @@ async def _single_conformers(
     for i, conformer in enumerate(mol.GetConformers()):
         atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
         pos = [atom["position"] for atom in atoms]
-        conformer.SetPositions(np.array(pos))
+        conformer.SetPositions(np.array(pos))  # type: ignore  [attr-defined]
 
     return {
         "molecule": mol,
@@ -932,9 +932,9 @@ async def _single_charges(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -944,7 +944,7 @@ async def _single_charges(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()
+        cid = conformer.GetId()  # type: ignore    [call-arg]
 
         post = rowan.submit_workflow(
             name=name,

@@ -7,7 +7,7 @@ from rdkit import Chem
 
 from .utils import api_client
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol  # type: ignore [name-defined]
+RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 
 
 class Workflow(BaseModel):
