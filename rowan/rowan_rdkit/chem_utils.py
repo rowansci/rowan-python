@@ -7,12 +7,12 @@ from typing import Iterable, Literal, TypeAlias, TypedDict
 import numpy as np
 import stjames
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem  # type: ignore [attr-defined]
 
 import rowan
 from rowan.utils import ATOMIC_NUMBER_TO_ATOMIC_SYMBOL, get_api_key
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
+RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol  # type: ignore [name-defined]
 pKaMode = Literal["reckless", "rapid", "careful"]
 TautomerMode = Literal["reckless", "rapid", "careful"]
 ConformerMode = Literal["reckless", "rapid"]
@@ -97,24 +97,24 @@ apply_nest_asyncio()
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
     stjames_mol_dict = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
 
-    return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())
+    return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())  # type: ignore [attr-defined]
 
 
 def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
     try:
-        AllChem.SanitizeMol(rdkm)  # type: ignore [attr-defined]
+        AllChem.SanitizeMol(rdkm)
     except Exception as e:
         raise ValueError("Molecule could not be generated -- invalid chemistry!") from e
 
-    rdkm = AllChem.AddHs(rdkm)  # type: ignore [attr-defined]
+    rdkm = AllChem.AddHs(rdkm)
     try:
-        assert AllChem.EmbedMolecule(rdkm, maxAttempts=200) >= 0  # type: ignore [attr-defined]
+        assert AllChem.EmbedMolecule(rdkm, maxAttempts=200) >= 0
     except AssertionError as e:
-        status1 = AllChem.EmbedMolecule(rdkm, maxAttempts=200, useRandomCoords=True)  # type: ignore [attr-defined]
+        status1 = AllChem.EmbedMolecule(rdkm, maxAttempts=200, useRandomCoords=True)
         if status1 < 0:
             raise ValueError("Cannot embed molecule!") from e
     try:
-        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0  # type: ignore [attr-defined]
+        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0
     except AssertionError:
         pass
 
@@ -837,7 +837,7 @@ async def _single_conformers(
     lowest_n_uuids = [item[1][0] for item in sorted_data[:num_conformers]]
     lowest_energies = [item[0] for item in sorted_data[:num_conformers]]
 
-    AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)  # type: ignore [attr-defined]
+    AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)
 
     for i, conformer in enumerate(mol.GetConformers()):
         atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
