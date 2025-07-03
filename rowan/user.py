@@ -65,6 +65,11 @@ class User(BaseModel):
         )
 
     def credits_available_string(self) -> str:
+        """
+        Returns a string showing available credits, including organization credits if applicable
+
+        :return: A string showing available credits
+        """
         individual_credits = f"Weekly Credits: {self.weekly_credits}\nCredits: {self.credits}"
         if self.organization is not None:
             return (

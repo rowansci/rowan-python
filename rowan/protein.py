@@ -21,6 +21,11 @@ class Protein(BaseModel):
         return f"<Protein name='{self.name}' created_at='{self.created_at}'>"
 
     def load_data(self) -> Self:
+        """
+        Loads protein data
+
+        :return: protein with loaded data
+        """
         with api_client() as client:
             response = client.get(f"/protein/{self.uuid}")
             response.raise_for_status()
@@ -40,6 +45,15 @@ class Protein(BaseModel):
         pocket: list[list[float]] | None = None,
     ) -> Self:
         # Use current values unless new ones are passed in
+        """
+        Updates protein data
+
+        :param name: The new name of the protein
+        :param data: The new data of the protein
+        :param public: Whether the protein is public
+        :param pocket: The new pocket of the protein
+        :return: The updated protein object
+        """
         updated_payload = {
             "name": name if name is not None else self.name,
             "data": data if data is not None else self.data,
@@ -60,6 +74,11 @@ class Protein(BaseModel):
         return self
 
     def delete(self) -> None:
+        """
+        Deletes a protein
+
+        :raises requests.HTTPError: if the request to the API fails
+        """
         with api_client() as client:
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
@@ -71,6 +90,16 @@ def list_proteins(
     page: int = 0,
     size: int = 20,
 ) -> list[Protein]:
+    """
+    List proteins
+
+    :param ancestor_uuid: The UUID of the ancestor protein to filter by
+    :param name_contains: Substring to search for in protein names
+    :param page: The page number to retrieve
+    :param size: The number of items per page
+    :return: A list of Protein objects that match the search criteria
+    :raises requests.HTTPError: if the request to the API fails
+    """
     params: dict[str, Any] = {"page": page, "size": size}
     if ancestor_uuid is not None:
         params["ancestor_uuid"] = ancestor_uuid

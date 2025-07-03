@@ -40,6 +40,13 @@ class Workflow(BaseModel):
         return f"<Workflow name='{self.name}' created_at='{self.created_at}'>"
 
     def load_data(self) -> Self:
+        """
+        Loads workflow data from the API and updates the current instance.
+
+        :return: An updated instance of the workflow with data loaded from the API.
+        :raises HTTPError: If the API request fails.
+        """
+
         with api_client() as client:
             response = client.get(f"/workflow/{self.uuid}")
             response.raise_for_status()
@@ -54,6 +61,17 @@ class Workflow(BaseModel):
         email_when_complete: bool | None = None,
         public: bool | None = None,
     ) -> None:
+        """
+        Updates a workflow in the API with new data.
+
+        :param name: The new name of the workflow.
+        :param parent_uuid: The UUID of the parent folder.
+        :param notes: A description of the workflow.
+        :param starred: Whether the workflow is starred.
+        :param email_when_complete: Whether the workflow should send an email when it is complete.
+        :param public: Whether the workflow is public.
+        :raises HTTPError: If the API request fails.
+        """
         old_data = self.load_data()
 
         new_data = {
@@ -77,9 +95,23 @@ class Workflow(BaseModel):
             setattr(self, key, value)
 
     def get_status(self) -> stjames.Status:
+        """
+        Gets the status of the workflow.
+
+        :return: The status of the workflow, as an instance of stjames.Status.
+        """
         return stjames.Status(self.load_data().status or 0)
 
     def is_finished(self) -> bool:
+        """
+        Check if the workflow is finished.
+
+        This method checks the current status of the workflow and determines if it has completed,
+        failed, or been stopped.
+
+        :return: True if the workflow status is COMPLETED_OK, FAILED, or STOPPED; False otherwise.
+        """
+
         status = self.get_status()
 
         return status in {
@@ -89,16 +121,31 @@ class Workflow(BaseModel):
         }
 
     def stop(self) -> None:
+        """
+        Stops a workflow.
+
+        :raises HTTPError: If the API request fails.
+        """
         with api_client() as client:
             response = client.post(f"/workflow/{self.uuid}/stop")
             response.raise_for_status()
 
     def delete(self) -> None:
+        """
+        Deletes the workflow.
+
+        :raises HTTPError: If the API request fails.
+        """
         with api_client() as client:
             response = client.delete(f"/workflow/{self.uuid}")
             response.raise_for_status()
 
     def delete_data(self) -> None:
+        """
+        Deletes the workflow data from the API.
+
+        :raises HTTPError: If the API request fails.
+        """
         with api_client() as client:
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
@@ -112,6 +159,19 @@ def submit_workflow(
     name: str | None = None,
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits a workflow to the API.
+
+    :param workflow_type: The type of workflow to submit.
+    :param workflow_data: A dictionary containing the data required to run the workflow.
+    :param initial_molecule: A molecule object to use as the initial molecule in the workflow.
+    :param initial_smiles: A SMILES string to use as the initial molecule in the workflow.
+    :param name: A name to give to the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
+    :raises HTTPError: If the API request fails.
+    """
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
@@ -137,6 +197,13 @@ def submit_workflow(
 
 
 def retrieve_workflow(uuid: str) -> Workflow:
+    """
+    Retrieves a workflow from the API.
+
+    :param uuid: The UUID of the workflow to retrieve.
+    :return: A Workflow object representing the retrieved workflow.
+    :raises HTTPError: If the API request fails.
+    """
     with api_client() as client:
         response = client.get(f"/workflow/{uuid}")
         response.raise_for_status()
@@ -144,13 +211,20 @@ def retrieve_workflow(uuid: str) -> Workflow:
 
 
 def retrieve_calculation_molecules(uuid: str) -> list[dict[str, Any]]:
+    """
+    Retrieves a list of molecules from a calculation.
+
+    :param uuid: The UUID of the calculation to retrieve molecules from.
+    :return: A list of dictionaries representing the molecules in the calculation.
+    :raises HTTPError: If the API request fails.
+    """
     with api_client() as client:
         response = client.get(f"/calculation/{uuid}/molecules")
         response.raise_for_status()
         return response.json()
 
 
-def update(
+def update_workflow(
     uuid: str,
     name: str | None = None,
     parent_uuid: str | None = None,
@@ -159,6 +233,19 @@ def update(
     email_when_complete: bool | None = None,
     public: bool | None = None,
 ) -> Workflow:
+    """
+    Updates a workflow in the API with new data.
+
+    :param uuid: The UUID of the workflow to update.
+    :param name: The new name of the workflow.
+    :param parent_uuid: The UUID of the parent folder.
+    :param notes: A description of the workflow.
+    :param starred: Whether the workflow is starred.
+    :param email_when_complete: Whether the workflow should send an email when it is complete.
+    :param public: Whether the workflow is public.
+    :return: An updated Workflow object.
+    :raises HTTPError: If the API request fails.
+    """
     new_data: dict[str, Any] = {}
 
     if name is not None:
@@ -185,12 +272,27 @@ def update(
         return Workflow(**response.json())
 
 
-def get_status(uuid: str) -> stjames.Status:
+def get_workflow_status(uuid: str) -> stjames.Status:
+    """
+    Retrieves the status of a workflow by its UUID.
+
+    :param uuid: The UUID of the workflow to check the status of.
+    :return: The status of the workflow as an instance of stjames.Status.
+    """
+
     return stjames.Status(retrieve_workflow(uuid).status or 0)
 
 
-def is_finished(uuid: str) -> bool:
-    status = get_status(uuid)
+def workflow_is_finished(uuid: str) -> bool:
+    """
+    Checks if a workflow has finished.
+
+    A workflow is finished if it has been completed (with or without errors) or stopped.
+
+    :param uuid: The UUID of the workflow to check the status of.
+    :return: True if the workflow is finished, False otherwise.
+    """
+    status = get_workflow_status(uuid)
 
     return status in {
         stjames.Status.COMPLETED_OK,
@@ -199,19 +301,38 @@ def is_finished(uuid: str) -> bool:
     }
 
 
-def stop(uuid: str) -> None:
+def stop_workflow(uuid: str) -> None:
+    """
+    Stops a workflow.
+
+    :param uuid: The UUID of the workflow to stop.
+    :raises HTTPError: If the API request fails.
+    """
     with api_client() as client:
         response = client.post(f"/workflow/{uuid}/stop")
         response.raise_for_status()
 
 
-def delete(uuid: str) -> None:
+def delete_workflow(uuid: str) -> None:
+    """
+    Deletes a workflow.
+
+    :param uuid: The UUID of the workflow to delete.
+    :raises HTTPError: If the API request fails.
+    """
+
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}")
         response.raise_for_status()
 
 
-def delete_data(uuid: str) -> None:
+def delete_workflow_data(uuid: str) -> None:
+    """
+    Deletes a workflow's data.
+
+    :param uuid: The UUID of the workflow to delete data for.
+    :raises HTTPError: If the API request fails.
+    """
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}/delete_workflow_data")
         response.raise_for_status()
@@ -227,6 +348,20 @@ def list_workflows(
     page: int = 0,
     size: int = 10,
 ) -> list[Workflow]:
+    """
+    List workflows.
+
+    :param parent_uuid: The UUID of the parent folder.
+    :param name_contains: Substring to search for in workflow names.
+    :param public: Filter workflows by their public status.
+    :param starred: Filter workflows by their starred status.
+    :param status: Filter workflows by their status.
+    :param workflow_type: Filter workflows by their type.
+    :param page: The page number to retrieve.
+    :param size: The number of items per page.
+    :return: A list of Workflow objects that match the search criteria.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
     params: dict[str, Any] = {"page": page, "size": size}
 
     if parent_uuid is not None:
@@ -254,7 +389,7 @@ def list_workflows(
 
 
 def submit_basic_calculation_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     method: stjames.Method | str = "uma_m_omol",
     tasks: list[str] | None = None,
     mode: str = "auto",
@@ -262,6 +397,19 @@ def submit_basic_calculation_workflow(
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submit a basic calculation workflow to the API.
+
+    :param initial_molecule: The molecule to perform the calculation on.
+    :param method: The method to use for the calculation.
+    :param tasks: A list of tasks to perform for the calculation.
+    :param mode: The mode to run the calculation in.
+    :param engine: The engine to use for the calculation.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
     if not tasks:
         tasks = ["optimize"]
 
@@ -297,7 +445,7 @@ def submit_basic_calculation_workflow(
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     conf_gen_mode: str = "rapid",
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
@@ -305,6 +453,19 @@ def submit_conformer_search_workflow(
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits a conformer search workflow to the API.
+
+    :param initial_molecule: The molecule to perform the conformer search on.
+    :param conf_gen_mode: The mode to use for conformer generation.
+    :param final_method: The method to use for the final optimization.
+    :param solvent: The solvent to use for the final optimization.
+    :param transistion_state: Whether to optimize the transition state.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
@@ -354,7 +515,7 @@ def submit_conformer_search_workflow(
 
 
 def submit_pka_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
@@ -362,6 +523,19 @@ def submit_pka_workflow(
     name: str = "pKa Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits a pKa workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the pKa of.
+    :param pka_range: The range of pKa values to calculate.
+    :param deprotonate_elements: The elements to deprotonate. Given by atomic number.
+    :param protonate_elements: The elements to protonate. Given by atomic number.
+    :param mode: The mode to run the calculation in.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
@@ -392,7 +566,7 @@ def submit_pka_workflow(
 
 
 def submit_scan_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
     calculation_engine: str = "omol25",
     calculation_method: stjames.Method | str = "uma_m_omol",
@@ -400,6 +574,19 @@ def submit_scan_workflow(
     name: str = "Scan Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits a scan workflow to the API.
+
+    :param initial_molecule: The molecule used in the scan.
+    :param scan_settings: The scan settings.
+    :param calculation_engine: The engine to use for the calculation.
+    :param calculation_method: The method to use for the calculation.
+    :param wavefront_propagation: Whether to use wavefront propagation in the scan.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
@@ -445,6 +632,21 @@ def submit_irc_workflow(
     name: str = "IRC Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
+
+    :param initial_molecule: The initial molecule to perform the IRC calculation on.
+    :param method: The computational method to use for the IRC calculation.
+    :param engine: The computational engine to use for the calculation.
+    :param preopt: Whether to perform a pre-optimization of the molecule.
+    :param step_size: The step size to use for the IRC calculation.
+    :param max_irc_steps: The maximum number of IRC steps to perform.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted IRC workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
@@ -491,6 +693,20 @@ def submit_protein_cofolding_workflow(
     model: str = stjames.CofoldingModel.BOLTZ_2.value,
     folder_uuid: str | None = None,
 ) -> Workflow:
+    """
+    Submits a protein cofolding workflow to the API.
+
+    :param initial_protein_sequences: The sequences of the proteins to be cofolded.
+    :param initial_smiles_list: A list of SMILES strings for the ligands to be cofolded with.
+    :param ligand_binding_affinity_index: The index of the ligand for which to compute the binding affinity.
+    :param use_msa_server: Whether to use the MSA server for the computation.
+    :param use_potentials: Whether to use potentials for the computation.
+    :param name: The name of the workflow.
+    :param model: The model to use for the computation.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """  # noqa: E501
     workflow_data = {
         "use_msa_server": use_msa_server,
         "use_potentials": use_potentials,

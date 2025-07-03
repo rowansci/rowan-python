@@ -252,7 +252,7 @@ async def _single_pka(
     )
 
     start = time.time()
-    while not rowan.is_finished(post.uuid):
+    while not rowan.workflow_is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
@@ -365,7 +365,7 @@ async def _single_tautomers(
     )
 
     start = time.time()
-    while not rowan.is_finished(post.uuid):
+    while not rowan.workflow_is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
@@ -501,7 +501,7 @@ async def _single_energy(
         workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.workflow_is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
@@ -645,7 +645,7 @@ async def _single_optimize(
         workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.workflow_is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
@@ -812,7 +812,7 @@ async def _single_conformers(
     )
 
     start = time.time()
-    while not rowan.is_finished(post.uuid):
+    while not rowan.workflow_is_finished(post.uuid):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
@@ -966,7 +966,7 @@ async def _single_charges(
         workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.workflow_is_finished(uuid) for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
