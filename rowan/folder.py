@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 import stjames
 from pydantic import BaseModel
@@ -16,17 +16,16 @@ class Folder(BaseModel):
     public: bool = False
     created_at: datetime | None = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Folder name='{self.name}' created_at='{self.created_at}'>"
 
-    def retrieve(self) -> "Folder":
+    def retrieve(self) -> Self:
         """
         Retrieve the folder from the API.
 
         This method refreshes the folder object with the latest data from the API.
 
         :return: The updated folder object.
-        :rtype: Folder
         """
         with api_client() as client:
             response = client.get(f"/folder/{self.uuid}")
@@ -47,23 +46,17 @@ class Folder(BaseModel):
         notes: Optional[str] = None,
         starred: Optional[bool] = None,
         public: Optional[bool] = None,
-    ) -> "Folder":
+    ) -> Self:
         """
         Update a folder.
 
         :param name: The new name of the folder.
-        :type name: str or None
         :param parent_uuid: The UUID of the new parent folder.
-        :type parent_uuid: stjames.UUID or None
         :param notes: A description of the folder.
-        :type notes: str or None
         :param starred: Whether the folder is starred.
-        :type starred: bool or None
         :param public: Whether the folder is public.
-        :type public: bool or None
 
         :return: The updated folder object.
-        :rtype: Folder
         """
         payload = {
             "name": name if name is not None else self.name,
@@ -108,7 +101,7 @@ def list_folders(
     starred: bool | None = None,
     page: int = 0,
     size: int = 10,
-) -> list["Folder"]:
+) -> list[Folder]:
     """
     Retrieve a list of folders based on the specified criteria.
 
@@ -119,7 +112,7 @@ def list_folders(
     :param page: Pagination parameter to specify the page number.
     :param size: Pagination parameter to specify the number of items per page.
     :return: A list of Folder objects that match the search criteria.
-    :raises: HTTPError if the request to the API fails.
+    :raises requests.HTTPError: if the request to the API fails.
     """
 
     params: dict[str, Any] = {
@@ -150,7 +143,7 @@ def create_folder(
     notes: str = "",
     starred: bool = False,
     public: bool = False,
-) -> "Folder":
+) -> Folder:
     """
     Create a new folder.
 
