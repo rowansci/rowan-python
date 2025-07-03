@@ -1,16 +1,15 @@
 from datetime import datetime
-from typing import Any, Optional, Self
+from typing import Any, Self
 
-import stjames
 from pydantic import BaseModel
 
 from .utils import api_client
 
 
 class Folder(BaseModel):
-    uuid: stjames.UUID
+    uuid: str
     name: str | None = None
-    parent_uuid: stjames.UUID | None = None
+    parent_uuid: str | None = None
     notes: str = ""
     starred: bool = False
     public: bool = False
@@ -41,11 +40,11 @@ class Folder(BaseModel):
 
     def update(
         self,
-        name: Optional[str] = None,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: Optional[str] = None,
-        starred: Optional[bool] = None,
-        public: Optional[bool] = None,
+        name: str | None = None,
+        parent_uuid: str | None = None,
+        notes: str | None = None,
+        starred: bool | None = None,
+        public: bool | None = None,
     ) -> Self:
         """
         Update a folder.
@@ -85,9 +84,7 @@ class Folder(BaseModel):
         This is a destructive action, it will delete all the folders and
         workflows that are inside this folder.
 
-        Raises
-        ------
-            requests.HTTPError: If the request was not successful.
+        :raises requests.HTTPError: if the request to the API fails.
         """
         with api_client() as client:
             response = client.delete(f"/folder/{self.uuid}")
@@ -139,7 +136,7 @@ def list_folders(
 
 def create_folder(
     name: str,
-    parent_uuid: Optional[stjames.UUID] = None,
+    parent_uuid: str | None = None,
     notes: str = "",
     starred: bool = False,
     public: bool = False,
