@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 from .utils import api_client

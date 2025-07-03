@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 import time
-from typing import Iterable, Literal, Optional, TypeAlias, TypedDict
+from typing import Iterable, Literal, TypeAlias, TypedDict
 
 import numpy as np
 import stjames
@@ -297,7 +297,7 @@ def run_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> TautomerResults:
     """
     Generate possible tautomers of a Molecule.
@@ -317,7 +317,7 @@ def batch_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[TautomerResults]:
     """
     Generate possible tautomers of a Molecule.
@@ -342,7 +342,7 @@ async def _single_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> TautomerResults:
     """
     Generate possible tautomers of a Molecule.
@@ -392,7 +392,7 @@ def run_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
@@ -417,7 +417,7 @@ def batch_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[list[ConformerEnergyResult]]:
     """
     Computes the energy for the given molecule.
@@ -449,7 +449,7 @@ async def _single_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
@@ -525,7 +525,7 @@ def run_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
@@ -554,7 +554,7 @@ def batch_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[OptimizeResult]:
     """
     Optimize each of a Molecule's conformers and then return the Molecule.
@@ -589,7 +589,7 @@ async def _single_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
@@ -678,7 +678,7 @@ def run_conformers(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Conformer API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> ConformerResult:
     """
     Generate conformers for a Molecule.
@@ -757,7 +757,7 @@ async def _single_conformers(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Conformer API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> ConformerResult:
     """
     Generate conformers for a molecule.
@@ -857,7 +857,7 @@ def run_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> ChargesResults:
     """
     Computes atom-centered charges for the given Molecule.
@@ -882,7 +882,7 @@ def batch_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> list[ChargesResults]:
     """
     Computes atom-centered charges for the given Molecules.
@@ -914,7 +914,7 @@ async def _single_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[str] = None,
+    folder_uuid: str | None = None,
 ) -> ChargesResults:
     """
     Computes atom-centered charges for the given Molecule.

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, TypeAlias
+from typing import Any, Self, TypeAlias
 
 import stjames
 from pydantic import BaseModel, Field
@@ -23,7 +23,7 @@ class Workflow(BaseModel):
     starred: bool | None = None
     public: bool | None = None
     workflow_type: str | None = Field(default=None, alias="object_type")
-    data: dict | None = Field(default=None, alias="object_data")
+    data: dict[str, Any] | None = Field(default=None, alias="object_data")
     email_when_complete: bool | None = None
     max_credits: int | None = None
     elapsed: float | None = None
@@ -39,12 +39,11 @@ class Workflow(BaseModel):
     def __repr__(self) -> str:
         return f"<Workflow name='{self.name}' created_at='{self.created_at}'>"
 
-    def load_data(self) -> "Workflow":
+    def load_data(self) -> Self:
         with api_client() as client:
             response = client.get(f"/workflow/{self.uuid}")
             response.raise_for_status()
-            self.data = response.json().get("object_data")
-            return Workflow(**response.json())
+            return type(self)(**response.json())
 
     def update(
         self,
@@ -77,16 +76,16 @@ class Workflow(BaseModel):
         for key, value in updated.items():
             setattr(self, key, value)
 
-    def get_status(self) -> str:
-        return stjames.Status(self.load_data().status or 0).name
+    def get_status(self) -> stjames.Status:
+        return stjames.Status(self.load_data().status or 0)
 
     def is_finished(self) -> bool:
         status = self.get_status()
 
         return status in {
-            stjames.Status.COMPLETED_OK.value,
-            stjames.Status.FAILED.value,
-            stjames.Status.STOPPED.value,
+            stjames.Status.COMPLETED_OK,
+            stjames.Status.FAILED,
+            stjames.Status.STOPPED,
         }
 
     def stop(self) -> None:
@@ -108,7 +107,7 @@ class Workflow(BaseModel):
 def submit_workflow(
     workflow_type: str,
     workflow_data: dict[str, Any],
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: str | None = None,
@@ -186,17 +185,17 @@ def update(
         return Workflow(**response.json())
 
 
-def get_status(uuid: str) -> str:
-    return stjames.Status(retrieve_workflow(uuid).status or 0).name
+def get_status(uuid: str) -> stjames.Status:
+    return stjames.Status(retrieve_workflow(uuid).status or 0)
 
 
 def is_finished(uuid: str) -> bool:
     status = get_status(uuid)
 
     return status in {
-        stjames.Status.COMPLETED_OK.name,
-        stjames.Status.FAILED.name,
-        stjames.Status.STOPPED.name,
+        stjames.Status.COMPLETED_OK,
+        stjames.Status.FAILED,
+        stjames.Status.STOPPED,
     }
 
 
@@ -219,12 +218,12 @@ def delete_data(uuid: str) -> None:
 
 
 def list_workflows(
-    parent_uuid: Optional[str] = None,
-    name_contains: Optional[str] = None,
-    public: Optional[bool] = None,
-    starred: Optional[bool] = None,
-    status: Optional[int] = None,
-    workflow_type: Optional[str] = None,
+    parent_uuid: str | None = None,
+    name_contains: str | None = None,
+    public: bool | None = None,
+    starred: bool | None = None,
+    status: int | None = None,
+    workflow_type: str | None = None,
     page: int = 0,
     size: int = 10,
 ) -> list[Workflow]:
@@ -255,11 +254,11 @@ def list_workflows(
 
 
 def submit_basic_calculation_workflow(
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
-    method: str = "egret_1",
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    method: stjames.Method | str = "uma_m_omol",
     tasks: list[str] | None = None,
     mode: str = "auto",
-    engine: str = "egret",
+    engine: str = "omol25",
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
@@ -271,9 +270,12 @@ def submit_basic_calculation_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
+    if isinstance(method, str):
+        method = stjames.Method(method)
+
     workflow_data = {
         "settings": {
-            "method": method,
+            "method": method.name,
             "tasks": tasks,
             "mode": mode,
         },
@@ -295,9 +297,9 @@ def submit_basic_calculation_workflow(
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
     conf_gen_mode: str = "rapid",
-    final_method: str = "aimnet2_wb97md3",
+    final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
     transistion_state: bool = False,
     name: str = "Conformer Search Workflow",
@@ -308,9 +310,12 @@ def submit_conformer_search_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
+    if isinstance(final_method, str):
+        final_method = stjames.Method(final_method)
+
     solvent_model = None
     if solvent:
-        solvent_model = "alpb" if stjames.Method(final_method) in stjames.XTB_METHODS else "cpcm"
+        solvent_model = "alpb" if final_method in stjames.XTB_METHODS else "cpcm"
 
     opt_settings = stjames.Settings(
         method=final_method,
@@ -349,7 +354,7 @@ def submit_conformer_search_workflow(
 
 
 def submit_pka_workflow(
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
@@ -387,11 +392,11 @@ def submit_pka_workflow(
 
 
 def submit_scan_workflow(
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
-    calculation_engine: str = "egret",
-    calculation_method: str = "egret_1",
-    wavefront_propigation: bool = True,
+    calculation_engine: str = "omol25",
+    calculation_method: stjames.Method | str = "uma_m_omol",
+    wavefront_propagation: bool = True,
     name: str = "Scan Workflow",
     folder_uuid: str | None = None,
 ) -> Workflow:
@@ -400,12 +405,15 @@ def submit_scan_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
+    if isinstance(calculation_method, str):
+        calculation_method = stjames.Method(calculation_method)
+
     workflow_data = {
-        "wavefront_propigation": wavefront_propigation,
+        "wavefront_propagation": wavefront_propagation,
         "scan_settings": scan_settings,
         "calc_engine": calculation_engine,
         "calc_settings": {
-            "method": calculation_method,
+            "method": calculation_method.name,
             "corrections": [],
             "tasks": ["optimize"],
             "mode": "auto",
@@ -428,9 +436,9 @@ def submit_scan_workflow(
 
 
 def submit_irc_workflow(
-    initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
-    method: str = "aimnet2_wb97md3",
-    engine: str = "aimnet2",
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    method: stjames.Method | str = "uma_m_omol",
+    engine: str = "omol25",
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
@@ -442,9 +450,12 @@ def submit_irc_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
+    if isinstance(method, str):
+        method = stjames.Method(method)
+
     workflow_data = {
         "settings": {
-            "method": method,
+            "method": method.name,
             "tasks": [],
             "corrections": [],
             "mode": "auto",
