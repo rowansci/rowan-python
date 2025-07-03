@@ -111,7 +111,7 @@ def submit_workflow(
     initial_molecule: dict | stjames.Molecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     data = {
         "name": name,
@@ -137,14 +137,14 @@ def submit_workflow(
         return Workflow(**response.json())
 
 
-def retrieve_workflow(uuid: stjames.UUID) -> Workflow:
+def retrieve_workflow(uuid: str) -> Workflow:
     with api_client() as client:
         response = client.get(f"/workflow/{uuid}")
         response.raise_for_status()
         return Workflow(**response.json())
 
 
-def retrieve_calculation_molecules(uuid: stjames.UUID) -> list[dict[str, Any]]:
+def retrieve_calculation_molecules(uuid: str) -> list[dict[str, Any]]:
     with api_client() as client:
         response = client.get(f"/calculation/{uuid}/molecules")
         response.raise_for_status()
@@ -186,11 +186,11 @@ def update(
         return Workflow(**response.json())
 
 
-def get_status(uuid: stjames.UUID) -> str:
+def get_status(uuid: str) -> str:
     return stjames.Status(retrieve_workflow(uuid).status or 0).name
 
 
-def is_finished(uuid: stjames.UUID) -> bool:
+def is_finished(uuid: str) -> bool:
     status = get_status(uuid)
 
     return status in {
@@ -200,26 +200,26 @@ def is_finished(uuid: stjames.UUID) -> bool:
     }
 
 
-def stop(uuid: stjames.UUID) -> None:
+def stop(uuid: str) -> None:
     with api_client() as client:
         response = client.post(f"/workflow/{uuid}/stop")
         response.raise_for_status()
 
 
-def delete(uuid: stjames.UUID) -> None:
+def delete(uuid: str) -> None:
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}")
         response.raise_for_status()
 
 
-def delete_data(uuid: stjames.UUID) -> None:
+def delete_data(uuid: str) -> None:
     with api_client() as client:
         response = client.delete(f"/workflow/{uuid}/delete_workflow_data")
         response.raise_for_status()
 
 
 def list_workflows(
-    parent_uuid: Optional[stjames.UUID] = None,
+    parent_uuid: Optional[str] = None,
     name_contains: Optional[str] = None,
     public: Optional[bool] = None,
     starred: Optional[bool] = None,
@@ -261,7 +261,7 @@ def submit_basic_calculation_workflow(
     mode: str = "auto",
     engine: str = "egret",
     name: str = "Basic Calculation Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     if not tasks:
         tasks = ["optimize"]
@@ -301,7 +301,7 @@ def submit_conformer_search_workflow(
     solvent: str | None = None,
     transistion_state: bool = False,
     name: str = "Conformer Search Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
@@ -355,7 +355,7 @@ def submit_pka_workflow(
     protonate_elements: list[int] | None = None,
     mode: str = "careful",
     name: str = "pKa Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
@@ -393,7 +393,7 @@ def submit_scan_workflow(
     calculation_method: str = "egret_1",
     wavefront_propigation: bool = True,
     name: str = "Scan Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
@@ -435,7 +435,7 @@ def submit_irc_workflow(
     step_size: float = 0.05,
     max_irc_steps: int = 30,
     name: str = "IRC Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     if isinstance(initial_molecule, stjames.Molecule):
         initial_molecule = initial_molecule.model_dump()
@@ -478,7 +478,7 @@ def submit_protein_cofolding_workflow(
     use_potentials: bool = False,
     name: str = "Cofolding Workflow",
     model: str = stjames.CofoldingModel.BOLTZ_2.value,
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> Workflow:
     workflow_data = {
         "use_msa_server": use_msa_server,

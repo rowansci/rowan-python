@@ -1,39 +1,26 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
-import stjames
+from pydantic import BaseModel
 
 from .utils import api_client
 
 
-class Protein:
-    def __init__(
-        self,
-        uuid: stjames.UUID,
-        created_at: datetime | None = None,
-        used_in_workflow: bool | None = None,
-        ancestor_uuid: stjames.UUID | None = None,
-        sanitized: bool | None = None,
-        name: str | None = None,
-        data: dict | None = None,
-        public: bool | None = None,
-        pocket: list[list[float]] | None = None,
-        **kwargs,
-    ):
-        self.uuid = uuid
-        self.name = name
-        self.data = data
-        self.public = public
-        self.pocket = pocket
-        self.created_at = created_at
-        self.used_in_workflow = used_in_workflow
-        self.ancestor_uuid = ancestor_uuid
-        self.sanitized = sanitized
+class Protein(BaseModel):
+    uuid: str
+    created_at: datetime | None = None
+    used_in_workflow: bool | None = None
+    ancestor_uuid: str | None = None
+    sanitized: int | None = None
+    name: str | None = None
+    data: dict | None = None
+    public: bool | None = None
+    pocket: list[list[float]] | None = None
 
     def __repr__(self):
         return f"<Protein name='{self.name}' created_at='{self.created_at}'>"
 
-    def load_data(self) -> "Protein":
+    def load_data(self) -> Self:
         with api_client() as client:
             response = client.get(f"/protein/{self.uuid}")
             response.raise_for_status()
@@ -47,11 +34,11 @@ class Protein:
 
     def update(
         self,
-        name: Optional[str] = None,
-        data: Optional[dict] = None,
-        public: Optional[bool] = None,
-        pocket: Optional[list[list[float]]] = None,
-    ) -> "Protein":
+        name: str | None = None,
+        data: dict | None = None,
+        public: bool | None = None,
+        pocket: list[list[float]] | None = None,
+    ) -> Self:
         # Use current values unless new ones are passed in
         updated_payload = {
             "name": name if name is not None else self.name,
@@ -79,11 +66,11 @@ class Protein:
 
 
 def list_proteins(
-    ancestor_uuid: Optional[stjames.UUID] = None,
-    name_contains: Optional[str] = None,
+    ancestor_uuid: str | None = None,
+    name_contains: str | None = None,
     page: int = 0,
     size: int = 20,
-) -> list["Protein"]:
+) -> list[Protein]:
     params: dict[str, Any] = {"page": page, "size": size}
     if ancestor_uuid is not None:
         params["ancestor_uuid"] = ancestor_uuid
