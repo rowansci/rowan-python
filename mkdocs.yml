@@ -26,5 +26,5 @@ plugins:
             line_length: 88 
             unwrap_annotated: true 
 nav:
-  - API Reference: reference.md
+  - API Reference: index.md
   - "← docs.rowansci.com": https://docs.rowansci.com/
