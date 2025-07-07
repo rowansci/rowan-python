@@ -52,7 +52,8 @@ fmt = { cmd="ruff format ." }
 lint = { cmd="ruff check . --fix" }
 types = { cmd="mypy ." }
 test = { cmd="pytest" }
-mkdocs = { cmd="mkdocs serve" }
+mkdocs-serve = { cmd="mkdocs serve" }
+mkdocs-build = { cmd="mkdocs build --clean" }
 all = { depends-on = ["fmt", "lint", "types", "test"] }
 
 [tool.ruff]
