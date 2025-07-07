@@ -11,29 +11,51 @@ RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 
 
 class Workflow(BaseModel):
+    """A Rowan workflow.
+
+    Don’t instantiate this class directly. Instead use one of the submit workflow functions.
+    Workflow data is not loaded by default to avoid unnecessary downloads that could impact
+    performance. Call `load_data()` to fetch and attach the workflow data to this `Workflow` object.
+
+    :ivar name: The name of the workflow.
+    :var uuid: The UUID of the workflow.
+    :var created_at: The date and time the workflow was created.
+    :var updated_at: The date and time the workflow was last updated.
+    :var started_at: The date and time the workflow computation was started.
+    :var completed_at: The date and time the workflow was completed.
+    :var status: The status of the workflow.
+    :var parent_uuid: The UUID of the parent folder.
+    :var notes: Workflow notes.
+    :var starred: Whether the workflow is starred.
+    :var public: Whether the workflow is public.
+    :var workflow_type: The type of the workflow.
+    :var data: The data of the workflow.
+    :var email_when_complete: Whether the workflow should send an email when it is complete.
+    :var max_credits: The maximum number of credits to use for the workflow.
+    :var elapsed: The elapsed time of the workflow.
+    :var credits_charged: The number of credits charged for the workflow.
+    ...
+    """
+
     name: str
     uuid: str
-    created_at: datetime | None = None
+    created_at: datetime
     updated_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
-    status: int | None = Field(default=None, alias="object_status")
+    status: stjames.Status = Field(alias="object_status")
     parent_uuid: str
-    notes: str | None = None
-    starred: bool | None = None
-    public: bool | None = None
-    workflow_type: str | None = Field(default=None, alias="object_type")
-    data: dict[str, Any] | None = Field(default=None, alias="object_data")
-    email_when_complete: bool | None = None
+    notes: str
+    starred: bool
+    public: bool
+    workflow_type: str = Field(alias="object_type")
+    data: dict[str, Any] = Field(default={}, alias="object_data")
+    email_when_complete: bool
     max_credits: int | None = None
     elapsed: float | None = None
-    credits_charged: float | None = None
+    credits_charged: float
 
-    class Config:
-        """
-        Configuration for pydantic
-        """
-
+    class Config:  # noqa: D106
         validate_by_name = True
 
     def __repr__(self) -> str:
@@ -43,7 +65,7 @@ class Workflow(BaseModel):
         """
         Loads workflow data from the API and updates the current instance.
 
-        :return: An updated instance of the workflow with data loaded from the API.
+        :return: An updated instance of the workflow with data loaded from the database.
         :raises HTTPError: If the API request fails.
         """
 
@@ -165,7 +187,9 @@ def submit_workflow(
     :param workflow_type: The type of workflow to submit.
     :param workflow_data: A dictionary containing the data required to run the workflow.
     :param initial_molecule: A molecule object to use as the initial molecule in the workflow.
+    At least one of a molecule or SMILES must be provided.
     :param initial_smiles: A SMILES string to use as the initial molecule in the workflow.
+    At least one of a molecule or SMILES must be provided.
     :param name: A name to give to the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :return: A Workflow object representing the submitted workflow.
@@ -349,7 +373,7 @@ def list_workflows(
     size: int = 10,
 ) -> list[Workflow]:
     """
-    List workflows.
+    Lists workflows subject to the specified criteria.
 
     :param parent_uuid: The UUID of the parent folder.
     :param name_contains: Substring to search for in workflow names.
@@ -402,8 +426,11 @@ def submit_basic_calculation_workflow(
 
     :param initial_molecule: The molecule to perform the calculation on.
     :param method: The method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    for options.
     :param tasks: A list of tasks to perform for the calculation.
-    :param mode: The mode to run the calculation in.
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param engine: The engine to use for the calculation.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
@@ -457,9 +484,14 @@ def submit_conformer_search_workflow(
     Submits a conformer search workflow to the API.
 
     :param initial_molecule: The molecule to perform the conformer search on.
-    :param conf_gen_mode: The mode to use for conformer generation.
+    :param conf_gen_mode: The mode to use for conformer generation. See
+    [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param final_method: The method to use for the final optimization.
-    :param solvent: The solvent to use for the final optimization.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    for options.
+    :param solvent: The solvent to use for the final optimization. See [the list of available solvents](https://github.com/rowansci/stjames-public/blob/master/stjames/solvent.py)
+        for valid values. Be aware that not all methods support solvents.
     :param transistion_state: Whether to optimize the transition state.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
@@ -530,7 +562,9 @@ def submit_pka_workflow(
     :param pka_range: The range of pKa values to calculate.
     :param deprotonate_elements: The elements to deprotonate. Given by atomic number.
     :param protonate_elements: The elements to protonate. Given by atomic number.
-    :param mode: The mode to run the calculation in.
+    :param mode: The mode to run the calculation in. See
+    [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :return: A Workflow object representing the submitted workflow.
@@ -581,6 +615,8 @@ def submit_scan_workflow(
     :param scan_settings: The scan settings.
     :param calculation_engine: The engine to use for the calculation.
     :param calculation_method: The method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    for options.
     :param wavefront_propagation: Whether to use wavefront propagation in the scan.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
@@ -637,6 +673,8 @@ def submit_irc_workflow(
 
     :param initial_molecule: The initial molecule to perform the IRC calculation on.
     :param method: The computational method to use for the IRC calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    for options.
     :param engine: The computational engine to use for the calculation.
     :param preopt: Whether to perform a pre-optimization of the molecule.
     :param step_size: The step size to use for the IRC calculation.

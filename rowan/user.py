@@ -4,24 +4,68 @@ from .utils import api_client
 
 
 class Organization(BaseModel):
+    """
+    A Rowan organization
+
+    :ivar name: The name of the organization.
+    :ivar weekly_credits: The weekly credits of the organization.
+    :ivar credits: The credits of the organization.
+    """
+
     name: str
     weekly_credits: float | None = None
     credits: float | None = None
 
 
 class OrganizationRole(BaseModel):
+    """
+    A Rowan organization role
+
+    :ivar name: The name of the organization role.
+    """
+
     name: str
 
 
 class SubscriptionPlan(BaseModel):
+    """
+    A Rowan subscription plan
+
+    :ivar name: The name of the subscription plan.
+    """
+
     name: str
 
 
 class IndividualSubscription(BaseModel):
+    """
+    A Rowan individual subscription
+
+    :ivar subscription_plan: The subscription plan of the individual subscription.
+    """
+
     subscription_plan: SubscriptionPlan
 
 
 class User(BaseModel):
+    """
+    A Rowan user
+
+    :ivar uuid: The UUID of the user.
+    :ivar username: The username of the user.
+    :ivar email: The email of the user.
+    :ivar firstname: The first name of the user.
+    :ivar lastname: The last name of the user.
+    :ivar weekly_credits: The weekly credits of the user.
+    :ivar credits: The credits of the user.
+    :ivar billing_name: The billing name of the user.
+    :ivar billing_address: The billing address of the user.
+    :ivar credit_balance_warning: The credit balance warning of the user.
+    :ivar organization: The organization of the user.
+    :ivar organization_role: The organization role of the user.
+    :ivar individual_subscription: The individual subscription of the user.
+    """
+
     uuid: str
     username: str
     email: str

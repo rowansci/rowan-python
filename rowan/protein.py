@@ -7,6 +7,22 @@ from .utils import api_client
 
 
 class Protein(BaseModel):
+    """
+    A Rowan protein.
+
+    Data is not loaded by default to avoid unnecessary downloads that could impact performance.
+    Call `load_data()` to fetch and attach the protein data to this `Protein` object.
+
+    :ivar uuid: The UUID of the protein
+    :ivar created_at: The creation date of the protein
+    :ivar used_in_workflow: Whether the protein is used in a workflow
+    :ivar ancestor_uuid: The UUID of the ancestor protein
+    :ivar sanitized: Whether the protein is sanitized
+    :ivar name: The name of the protein
+    :ivar data: The data of the protein
+    :ivar public: Whether the protein is public
+    """
+
     uuid: str
     created_at: datetime | None = None
     used_in_workflow: bool | None = None

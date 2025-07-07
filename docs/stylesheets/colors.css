@@ -1,0 +1,6 @@
+/* Light-mode brand green */
+:root > * {
+  --md-primary-fg-color:        #16a34a;
+  --md-primary-fg-color--light: #c3d3e1; 
+  --md-primary-fg-color--dark:  #74967E; 
+}

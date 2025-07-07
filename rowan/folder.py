@@ -7,6 +7,18 @@ from .utils import api_client
 
 
 class Folder(BaseModel):
+    """
+    A class representing a folder in the Rowan API.
+
+    :ivar uuid: The UUID of the folder.
+    :ivar name: The name of the folder.
+    :ivar parent_uuid: The UUID of the parent folder.
+    :ivar notes: Folder notes.
+    :ivar starred: Whether the folder is starred.
+    :ivar public: Whether the folder is public.
+    :ivar created_at: The date and time the folder was created.
+    """
+
     uuid: str
     name: str | None = None
     parent_uuid: str | None = None

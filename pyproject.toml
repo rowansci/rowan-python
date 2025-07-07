@@ -39,6 +39,9 @@ mypy = ">=1.10"
 pre-commit = ">=3.7"
 ipython = "*"
 rdkit-stubs = ">=0.7"
+mkdocs-material = "*"
+mkdocstrings-python = "*"
+griffe-pydantic = "*"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
@@ -49,6 +52,7 @@ fmt = { cmd="ruff format ." }
 lint = { cmd="ruff check . --fix" }
 types = { cmd="mypy ." }
 test = { cmd="pytest" }
+mkdocs = { cmd="mkdocs serve" }
 all = { depends-on = ["fmt", "lint", "types", "test"] }
 
 [tool.ruff]
