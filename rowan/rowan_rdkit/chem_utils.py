@@ -326,7 +326,7 @@ def batch_tautomers(
     """
     Generate possible tautomers of a Molecule.
 
-    :param mol: RDKit Molecule
+    :param mols: RDKit Molecule
     :param mode: Tautomer mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     for options.
     :param timeout: time in seconds before the Workflow times out
@@ -429,7 +429,7 @@ def batch_energy(
     """
     Computes the energy for the given molecule.
 
-    :param mol: RDKit Molecule
+    :param mols: RDKit Molecule
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
@@ -571,7 +571,7 @@ def batch_optimize(
     """
     Optimize each of a Molecule's conformers and then return the Molecule.
 
-    :param mol: input Molecule
+    :param mols: input Molecule
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
@@ -737,7 +737,7 @@ def batch_conformers(
     """
     Generate conformers for a Molecule.
 
-    :param mol: RDKit molecule object
+    :param mols: RDKit molecule object
     :param num_conformers: number of conformers to generate
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
@@ -910,7 +910,7 @@ def batch_charges(
     """
     Computes atom-centered charges for the given Molecules.
 
-    :param mol: RDKit Molecule
+    :param mols: RDKit Molecule
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)

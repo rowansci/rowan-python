@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Any, Self, TypeAlias
 
@@ -61,18 +62,31 @@ class Workflow(BaseModel):
     def __repr__(self) -> str:
         return f"<Workflow name='{self.name}' created_at='{self.created_at}'>"
 
-    def load_data(self) -> Self:
+    def fetch_latest(self, in_place: bool = False) -> Self:
         """
-        Loads workflow data from the API and updates the current instance.
+        Loads workflow data from the database and updates the current instance.
 
-        :return: An updated instance of the workflow with data loaded from the database.
+        :return: The updated instance (self).
         :raises HTTPError: If the API request fails.
         """
-
         with api_client() as client:
             response = client.get(f"/workflow/{self.uuid}")
             response.raise_for_status()
-            return type(self)(**response.json())
+            data = response.json()
+
+            if not in_place:
+                return Workflow(**data)
+
+            # Create a new instance with proper field mapping
+            updated_instance = self.model_validate(data)
+
+            # Update current instance with new data using class-level model_fields
+            for field_name in self.__class__.model_fields:
+                setattr(self, field_name, getattr(updated_instance, field_name))
+
+            self.model_rebuild()
+
+            return self
 
     def update(
         self,
@@ -94,7 +108,7 @@ class Workflow(BaseModel):
         :param public: Whether the workflow is public.
         :raises HTTPError: If the API request fails.
         """
-        old_data = self.load_data()
+        old_data = self.updated_workflow()
 
         new_data = {
             "name": name if name is not None else old_data.name,
@@ -116,13 +130,30 @@ class Workflow(BaseModel):
         for key, value in updated.items():
             setattr(self, key, value)
 
+    def wait_for_result(self, poll_interval: int = 5) -> Self:
+        """
+        Wait for the workflow to finish.
+
+        This method will block until the workflow has finished computing. It
+        will periodically poll the API to check the status of the workflow.
+
+        :return: The current instance, with the workflow data loaded.
+        """
+
+        if poll_interval <= 0:
+            raise ValueError("poll_interval must be a positive integer")
+
+        while not self.is_finished():
+            time.sleep(poll_interval)
+        return self
+
     def get_status(self) -> stjames.Status:
         """
         Gets the status of the workflow.
 
         :return: The status of the workflow, as an instance of stjames.Status.
         """
-        return stjames.Status(self.load_data().status or 0)
+        return self.fetch_latest().status or stjames.Status.QUEUED
 
     def is_finished(self) -> bool:
         """
@@ -175,7 +206,7 @@ class Workflow(BaseModel):
 
 def submit_workflow(
     workflow_type: str,
-    workflow_data: dict[str, Any],
+    workflow_data: dict[str, Any] | None = None,
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
@@ -246,121 +277,6 @@ def retrieve_calculation_molecules(uuid: str) -> list[dict[str, Any]]:
         response = client.get(f"/calculation/{uuid}/molecules")
         response.raise_for_status()
         return response.json()
-
-
-def update_workflow(
-    uuid: str,
-    name: str | None = None,
-    parent_uuid: str | None = None,
-    notes: str | None = None,
-    starred: bool | None = None,
-    email_when_complete: bool | None = None,
-    public: bool | None = None,
-) -> Workflow:
-    """
-    Updates a workflow in the API with new data.
-
-    :param uuid: The UUID of the workflow to update.
-    :param name: The new name of the workflow.
-    :param parent_uuid: The UUID of the parent folder.
-    :param notes: A description of the workflow.
-    :param starred: Whether the workflow is starred.
-    :param email_when_complete: Whether the workflow should send an email when it is complete.
-    :param public: Whether the workflow is public.
-    :return: An updated Workflow object.
-    :raises HTTPError: If the API request fails.
-    """
-    new_data: dict[str, Any] = {}
-
-    if name is not None:
-        new_data["name"] = name
-
-    if parent_uuid is not None:
-        new_data["parent_uuid"] = parent_uuid
-
-    if notes is not None:
-        new_data["notes"] = notes
-
-    if starred is not None:
-        new_data["starred"] = starred
-
-    if email_when_complete is not None:
-        new_data["email_when_complete"] = email_when_complete
-
-    if public is not None:
-        new_data["public"] = public
-
-    with api_client() as client:
-        response = client.post(f"/workflow/{uuid}", json=new_data)
-        response.raise_for_status()
-        return Workflow(**response.json())
-
-
-def get_workflow_status(uuid: str) -> stjames.Status:
-    """
-    Retrieves the status of a workflow by its UUID.
-
-    :param uuid: The UUID of the workflow to check the status of.
-    :return: The status of the workflow as an instance of stjames.Status.
-    """
-
-    return stjames.Status(retrieve_workflow(uuid).status or 0)
-
-
-def workflow_is_finished(uuid: str) -> bool:
-    """
-    Checks if a workflow has finished.
-
-    A workflow is finished if it has been completed (with or without errors) or stopped.
-
-    :param uuid: The UUID of the workflow to check the status of.
-    :return: True if the workflow is finished, False otherwise.
-    """
-    status = get_workflow_status(uuid)
-
-    return status in {
-        stjames.Status.COMPLETED_OK,
-        stjames.Status.FAILED,
-        stjames.Status.STOPPED,
-    }
-
-
-def stop_workflow(uuid: str) -> None:
-    """
-    Stops a workflow.
-
-    :param uuid: The UUID of the workflow to stop.
-    :raises HTTPError: If the API request fails.
-    """
-    with api_client() as client:
-        response = client.post(f"/workflow/{uuid}/stop")
-        response.raise_for_status()
-
-
-def delete_workflow(uuid: str) -> None:
-    """
-    Deletes a workflow.
-
-    :param uuid: The UUID of the workflow to delete.
-    :raises HTTPError: If the API request fails.
-    """
-
-    with api_client() as client:
-        response = client.delete(f"/workflow/{uuid}")
-        response.raise_for_status()
-
-
-def delete_workflow_data(uuid: str) -> None:
-    """
-    Deletes a workflow's data.
-
-    :param uuid: The UUID of the workflow to delete data for.
-    :raises HTTPError: If the API request fails.
-    """
-    with api_client() as client:
-        response = client.delete(f"/workflow/{uuid}/delete_workflow_data")
-        response.raise_for_status()
-
 
 def list_workflows(
     parent_uuid: str | None = None,
