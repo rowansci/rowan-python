@@ -75,14 +75,14 @@ class Workflow(BaseModel):
             data = response.json()
 
             if not in_place:
-                return Workflow(**data)
+                return self.__class__.model_validate(data)
 
             # Create a new instance with proper field mapping
-            updated_instance = self.model_validate(data)
+            updated_workflow = self.model_validate(data)
 
             # Update current instance with new data using class-level model_fields
             for field_name in self.__class__.model_fields:
-                setattr(self, field_name, getattr(updated_instance, field_name))
+                setattr(self, field_name, getattr(updated_workflow, field_name))
 
             self.model_rebuild()
 
@@ -96,7 +96,8 @@ class Workflow(BaseModel):
         starred: bool | None = None,
         email_when_complete: bool | None = None,
         public: bool | None = None,
-    ) -> None:
+        in_place: bool = False,
+    ) -> Self:
         """
         Updates a workflow in the API with new data.
 
@@ -108,7 +109,7 @@ class Workflow(BaseModel):
         :param public: Whether the workflow is public.
         :raises HTTPError: If the API request fails.
         """
-        old_data = self.updated_workflow()
+        old_data = self.fetch_latest()
 
         new_data = {
             "name": name if name is not None else old_data.name,
@@ -124,11 +125,19 @@ class Workflow(BaseModel):
         with api_client() as client:
             response = client.post(f"/workflow/{self.uuid}", json=new_data)
             response.raise_for_status()
-            updated = response.json()
+            data = response.json()
 
-        # Update self with new data
-        for key, value in updated.items():
-            setattr(self, key, value)
+        if not in_place:
+            return self.__class__.model_validate(data)
+
+        updated_workflow = self.model_validate(data)
+
+        for field_name in self.__class__.model_fields:
+            setattr(self, field_name, getattr(updated_workflow, field_name))
+
+            self.model_rebuild()
+
+        return self
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
         """
@@ -277,6 +286,7 @@ def retrieve_calculation_molecules(uuid: str) -> list[dict[str, Any]]:
         response = client.get(f"/calculation/{uuid}/molecules")
         response.raise_for_status()
         return response.json()
+
 
 def list_workflows(
     parent_uuid: str | None = None,
