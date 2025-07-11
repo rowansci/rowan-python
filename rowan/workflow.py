@@ -529,7 +529,7 @@ def submit_scan_workflow(
 
     :param initial_molecule: The molecule used in the scan.
     :param scan_settings: The scan settings.
-    :param calculation_engine: The engine to use for the calculation.
+    :param calculation_engine: The engine to use for the calculation. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param calculation_method: The method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     for options.
