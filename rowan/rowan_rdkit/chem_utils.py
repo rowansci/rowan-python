@@ -139,7 +139,8 @@ def run_pka(
     Calculate the pKa of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: pKa calculation Mode
+    :param mode: pKa calculation Mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -179,7 +180,8 @@ def batch_pka(
     Calculate the pKa of a batch of Molecules.
 
     :param mols: list of RDKit Molecules
-    :param mode: pKa calculation mode
+    :param mode: pKa calculation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -223,7 +225,8 @@ async def _single_pka(
     Calculate the pKa of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: pKa calculation mode
+    :param mode: pKa calculation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -303,7 +306,8 @@ def run_tautomers(
     Generate possible tautomers of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: Tautomer mode
+    :param mode: Tautomer mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -323,7 +327,8 @@ def batch_tautomers(
     Generate possible tautomers of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: Tautomer mode
+    :param mode: Tautomer mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -398,9 +403,11 @@ def run_energy(
     Computes the energy for the given molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
-    :param mode: Mode to run the energy
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the energy. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -423,9 +430,11 @@ def batch_energy(
     Computes the energy for the given molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
-    :param mode: Mode to run the energy
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the energy. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -455,8 +464,9 @@ async def _single_energy(
     Computes the energy for the given molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param mode: Mode to run the energy
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -531,10 +541,12 @@ def run_optimize(
     Optimize each of a molecule's conformers and then return the molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the optimization
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param return_energies: whether to return energies in Hartree too
-    :param mode: Mode to run the optimization
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -560,9 +572,11 @@ def batch_optimize(
     Optimize each of a Molecule's conformers and then return the Molecule.
 
     :param mol: input Molecule
-    :param method: Method with which to compute the Molecule's energy
-    :param engine: Engine to run the optimization
-    :param mode: Mode to run the optimization
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -595,9 +609,10 @@ async def _single_optimize(
     Optimize each of a molecule's conformers and then return the molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the optimization
-    :param mode: Mode to run the optimization
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -685,8 +700,10 @@ def run_conformers(
 
     :param mol: RDKit Molecule
     :param num_conformers: number of conformers to generate
-    :param method: Method with which to compute the molecule's energy
-    :param mode: Mode for conformer generation
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: Mode for conformer generation. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -722,8 +739,10 @@ def batch_conformers(
 
     :param mol: RDKit molecule object
     :param num_conformers: number of conformers to generate
-    :param method: method with which to compute the molecule's energy
-    :param mode: conformer generation mode
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: conformer generation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -764,8 +783,10 @@ async def _single_conformers(
 
     :param mol: RDKit Molecule
     :param num_conformers: number of conformers to generate
-    :param method: method with which to compute the molecule's energy
-    :param mode: conformer generation mode
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: conformer generation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -863,9 +884,11 @@ def run_charges(
     Computes atom-centered charges for the given Molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
@@ -888,9 +911,11 @@ def batch_charges(
     Computes atom-centered charges for the given Molecules.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
@@ -920,9 +945,11 @@ async def _single_charges(
     Computes atom-centered charges for the given Molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID

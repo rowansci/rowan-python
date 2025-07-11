@@ -1,5 +1,3 @@
-# API reference
-
 ## Workflow Class and Functions
 ::: rowan.workflow
     handler: python

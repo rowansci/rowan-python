@@ -431,7 +431,7 @@ def submit_basic_calculation_workflow(
     :param tasks: A list of tasks to perform for the calculation.
     :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     for options.
-    :param engine: The engine to use for the calculation.
+    :param engine: The engine to use for the calculation. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :return: A Workflow object representing the submitted workflow.
@@ -675,7 +675,7 @@ def submit_irc_workflow(
     :param method: The computational method to use for the IRC calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     for options.
-    :param engine: The computational engine to use for the calculation.
+    :param engine: The computational engine to use for the calculation. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param preopt: Whether to perform a pre-optimization of the molecule.
     :param step_size: The step size to use for the IRC calculation.
     :param max_irc_steps: The maximum number of IRC steps to perform.
