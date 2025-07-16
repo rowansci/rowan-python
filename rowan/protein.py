@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Self
 
 from pydantic import BaseModel
@@ -34,9 +35,9 @@ class Protein(BaseModel):
     pocket: list[list[float]] | None = None
 
     def __repr__(self):
-        return f"<Protein name='{self.name}' created_at='{self.created_at}'>"
+        return f"<Protein name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
-    def load_data(self) -> Self:
+    def refresh(self, in_place: bool = True) -> Self:
         """
         Loads protein data
 
@@ -46,11 +47,15 @@ class Protein(BaseModel):
             response = client.get(f"/protein/{self.uuid}")
             response.raise_for_status()
             protein_data = response.json()
+            if not in_place:
+                return Protein(**protein_data)
 
         self.name = protein_data.get("name")
         self.data = protein_data.get("data")
         self.public = protein_data.get("public")
         self.pocket = protein_data.get("pocket")
+        self.sanitized = protein_data.get("sanitized")
+        self.used_in_workflow = protein_data.get("used_in_workflow")
         return self
 
     def update(
@@ -99,6 +104,32 @@ class Protein(BaseModel):
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
 
+    def sanitize(self) -> None:
+        """
+        Sanitizes a protein
+
+        :raises requests.HTTPError: if the request to the API fails
+        """
+        with api_client() as client:
+            response = client.post(f"/protein/sanitize/{self.uuid}")
+            response.raise_for_status()
+
+def retrieve_protein(uuid: str) -> Protein:
+    """
+    Retrieves a protein from the API using its UUID.
+
+    :param uuid: The UUID of the protein to retrieve.
+    :return: A Protein object representing the retrieved protein.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    with api_client() as client:
+        response = client.get(f"/protein/{uuid}")
+        response.raise_for_status()
+        protein_data = response.json()
+
+    return Protein(**protein_data)
+
 
 def list_proteins(
     ancestor_uuid: str | None = None,
@@ -128,3 +159,62 @@ def list_proteins(
         results = response.json()["proteins"]
 
     return [Protein(**item) for item in results]
+
+def upload_protein(name: str, file_path: Path) -> Protein:
+    """
+    Uploads a protein from a PDB file to the API.
+
+    :param name: The name of the protein to create
+    :param file_path: The path to the PDB file to upload
+    :return: A Protein object representing the uploaded protein
+    :raises requests.HTTPError: if the request to the API fails
+    """
+    with api_client() as client:
+        # Step 1: Read the file and post it to the conversion endpoint.
+        conversion_payload = {"name": name, "text": file_path.read_text()}
+        conversion_response = client.post("/convert/pdb_file_to_protein", json=conversion_payload)
+        conversion_response.raise_for_status()  # Ensure the request was successful
+
+        # Extract the JSON data from the conversion response.
+        protein_data = conversion_response.json()
+
+        # Step 2: Use the converted data to create the final protein object.
+        creation_payload = {
+            "name": name,
+            "protein_data": protein_data,
+            "ancestor_uuid": None
+        }
+        final_response = client.post("/protein", json=creation_payload)
+        final_response.raise_for_status()
+
+        # Deserialize the final JSON response into a Protein object and return it.
+        return Protein(**final_response.json())
+
+def create_protein_from_pdb_id(name: str, code: str) -> Protein:
+    """
+    Creates a protein from a PDB ID.
+
+    :param name: The name of the protein to create
+    :param code: The PDB ID of the protein to create
+    :return: A Protein object representing the created protein
+    :raises requests.HTTPError: if the request to the API fails
+    """
+    with api_client() as client:
+        # Step 1: Read the file and post it to the conversion endpoint.
+        conversion_response = client.post(f"/convert/pdb_id_to_protein?pdb_id={code}")
+        conversion_response.raise_for_status()  # Ensure the request was successful
+
+        # Extract the JSON data from the conversion response.
+        protein_data = conversion_response.json()
+
+        # Step 2: Use the converted data to create the final protein object.
+        creation_payload = {
+            "name": name,
+            "protein_data": protein_data,
+            "ancestor_uuid": None
+        }
+        final_response = client.post("/protein", json=creation_payload)
+        final_response.raise_for_status()
+
+        # Deserialize the final JSON response into a Protein object and return it.
+        return Protein(**final_response.json())

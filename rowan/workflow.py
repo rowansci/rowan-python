@@ -6,6 +6,7 @@ import stjames
 from pydantic import BaseModel, Field
 from rdkit import Chem
 
+from .protein import Protein
 from .utils import api_client
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
@@ -60,7 +61,7 @@ class Workflow(BaseModel):
         validate_by_name = True
 
     def __repr__(self) -> str:
-        return f"<Workflow name='{self.name}' created_at='{self.created_at}'>"
+        return f"<Workflow name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
     def fetch_latest(self, in_place: bool = False) -> Self:
         """
@@ -471,6 +472,55 @@ def submit_conformer_search_workflow(
         response.raise_for_status()
         return Workflow(**response.json())
 
+def submit_solubility_workflow(
+    initial_smiles: str,
+    solvents: list[str] | None = None,
+    temperatures: list[float] | None = None,
+    name: str = "pKa Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a solubility workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the solubility of.
+    :param solvents: The list of solvents to use for the calculation.
+    :param temperatures: The list of temperatures to use for the calculation.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    if not solvents:
+        solvents =[
+      "CCCCCC",
+      "CC1=CC=CC=C1",
+      "C1CCCO1",
+      "CC(=O)OCC",
+      "CCO",
+      "CC#N"
+    ]
+
+    if not temperatures:
+        temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
+
+    workflow_data = {
+        "solvents": solvents,
+        "temperatures": temperatures
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "solubility",
+        "workflow_data": workflow_data,
+        "initial_smiles": initial_smiles,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
 
 def submit_pka_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
@@ -524,6 +574,177 @@ def submit_pka_workflow(
         response.raise_for_status()
         return Workflow(**response.json())
 
+
+def submit_redox_potential_workflow(
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    reduction: bool = False,
+    oxidization: bool = True,
+    mode: str = "rapid",
+    name: str = "Redox Potential Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a redox potential workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the redox potential of.
+    :param reduction: Whether to calculate the reduction potential.
+    :param oxidization: Whether to calculate the oxidization potential.
+    :param mode: The mode to run the calculation in. See
+    [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow_data = {
+        "oxidation": oxidization,
+        "reduction": reduction,
+        "mode": mode,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "redox_potential",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_fukui_workflow(
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    optimization_method: str = "gfn2_xtb",
+    fukui_method: str = "gfn1_xtb",
+    solvent_settings: dict[str, str] | None = None,
+    name: str = "Redox Potential Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a fukui workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the fukui indices of.
+    :optimization_method: The method to use for the optimization.
+    :fukui_method: The method to use for the fukui calculation.
+    :solvent_settings: The solvent settings to use for the fukui calculation.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    optimization_settings = stjames.Settings(method=optimization_method)
+    fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
+
+    workflow_data = {
+        "opt_settings": optimization_settings,
+        "opt_engine": stjames.Method(optimization_method).default_engine(),
+        "fukui_settings": fukui_settings,
+        "fukui_engine": stjames.Method(fukui_method).default_engine(),
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "fukui",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+
+def submit_tautomer_search_workflow(
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    mode: str = "careful",
+    name: str = "Tautomer Search Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a tautomer search workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the tautomers of.
+    :param mode: The mode to run the calculation in. See
+    [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow_data = {
+        "mode": mode,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "tautomers",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+
+def submit_descriptors_workflow(
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    name: str = "Descriptors Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a descriptors workflow to the API.
+
+    :param initial_molecule: The molecule to calculate the descriptors of.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "descriptors",
+        "workflow_data": {},
+        "initial_molecule": initial_molecule,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
 
 def submit_scan_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
@@ -684,6 +905,57 @@ def submit_protein_cofolding_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "protein_cofolding",
         "workflow_data": workflow_data,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_docking_workflow(
+    protein: str | Protein,
+    pocket: list[list[float]],
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    name: str = "Docking Workflow",
+    folder_uuid: str | None = None,
+) -> Workflow:
+    """
+    Submits a Docking workflow to the API.
+
+    :param protein: The protein to dock. Can be fed as a uuid or a Protein object.
+    :param initial_molecule: The initial molecule to be docked
+    :param do_csearch: Whether to perform a conformational search on the ligand.
+    :param do_optimization: Whether to perform an optimization on the ligand.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :return: A Workflow object representing the submitted IRC workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    if isinstance(initial_molecule, stjames.Molecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+
+    if isinstance(protein, Protein):
+        protein = protein.uuid
+
+    workflow_data = {
+        "target_uuid": protein,
+        "pocket": pocket,
+        "do_csearch": do_csearch,
+        "do_optimization": do_optimization,
+    }
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "docking",
+        "workflow_data": workflow_data,
+        "initial_molecule": initial_molecule,
     }
 
     with api_client() as client:

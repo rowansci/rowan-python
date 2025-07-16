@@ -28,7 +28,7 @@ class Folder(BaseModel):
     created_at: datetime | None = None
 
     def __repr__(self) -> str:
-        return f"<Folder name='{self.name}' created_at='{self.created_at}'>"
+        return f"<Folder name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
     def retrieve(self) -> Self:
         """
