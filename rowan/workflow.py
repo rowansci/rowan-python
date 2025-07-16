@@ -472,6 +472,7 @@ def submit_conformer_search_workflow(
         response.raise_for_status()
         return Workflow(**response.json())
 
+
 def submit_solubility_workflow(
     initial_smiles: str,
     solvents: list[str] | None = None,
@@ -492,22 +493,12 @@ def submit_solubility_workflow(
     """
 
     if not solvents:
-        solvents =[
-      "CCCCCC",
-      "CC1=CC=CC=C1",
-      "C1CCCO1",
-      "CC(=O)OCC",
-      "CCO",
-      "CC#N"
-    ]
+        solvents = ["CCCCCC", "CC1=CC=CC=C1", "C1CCCO1", "CC(=O)OCC", "CCO", "CC#N"]
 
     if not temperatures:
         temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
 
-    workflow_data = {
-        "solvents": solvents,
-        "temperatures": temperatures
-    }
+    workflow_data = {"solvents": solvents, "temperatures": temperatures}
 
     data = {
         "name": name,
@@ -521,6 +512,7 @@ def submit_solubility_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
+
 
 def submit_pka_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
@@ -671,7 +663,6 @@ def submit_fukui_workflow(
         return Workflow(**response.json())
 
 
-
 def submit_tautomer_search_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     mode: str = "careful",
@@ -713,7 +704,6 @@ def submit_tautomer_search_workflow(
         return Workflow(**response.json())
 
 
-
 def submit_descriptors_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     name: str = "Descriptors Workflow",
@@ -745,6 +735,7 @@ def submit_descriptors_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
+
 
 def submit_scan_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,

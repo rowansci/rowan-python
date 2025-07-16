@@ -22,23 +22,31 @@ PROTACs = {
     2425: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCCCCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1",
     2426: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCCCCCCCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1",
     2427: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1",
-    2428: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCOCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1"
-    }
+    2428: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCOCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1",
+}
 
 protac_solubility_folder = rowan.create_folder(name="PROTAC Solubility")
 
 workflows = []
 for id, smiles in PROTACs.items():
-    workflows.append(rowan.submit_solubility_workflow(initial_smiles=smiles,
-                              solvents=["CS(=O)C"],
-                              temperatures=[293.15],
-                              folder_uuid=protac_solubility_folder.uuid,
-                              name=f"solubility {id}"))
+    workflows.append(
+        rowan.submit_solubility_workflow(
+            initial_smiles=smiles,
+            solvents=["CS(=O)C"],
+            temperatures=[293.15],
+            folder_uuid=protac_solubility_folder.uuid,
+            name=f"solubility {id}",
+        )
+    )
 
 
 for workflow in workflows:
     workflow.wait_for_result()
     workflow.fetch_latest(in_place=True)
 
-print([(workflow.name, workflow.data["solubilities"]["CS(=O)C"]["solubilities"])
-       for workflow in workflows])
+print(
+    [
+        (workflow.name, workflow.data["solubilities"]["CS(=O)C"]["solubilities"])
+        for workflow in workflows
+    ]
+)

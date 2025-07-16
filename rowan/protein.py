@@ -48,7 +48,7 @@ class Protein(BaseModel):
             response.raise_for_status()
             protein_data = response.json()
             if not in_place:
-                return Protein(**protein_data)
+                return self.__class__.model_validate(protein_data)
 
         self.name = protein_data.get("name")
         self.data = protein_data.get("data")
@@ -114,6 +114,7 @@ class Protein(BaseModel):
             response = client.post(f"/protein/sanitize/{self.uuid}")
             response.raise_for_status()
 
+
 def retrieve_protein(uuid: str) -> Protein:
     """
     Retrieves a protein from the API using its UUID.
@@ -160,6 +161,7 @@ def list_proteins(
 
     return [Protein(**item) for item in results]
 
+
 def upload_protein(name: str, file_path: Path) -> Protein:
     """
     Uploads a protein from a PDB file to the API.
@@ -179,16 +181,13 @@ def upload_protein(name: str, file_path: Path) -> Protein:
         protein_data = conversion_response.json()
 
         # Step 2: Use the converted data to create the final protein object.
-        creation_payload = {
-            "name": name,
-            "protein_data": protein_data,
-            "ancestor_uuid": None
-        }
+        creation_payload = {"name": name, "protein_data": protein_data, "ancestor_uuid": None}
         final_response = client.post("/protein", json=creation_payload)
         final_response.raise_for_status()
 
         # Deserialize the final JSON response into a Protein object and return it.
         return Protein(**final_response.json())
+
 
 def create_protein_from_pdb_id(name: str, code: str) -> Protein:
     """
@@ -208,11 +207,7 @@ def create_protein_from_pdb_id(name: str, code: str) -> Protein:
         protein_data = conversion_response.json()
 
         # Step 2: Use the converted data to create the final protein object.
-        creation_payload = {
-            "name": name,
-            "protein_data": protein_data,
-            "ancestor_uuid": None
-        }
+        creation_payload = {"name": name, "protein_data": protein_data, "ancestor_uuid": None}
         final_response = client.post("/protein", json=creation_payload)
         final_response.raise_for_status()
 
