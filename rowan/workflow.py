@@ -221,6 +221,7 @@ def submit_workflow(
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a workflow to the API.
@@ -233,6 +234,7 @@ def submit_workflow(
     At least one of a molecule or SMILES must be provided.
     :param name: A name to give to the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
@@ -242,6 +244,7 @@ def submit_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": workflow_type,
         "workflow_data": workflow_data,
+        "max_credits": max_credits,
     }
 
     if initial_smiles is not None:
@@ -347,6 +350,7 @@ def submit_basic_calculation_workflow(
     engine: str = "omol25",
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submit a basic calculation workflow to the API.
@@ -361,6 +365,7 @@ def submit_basic_calculation_workflow(
     :param engine: The engine to use for the calculation. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -390,6 +395,7 @@ def submit_basic_calculation_workflow(
         "workflow_type": "basic_calculation",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -406,6 +412,7 @@ def submit_conformer_search_workflow(
     transistion_state: bool = False,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a conformer search workflow to the API.
@@ -422,6 +429,7 @@ def submit_conformer_search_workflow(
     :param transistion_state: Whether to optimize the transition state.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -465,6 +473,7 @@ def submit_conformer_search_workflow(
         "workflow_type": "conformer_search",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -477,8 +486,9 @@ def submit_solubility_workflow(
     initial_smiles: str,
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,
-    name: str = "pKa Workflow",
+    name: str = "Solubility Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a solubility workflow to the API.
@@ -488,6 +498,7 @@ def submit_solubility_workflow(
     :param temperatures: The list of temperatures to use for the calculation.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -506,6 +517,7 @@ def submit_solubility_workflow(
         "workflow_type": "solubility",
         "workflow_data": workflow_data,
         "initial_smiles": initial_smiles,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -522,6 +534,7 @@ def submit_pka_workflow(
     mode: str = "careful",
     name: str = "pKa Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a pKa workflow to the API.
@@ -535,6 +548,7 @@ def submit_pka_workflow(
     for options.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -559,6 +573,7 @@ def submit_pka_workflow(
         "workflow_type": "pka",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -574,6 +589,7 @@ def submit_redox_potential_workflow(
     mode: str = "rapid",
     name: str = "Redox Potential Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a redox potential workflow to the API.
@@ -586,6 +602,7 @@ def submit_redox_potential_workflow(
     for options.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -606,6 +623,7 @@ def submit_redox_potential_workflow(
         "workflow_type": "redox_potential",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -621,6 +639,7 @@ def submit_fukui_workflow(
     solvent_settings: dict[str, str] | None = None,
     name: str = "Redox Potential Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a fukui workflow to the API.
@@ -631,6 +650,7 @@ def submit_fukui_workflow(
     :solvent_settings: The solvent settings to use for the fukui calculation.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -655,6 +675,7 @@ def submit_fukui_workflow(
         "workflow_type": "fukui",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -668,6 +689,7 @@ def submit_tautomer_search_workflow(
     mode: str = "careful",
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a tautomer search workflow to the API.
@@ -678,6 +700,7 @@ def submit_tautomer_search_workflow(
     for options.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -696,6 +719,7 @@ def submit_tautomer_search_workflow(
         "workflow_type": "tautomers",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -708,6 +732,7 @@ def submit_descriptors_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     name: str = "Descriptors Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a descriptors workflow to the API.
@@ -715,6 +740,7 @@ def submit_descriptors_workflow(
     :param initial_molecule: The molecule to calculate the descriptors of.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -729,6 +755,7 @@ def submit_descriptors_workflow(
         "workflow_type": "descriptors",
         "workflow_data": {},
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -745,6 +772,7 @@ def submit_scan_workflow(
     wavefront_propagation: bool = True,
     name: str = "Scan Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a scan workflow to the API.
@@ -758,6 +786,7 @@ def submit_scan_workflow(
     :param wavefront_propagation: Whether to use wavefront propagation in the scan.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -788,6 +817,7 @@ def submit_scan_workflow(
         "workflow_type": "scan",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -805,6 +835,7 @@ def submit_irc_workflow(
     max_irc_steps: int = 30,
     name: str = "IRC Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
@@ -819,6 +850,7 @@ def submit_irc_workflow(
     :param max_irc_steps: The maximum number of IRC steps to perform.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -851,6 +883,7 @@ def submit_irc_workflow(
         "workflow_type": "irc",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -868,6 +901,7 @@ def submit_protein_cofolding_workflow(
     name: str = "Cofolding Workflow",
     model: str = stjames.CofoldingModel.BOLTZ_2.value,
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a protein cofolding workflow to the API.
@@ -880,6 +914,7 @@ def submit_protein_cofolding_workflow(
     :param name: The name of the workflow.
     :param model: The model to use for the computation.
     :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """  # noqa: E501
@@ -896,6 +931,7 @@ def submit_protein_cofolding_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "protein_cofolding",
         "workflow_data": workflow_data,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
@@ -912,6 +948,7 @@ def submit_docking_workflow(
     do_optimization: bool = True,
     name: str = "Docking Workflow",
     folder_uuid: str | None = None,
+    max_credits: int | None = None,
 ) -> Workflow:
     """
     Submits a Docking workflow to the API.
@@ -922,6 +959,7 @@ def submit_docking_workflow(
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -947,6 +985,7 @@ def submit_docking_workflow(
         "workflow_type": "docking",
         "workflow_data": workflow_data,
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
     }
 
     with api_client() as client:
