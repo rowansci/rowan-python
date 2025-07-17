@@ -5,11 +5,11 @@ import rowan
 
 # rowan.api_key = ""
 
-confomer_dependent_redox_folder = rowan.create_folder(name="Conformer dependent redox results")
+conformer_dependent_redox_folder = rowan.create_folder(name="Conformer dependent redox results")
 
 result = rowan.submit_conformer_search_workflow(
     initial_molecule=Molecule.from_smiles("CC(C)Cc1ccc(C(=O)c2ccc(O)cc2)cc1"),
-    folder_uuid=confomer_dependent_redox_folder.uuid,
+    folder_uuid=conformer_dependent_redox_folder.uuid,
 )
 result.wait_for_result()
 result.fetch_latest(in_place=True)
@@ -25,7 +25,7 @@ for conformer in result.data["conformer_uuids"][:10]:
             stjames_molecule,
             reduction=True,
             oxidization=True,
-            folder_uuid=confomer_dependent_redox_folder.uuid,
+            folder_uuid=conformer_dependent_redox_folder.uuid,
         )
     )
 
