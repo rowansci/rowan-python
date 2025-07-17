@@ -75,7 +75,7 @@ class Folder:
         page: int = 0,
         size: int = 10,
     ) -> dict[str, Any]:
-        params = {
+        params: dict[str, Any] = {
             "page": page,
             "size": size,
         }
