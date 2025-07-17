@@ -78,11 +78,16 @@ class Folder:
         params = {
             "page": page,
             "size": size,
-            "parent_uuid": parent_uuid,
-            "name_contains": name_contains,
-            "public": public,
-            "starred": starred,
         }
+        # Only add optional parameters if they are not None
+        if parent_uuid is not None:
+            params["parent_uuid"] = parent_uuid
+        if name_contains is not None:
+            params["name_contains"] = name_contains
+        if public is not None:
+            params["public"] = public
+        if starred is not None:
+            params["starred"] = starred
 
         with api_client() as client:
             response = client.get("/folder", params=params)
