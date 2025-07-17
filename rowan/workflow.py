@@ -493,7 +493,7 @@ def submit_solubility_workflow(
     """
     Submits a solubility workflow to the API.
 
-    :param initial_molecule: The molecule to calculate the solubility of.
+    :param initial_smiles: The smiles of the molecule to calculate the solubility of.
     :param solvents: The list of solvents to use for the calculation.
     :param temperatures: The list of temperatures to use for the calculation.
     :param name: The name of the workflow.
