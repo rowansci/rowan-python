@@ -87,6 +87,7 @@ ignore = [
     "RUF002",  # Docstring contains ambiguous dash (en or em dash)
     "RUF003",  # String contains ambiguous unicode character
     "PLC0206", # Extracting value from dictionary without calling `.items()`
+    "PLC0415",
 
     # To remove
     #"B905",
