@@ -67,6 +67,7 @@ class Workflow(BaseModel):
         """
         Loads workflow data from the database and updates the current instance.
 
+        :param in_place: Whether to update the current instance in-place.
         :return: The updated instance (self).
         :raises HTTPError: If the API request fails.
         """

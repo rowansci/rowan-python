@@ -30,25 +30,33 @@ class Folder(BaseModel):
     def __repr__(self) -> str:
         return f"<Folder name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
-    def retrieve(self) -> Self:
+    def fetch_latest(self, in_place: bool = False) -> Self:
         """
-        Retrieve the folder from the API.
+        Fetch the latest folder data from the API.
 
         This method refreshes the folder object with the latest data from the API.
 
-        :return: The updated folder object.
+        :param in_place: Whether to update the current instance in-place.
+        :return: The updated instance (self).
+        :raises HTTPError: If the API request fails.
         """
         with api_client() as client:
             response = client.get(f"/folder/{self.uuid}")
             response.raise_for_status()
             data = response.json()
 
-        self.name = data.get("name")
-        self.parent_uuid = data.get("parent_uuid")
-        self.notes = data.get("notes")
-        self.starred = data.get("starred")
-        self.public = data.get("public")
-        return self
+            if not in_place:
+                return self.__class__.model_validate(data)
+
+            updated_folder = self.model_validate(data)
+
+            # Update current instance with new data using class-level model_fields
+            for field_name in self.__class__.model_fields:
+                setattr(self, field_name, getattr(updated_folder, field_name))
+
+            self.model_rebuild()
+
+            return self
 
     def update(
         self,
@@ -101,6 +109,33 @@ class Folder(BaseModel):
         with api_client() as client:
             response = client.delete(f"/folder/{self.uuid}")
             response.raise_for_status()
+
+
+def retrieve_folder(uuid: str) -> Folder:
+    """
+    Retrieves a folder from the API by UUID. Folder UUID can be found in the folder's URL.
+
+    :param uuid: The UUID of the folder to retrieve.
+    :return: A Folder object representing the retrieved folder.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.get(f"/folder/{uuid}")
+        response.raise_for_status()
+        return Folder(**response.json())
+
+
+def home_folder() -> Folder:
+    """
+    Retrieves the home folder from the API.
+
+    :return: A Folder object representing the home folder.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.get("/user/me/root_folders")
+        response.raise_for_status()
+        return Folder(**response.json()["user_root"])
 
 
 def list_folders(
