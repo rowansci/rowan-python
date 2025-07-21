@@ -45,18 +45,18 @@ class Folder(BaseModel):
             response.raise_for_status()
             data = response.json()
 
-            if not in_place:
-                return self.__class__.model_validate(data)
+        if not in_place:
+            return self.__class__.model_validate(data)
 
-            updated_folder = self.model_validate(data)
+        updated_folder = self.model_validate(data)
 
-            # Update current instance with new data using class-level model_fields
-            for field_name in self.__class__.model_fields:
-                setattr(self, field_name, getattr(updated_folder, field_name))
+        # Update current instance with new data using class-level model_fields
+        for field_name in self.__class__.model_fields:
+            setattr(self, field_name, getattr(updated_folder, field_name))
 
-            self.model_rebuild()
+        self.model_rebuild()
 
-            return self
+        return self
 
     def update(
         self,

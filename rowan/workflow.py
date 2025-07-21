@@ -10,6 +10,7 @@ from .protein import Protein
 from .utils import api_client
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
+StJamesMolecule: TypeAlias = stjames.Molecule
 
 
 class Workflow(BaseModel):
@@ -67,7 +68,7 @@ class Workflow(BaseModel):
         """
         Loads workflow data from the database and updates the current instance.
 
-        :param in_place: Whether to update the current instance in-place.
+        :param in_place: Whether to update the current instance in-place. 
         :return: The updated instance (self).
         :raises HTTPError: If the API request fails.
         """
@@ -76,19 +77,19 @@ class Workflow(BaseModel):
             response.raise_for_status()
             data = response.json()
 
-            if not in_place:
-                return self.__class__.model_validate(data)
+        if not in_place:
+            return self.__class__.model_validate(data)
 
-            # Create a new instance with proper field mapping
-            updated_workflow = self.model_validate(data)
+        # Create a new instance with proper field mapping
+        updated_workflow = self.model_validate(data)
 
-            # Update current instance with new data using class-level model_fields
-            for field_name in self.__class__.model_fields:
-                setattr(self, field_name, getattr(updated_workflow, field_name))
+        # Update current instance with new data using class-level model_fields
+        for field_name in self.__class__.model_fields:
+            setattr(self, field_name, getattr(updated_workflow, field_name))
 
-            self.model_rebuild()
+        self.model_rebuild()
 
-            return self
+        return self
 
     def update(
         self,
@@ -218,7 +219,7 @@ class Workflow(BaseModel):
 def submit_workflow(
     workflow_type: str,
     workflow_data: dict[str, Any] | None = None,
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: str | None = None,
@@ -250,12 +251,12 @@ def submit_workflow(
 
     if initial_smiles is not None:
         data["initial_smiles"] = initial_smiles
-    elif isinstance(initial_molecule, stjames.Molecule):
+    elif isinstance(initial_molecule, StJamesMolecule):
         data["initial_molecule"] = initial_molecule.model_dump()
     elif isinstance(initial_molecule, dict):
         data["initial_molecule"] = initial_molecule
     elif isinstance(initial_molecule, RdkitMol):
-        data["initial_molecule"] = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump()
+        data["initial_molecule"] = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump()
     else:
         raise ValueError("You must provide either `initial_smiles` or a valid `initial_molecule`.")
 
@@ -344,7 +345,7 @@ def list_workflows(
 
 
 def submit_basic_calculation_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     method: stjames.Method | str = "uma_m_omol",
     tasks: list[str] | None = None,
     mode: str = "auto",
@@ -373,10 +374,10 @@ def submit_basic_calculation_workflow(
     if not tasks:
         tasks = ["optimize"]
 
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(method, str):
         method = stjames.Method(method)
@@ -406,7 +407,7 @@ def submit_basic_calculation_workflow(
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     conf_gen_mode: str = "rapid",
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
@@ -434,10 +435,10 @@ def submit_conformer_search_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(final_method, str):
         final_method = stjames.Method(final_method)
@@ -528,7 +529,7 @@ def submit_solubility_workflow(
 
 
 def submit_pka_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
@@ -553,10 +554,10 @@ def submit_pka_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
@@ -584,7 +585,7 @@ def submit_pka_workflow(
 
 
 def submit_redox_potential_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     reduction: bool = False,
     oxidization: bool = True,
     mode: str = "rapid",
@@ -607,10 +608,10 @@ def submit_redox_potential_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     workflow_data = {
         "oxidation": oxidization,
@@ -634,7 +635,7 @@ def submit_redox_potential_workflow(
 
 
 def submit_fukui_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     optimization_method: str = "gfn2_xtb",
     fukui_method: str = "gfn1_xtb",
     solvent_settings: dict[str, str] | None = None,
@@ -655,10 +656,10 @@ def submit_fukui_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
@@ -686,7 +687,7 @@ def submit_fukui_workflow(
 
 
 def submit_tautomer_search_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     mode: str = "careful",
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
@@ -705,10 +706,10 @@ def submit_tautomer_search_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     workflow_data = {
         "mode": mode,
@@ -730,7 +731,7 @@ def submit_tautomer_search_workflow(
 
 
 def submit_descriptors_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     name: str = "Descriptors Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -745,10 +746,10 @@ def submit_descriptors_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     data = {
         "name": name,
@@ -766,7 +767,7 @@ def submit_descriptors_workflow(
 
 
 def submit_scan_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
     calculation_engine: str = "omol25",
     calculation_method: stjames.Method | str = "uma_m_omol",
@@ -791,10 +792,10 @@ def submit_scan_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)
@@ -828,7 +829,7 @@ def submit_scan_workflow(
 
 
 def submit_irc_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
     method: stjames.Method | str = "uma_m_omol",
     engine: str = "omol25",
     preopt: bool = True,
@@ -856,10 +857,10 @@ def submit_irc_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(method, str):
         method = stjames.Method(method)
@@ -944,7 +945,7 @@ def submit_protein_cofolding_workflow(
 def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
     do_csearch: bool = True,
     do_optimization: bool = True,
     name: str = "Docking Workflow",
@@ -965,10 +966,10 @@ def submit_docking_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
-    if isinstance(initial_molecule, stjames.Molecule):
+    if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump()
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(protein, Protein):
         protein = protein.uuid
