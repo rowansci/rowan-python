@@ -4,8 +4,6 @@ Run an scan calculation on a molecule using Rowan.
 See documentation at: https://docs.rowansci.com/science/workflows/scan
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan
@@ -13,9 +11,8 @@ import rowan
 # rowan.api_key = ""
 
 # Run calculation remotely
-result = rowan.compute(
-    Molecule.from_smiles("O"),
-    workflow_type="scan",
+result = rowan.submit_scan_workflow(
+    initial_molecule=Molecule.from_smiles("O"),
     name="Water Angle scan",
     scan_settings={
         "type": "angle",
@@ -24,11 +21,8 @@ result = rowan.compute(
         "stop": 110,
         "num": 5,
     },
-    calc_settings={
-        "method": "GFN2-xTB",
-        "tasks": ["optimize"],
-    },
-    calc_engine="xtb",
+    calculation_method="GFN2-xTB",
+    calculation_engine="xtb",
 )
 
-print(json.dumps(result, indent=4))
+print(result)

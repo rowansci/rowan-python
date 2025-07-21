@@ -17,8 +17,6 @@ Rapid is recommended for most work.
 See documentation at: https://docs.rowansci.com/science/workflows/conformers
 """
 
-import json
-
 from stjames import Molecule
 
 import rowan
@@ -26,11 +24,8 @@ import rowan
 # rowan.api_key = ""
 
 # Run calculation remotely
-result = rowan.compute(
-    Molecule.from_smiles("CCOCC"),
-    workflow_type="conformers",
-    name="Diethyl ether conformers",
-    mode="reckless",
+result = rowan.submit_conformer_search_workflow(
+    initial_molecule=Molecule.from_smiles("CCOCC"),
 )
 
-print(json.dumps(result, indent=4))
+print(result)

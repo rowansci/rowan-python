@@ -11,6 +11,14 @@ from .constants import API_URL
 
 
 def get_api_key() -> str:
+    """
+    Get the API key from the environment variable ROWAN_API_KEY or the module-level attribute
+    rowan.api_key.
+
+    If neither of these are set, raise a ValueError with a helpful message.
+
+    :return: The API key.
+    """
     if (api_key := os.environ.get("ROWAN_API_KEY")) is not None:
         return api_key
     elif hasattr(rowan, "api_key"):
@@ -23,6 +31,13 @@ def get_api_key() -> str:
 
 
 def smiles_to_stjames(smiles: str) -> stjames.Molecule:
+    """
+    Convert a SMILES string to a `stjames.Molecule` object.
+
+    :param smiles: A string representing the SMILES notation of the molecule.
+    :return: A `stjames.Molecule` object created from the given SMILES string.
+    """
+
     return stjames.Molecule.from_smiles(smiles)
 
 

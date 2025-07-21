@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 import time
-from typing import Iterable, Literal, Optional, TypeAlias, TypedDict
+from typing import Iterable, Literal, TypeAlias, TypedDict
 
 import numpy as np
 import stjames
@@ -95,7 +95,7 @@ apply_nest_asyncio()
 
 
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
-    stjames_mol_dict = rowan.Calculation.retrieve(calculation_uuid)["molecules"][-1]
+    stjames_mol_dict = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
 
     return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())  # type: ignore [attr-defined]
 
@@ -114,7 +114,7 @@ def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
         if status1 < 0:
             raise ValueError("Cannot embed molecule!") from e
     try:
-        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0  # type: ignore [call-arg]
+        assert AllChem.MMFFOptimizeMolecule(rdkm, maxIters=200) >= 0  # type: ignore    [call-arg]
     except AssertionError:
         pass
 
@@ -133,13 +133,14 @@ def run_pka(
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> PKaResults:
     """
     Calculate the pKa of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: pKa calculation Mode
+    :param mode: pKa calculation Mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -173,13 +174,14 @@ def batch_pka(
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> list[PKaResults]:
     """
     Calculate the pKa of a batch of Molecules.
 
     :param mols: list of RDKit Molecules
-    :param mode: pKa calculation mode
+    :param mode: pKa calculation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -217,13 +219,14 @@ async def _single_pka(
     pka_range: tuple[int, int] = (2, 12),
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> PKaResults:
     """
     Calculate the pKa of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: pKa calculation mode
+    :param mode: pKa calculation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param pka_range: range of pKa values to calculate
@@ -236,7 +239,7 @@ async def _single_pka(
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="pka",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -252,16 +255,19 @@ async def _single_pka(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not post.is_finished():
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if not data:
+        raise Exception("Could not retrieve workflow data")
 
     acidic_pkas: list[PKaResult] = []
-    for microstate in data["conjugate_bases"]:
-        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+    for microstate in data.get("conjugate_bases", []):
+        atomic_number = data.get("initial_molecule", {})["atoms"][microstate["atom_index"] - 1][
             "atomic_number"
         ]
         acidic_pkas.append(
@@ -273,8 +279,8 @@ async def _single_pka(
         )
 
     basic_pkas: list[PKaResult] = []
-    for microstate in data["conjugate_acids"]:
-        atomic_number = data["initial_molecule"]["atoms"][microstate["atom_index"] - 1][
+    for microstate in data.get("conjugate_bases", []):
+        atomic_number = data.get("initial_molecule", {})["atoms"][microstate["atom_index"] - 1][
             "atomic_number"
         ]
 
@@ -294,13 +300,14 @@ def run_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> TautomerResults:
     """
     Generate possible tautomers of a Molecule.
 
     :param mol: RDKit Molecule
-    :param mode: Tautomer mode
+    :param mode: Tautomer mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -314,13 +321,14 @@ def batch_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[TautomerResults]:
     """
     Generate possible tautomers of a Molecule.
 
-    :param mol: RDKit Molecule
-    :param mode: Tautomer mode
+    :param mols: RDKit Molecule
+    :param mode: Tautomer mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -339,7 +347,7 @@ async def _single_tautomers(
     mode: TautomerMode = "reckless",
     timeout: int = 600,
     name: str = "Tautomers API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> TautomerResults:
     """
     Generate possible tautomers of a Molecule.
@@ -353,7 +361,7 @@ async def _single_tautomers(
     """
     get_api_key()
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="tautomers",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -362,12 +370,15 @@ async def _single_tautomers(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not post.is_finished():
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if not data:
+        raise Exception("Could not retrieve workflow data")
 
     return [
         {
@@ -375,7 +386,7 @@ async def _single_tautomers(
             "predicted_relative_energy": round(tautomer["predicted_relative_energy"], 2),
             "weight": round(tautomer["weight"], 5),
         }
-        for tautomer in data["tautomers"]
+        for tautomer in data.get("tautomers", [])
     ]
 
 
@@ -386,15 +397,17 @@ def run_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
-    :param mode: Mode to run the energy
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the energy. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -411,15 +424,17 @@ def batch_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[list[ConformerEnergyResult]]:
     """
     Computes the energy for the given molecule.
 
-    :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
-    :param mode: Mode to run the energy
+    :param mols: RDKit Molecule
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the energy. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -443,14 +458,15 @@ async def _single_energy(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[ConformerEnergyResult]:
     """
     Computes the energy for the given molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the energy
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the energy. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param mode: Mode to run the energy
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -461,9 +477,9 @@ async def _single_energy(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -473,9 +489,9 @@ async def _single_energy(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()   # type: ignore [call-arg]
+        cid = conformer.GetId()  # type: ignore    [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=stjames_mol,
@@ -492,19 +508,20 @@ async def _single_energy(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.retrieve_workflow(uuid).is_finished() for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
+    results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
 
     energies = [
-        rowan.Calculation.retrieve(data["calculation_uuid"])["molecules"][-1]["energy"]
+        rowan.retrieve_calculation_molecules(data["calculation_uuid"])[-1]["energy"]
         for data in results
+        if data is not None
     ]
 
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
@@ -518,16 +535,18 @@ def run_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the optimization
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param return_energies: whether to return energies in Hartree too
-    :param mode: Mode to run the optimization
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
@@ -547,15 +566,17 @@ def batch_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[OptimizeResult]:
     """
     Optimize each of a Molecule's conformers and then return the Molecule.
 
-    :param mol: input Molecule
-    :param method: Method with which to compute the Molecule's energy
-    :param engine: Engine to run the optimization
-    :param mode: Mode to run the optimization
+    :param mols: input Molecule
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -582,15 +603,16 @@ async def _single_optimize(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Optimize API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> OptimizeResult:
     """
     Optimize each of a molecule's conformers and then return the molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the optimization
-    :param mode: Mode to run the optimization
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the optimization. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: Mode to run the optimization. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -601,9 +623,9 @@ async def _single_optimize(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -615,10 +637,10 @@ async def _single_optimize(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()  # type: ignore [call-arg]
+        cid = conformer.GetId()  # type: ignore    [call-arg]
         stjames_mol = _rdkit_to_stjames(mol, cid)
 
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=stjames_mol,
@@ -635,23 +657,27 @@ async def _single_optimize(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.retrieve_workflow(uuid).is_finished() for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    results = [rowan.Workflow.retrieve(uuid)["object_data"] for uuid in workflow_uuids]
-    calculations = [rowan.Calculation.retrieve(data["calculation_uuid"]) for data in results]
-    optimization_atoms = [cacluation["molecules"][-1]["atoms"] for cacluation in calculations]
+    results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
+    calculations = [
+        rowan.retrieve_calculation_molecules(data["calculation_uuid"])
+        for data in results
+        if data is not None
+    ]
+    optimization_atoms = [cacluation[-1]["atoms"] for cacluation in calculations]
     optimized_positions = [[atom["position"] for atom in atoms] for atoms in optimization_atoms]
 
-    energies = [cacluation["molecules"][-1]["energy"] for cacluation in calculations]
+    energies = [cacluation[-1]["energy"] for cacluation in calculations]
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
-        conformer.SetPositions(np.array(optimized_positions[i]))   # type: ignore [attr-defined]
+        conformer.SetPositions(np.array(optimized_positions[i]))  # type: ignore  [attr-defined]
 
     return {
         "molecule": mol,
@@ -667,15 +693,17 @@ def run_conformers(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Conformer API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> ConformerResult:
     """
     Generate conformers for a Molecule.
 
     :param mol: RDKit Molecule
     :param num_conformers: number of conformers to generate
-    :param method: Method with which to compute the molecule's energy
-    :param mode: Mode for conformer generation
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: Mode for conformer generation. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -704,15 +732,17 @@ def batch_conformers(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Conformer API Workflow",
-    folder_uuid: stjames.UUID | None = None,
+    folder_uuid: str | None = None,
 ) -> list[ConformerResult]:
     """
     Generate conformers for a Molecule.
 
-    :param mol: RDKit molecule object
+    :param mols: RDKit molecule object
     :param num_conformers: number of conformers to generate
-    :param method: method with which to compute the molecule's energy
-    :param mode: conformer generation mode
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: conformer generation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -746,15 +776,17 @@ async def _single_conformers(
     return_energies: bool = False,
     timeout: int = 600,
     name: str = "Conformer API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> ConformerResult:
     """
     Generate conformers for a molecule.
 
     :param mol: RDKit Molecule
     :param num_conformers: number of conformers to generate
-    :param method: method with which to compute the molecule's energy
-    :param mode: conformer generation mode
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param mode: conformer generation mode. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
@@ -764,9 +796,9 @@ async def _single_conformers(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -774,7 +806,7 @@ async def _single_conformers(
             "This method is too slow; try running this through our web interface."
         )
 
-    post = rowan.Workflow.submit(
+    post = rowan.submit_workflow(
         name=name,
         workflow_type="conformer_search",
         initial_molecule=_rdkit_to_stjames(mol),
@@ -801,12 +833,15 @@ async def _single_conformers(
     )
 
     start = time.time()
-    while not rowan.Workflow.is_finished(post["uuid"]):
+    while not post.is_finished():
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
-    data = rowan.Workflow.retrieve(post["uuid"])["object_data"]
+    data = rowan.retrieve_workflow(post.uuid).data
+
+    if data is None:
+        raise NoConformersError("This molecule has no conformers")
 
     sorted_data = sorted(
         zip(data["energies"], data["conformer_uuids"]),
@@ -826,9 +861,9 @@ async def _single_conformers(
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)
 
     for i, conformer in enumerate(mol.GetConformers()):
-        atoms = rowan.Calculation.retrieve(lowest_n_uuids[i])["molecules"][-1]["atoms"]
+        atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
         pos = [atom["position"] for atom in atoms]
-        conformer.SetPositions(np.array(pos))  # type: ignore [attr-defined]
+        conformer.SetPositions(np.array(pos))  # type: ignore  [attr-defined]
 
     return {
         "molecule": mol,
@@ -843,15 +878,17 @@ def run_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> ChargesResults:
     """
     Computes atom-centered charges for the given Molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
@@ -868,15 +905,17 @@ def batch_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Charges API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> list[ChargesResults]:
     """
     Computes atom-centered charges for the given Molecules.
 
-    :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param mols: RDKit Molecule
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
@@ -900,15 +939,17 @@ async def _single_charges(
     mode: str = "auto",
     timeout: int = 600,
     name: str = "Energy API Workflow",
-    folder_uuid: Optional[stjames.UUID] = None,
+    folder_uuid: str | None = None,
 ) -> ChargesResults:
     """
     Computes atom-centered charges for the given Molecule.
 
     :param mol: RDKit Molecule
-    :param method: Method with which to compute the molecule's energy
-    :param engine: Engine to run the charges
-    :param mode:  Mode to run the charges
+    :param method: Method to use for the calculation.
+    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
+    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
@@ -918,9 +959,9 @@ async def _single_charges(
     get_api_key()
     method = stjames.Method(method)
 
-    if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+    if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
         mol = _embed_rdkit_mol(mol)
-        if mol.GetNumConformers() == 0:   # type: ignore [call-arg]
+        if mol.GetNumConformers() == 0:  # type: ignore    [call-arg]
             raise NoConformersError("This molecule has no conformers")
 
     if method not in FAST_METHODS:
@@ -930,9 +971,9 @@ async def _single_charges(
 
     workflow_uuids = []
     for conformer in mol.GetConformers():
-        cid = conformer.GetId()  # type: ignore [call-arg]
+        cid = conformer.GetId()  # type: ignore    [call-arg]
 
-        post = rowan.Workflow.submit(
+        post = rowan.submit_workflow(
             name=name,
             workflow_type="basic_calculation",
             initial_molecule=_rdkit_to_stjames(mol, cid),
@@ -949,18 +990,23 @@ async def _single_charges(
             folder_uuid=folder_uuid,
         )
 
-        workflow_uuids.append(post["uuid"])
+        workflow_uuids.append(post.uuid)
 
     start = time.time()
-    while not all(rowan.Workflow.is_finished(uuid) for uuid in workflow_uuids):
+    while not all(rowan.retrieve_workflow(uuid).is_finished() for uuid in workflow_uuids):
         await asyncio.sleep(5)
         if time.time() - start > timeout:
             raise TimeoutError("Workflow timed out")
 
     def grab_charges(uuid: str) -> list[float]:
         """Grab mulliken charges by UUID of workflow."""
-        data = rowan.Workflow.retrieve(uuid)["object_data"]
-        calc = rowan.Calculation.retrieve(data["calculation_uuid"])
-        return calc["molecules"][-1]["mulliken_charges"]
+        data = rowan.retrieve_workflow(uuid).data
+        if data is None:
+            raise KeyError("Workflow data not found")
+        molecules = rowan.retrieve_calculation_molecules(data["calculation_uuid"])
+        return molecules[-1]["mulliken_charges"]
 
-    return [{"conformer_index": i, "charges": grab_charges(uuid)} for i, uuid in workflow_uuids]
+    return [
+        {"conformer_index": i, "charges": grab_charges(uuid)}
+        for i, uuid in enumerate(workflow_uuids)
+    ]

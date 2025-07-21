@@ -1,0 +1,35 @@
+site_name: Rowan Python API
+theme:
+  name: material
+  logo: images/deciduous-tree-favicon.png
+  palette:
+    - scheme: default        # ← light mode
+      primary: custom        # tell Material we’re supplying a color
+      accent: teal
+    - scheme: slate          # ← dark mode
+      primary: custom
+      accent: teal
+extra_css:
+  - stylesheets/colors.css
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["."]
+          options:
+            heading_level: 3
+            docstring_style: sphinx     # ← "sphinx", "google" or "numpy"
+            docstring_section_style: table  # or "table" if you prefer grids
+            show_signature_annotations: false
+            merge_init_into_class: true     # if you want __init__ docs on the class
+            separate_signature: true          # uses Black if it’s on your PATH
+            line_length: 88 
+            unwrap_annotated: true 
+nav:
+  - Core API: index.md
+  - Rowan RDKit: rowan_rdkit.md
+  - "← docs.rowansci.com": https://docs.rowansci.com
+
+extra:
+  homepage: https://rowansci.com

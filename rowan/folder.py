@@ -1,95 +1,212 @@
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Self
 
-import stjames
+from pydantic import BaseModel
 
 from .utils import api_client
 
 
-class Folder:
-    @classmethod
-    def create(
-        cls,
-        name: str,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: str = "",
-        starred: bool = False,
-        public: bool = False,
-    ) -> dict[str, Any]:
-        data = {
-            "name": name,
-            "parent_uuid": parent_uuid,
-            "notes": notes,
-            "starred": starred,
-            "public": public,
-        }
-        with api_client() as client:
-            response = client.post("/folder", json=data)
-            response.raise_for_status()
-            return response.json()
+class Folder(BaseModel):
+    """
+    A class representing a folder in the Rowan API.
 
-    @classmethod
-    def retrieve(cls, uuid: stjames.UUID) -> dict[str, Any]:
-        with api_client() as client:
-            response = client.get(f"/folder/{uuid}")
-            response.raise_for_status()
-            return response.json()
+    :ivar uuid: The UUID of the folder.
+    :ivar name: The name of the folder.
+    :ivar parent_uuid: The UUID of the parent folder.
+    :ivar notes: Folder notes.
+    :ivar starred: Whether the folder is starred.
+    :ivar public: Whether the folder is public.
+    :ivar created_at: The date and time the folder was created.
+    """
 
-    @classmethod
+    uuid: str
+    name: str | None = None
+    parent_uuid: str | None = None
+    notes: str = ""
+    starred: bool = False
+    public: bool = False
+    created_at: datetime | None = None
+
+    def __repr__(self) -> str:
+        return f"<Folder name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
+
+    def fetch_latest(self, in_place: bool = False) -> Self:
+        """
+        Fetch the latest folder data from the API.
+
+        This method refreshes the folder object with the latest data from the API.
+
+        :param in_place: Whether to update the current instance in-place.
+        :return: The updated instance (self).
+        :raises HTTPError: If the API request fails.
+        """
+        with api_client() as client:
+            response = client.get(f"/folder/{self.uuid}")
+            response.raise_for_status()
+            data = response.json()
+
+        if not in_place:
+            return self.__class__.model_validate(data)
+
+        updated_folder = self.model_validate(data)
+
+        # Update current instance with new data using class-level model_fields
+        for field_name in self.__class__.model_fields:
+            setattr(self, field_name, getattr(updated_folder, field_name))
+
+        self.model_rebuild()
+
+        return self
+
     def update(
-        cls,
-        uuid: stjames.UUID,
-        name: Optional[str] = None,
-        parent_uuid: Optional[stjames.UUID] = None,
-        notes: Optional[str] = None,
-        starred: Optional[bool] = None,
-        public: Optional[bool] = None,
-    ) -> None:
-        old_data = cls.retrieve(uuid)
+        self,
+        name: str | None = None,
+        parent_uuid: str | None = None,
+        notes: str | None = None,
+        starred: bool | None = None,
+        public: bool | None = None,
+    ) -> Self:
+        """
+        Update a folder.
 
-        new_data = {
-            "name": name if name is not None else old_data["name"],
-            "parent_uuid": parent_uuid if parent_uuid is not None else old_data["parent_uuid"],
-            "notes": notes if notes is not None else old_data["notes"],
-            "starred": starred if starred is not None else old_data["starred"],
-            "public": public if public is not None else old_data["public"],
+        :param name: The new name of the folder.
+        :param parent_uuid: The UUID of the new parent folder.
+        :param notes: A description of the folder.
+        :param starred: Whether the folder is starred.
+        :param public: Whether the folder is public.
+
+        :return: The updated folder object.
+        """
+        payload = {
+            "name": name if name is not None else self.name,
+            "parent_uuid": parent_uuid if parent_uuid is not None else self.parent_uuid,
+            "notes": notes if notes is not None else self.notes,
+            "starred": starred if starred is not None else self.starred,
+            "public": public if public is not None else self.public,
         }
 
         with api_client() as client:
-            response = client.post(f"/folder/{uuid}", json=new_data)
+            response = client.post(f"/folder/{self.uuid}", json=payload)
             response.raise_for_status()
-            return response.json()
+            updated_data = response.json()
 
-    @classmethod
-    def delete(cls, uuid: stjames.UUID) -> None:
+        self.name = updated_data.get("name")
+        self.parent_uuid = updated_data.get("parent_uuid")
+        self.notes = updated_data.get("notes")
+        self.starred = updated_data.get("starred")
+        self.public = updated_data.get("public")
+        return self
+
+    def delete(self) -> None:
+        """
+        Delete the folder and all its contents.
+
+        This is a destructive action, it will delete all the folders and
+        workflows that are inside this folder.
+
+        :raises requests.HTTPError: if the request to the API fails.
+        """
         with api_client() as client:
-            response = client.delete(f"/folder/{uuid}")
+            response = client.delete(f"/folder/{self.uuid}")
             response.raise_for_status()
 
-    @classmethod
-    def list(
-        cls,
-        parent_uuid: Optional[stjames.UUID] = None,
-        name_contains: Optional[str] = None,
-        public: Optional[bool] = None,
-        starred: Optional[bool] = None,
-        page: int = 0,
-        size: int = 10,
-    ) -> dict[str, Any]:
-        params: dict[str, Any] = {
-            "page": page,
-            "size": size,
-        }
-        # Only add optional parameters if they are not None
-        if parent_uuid is not None:
-            params["parent_uuid"] = parent_uuid
-        if name_contains is not None:
-            params["name_contains"] = name_contains
-        if public is not None:
-            params["public"] = public
-        if starred is not None:
-            params["starred"] = starred
 
-        with api_client() as client:
-            response = client.get("/folder", params=params)
-            response.raise_for_status()
-            return response.json()
+def retrieve_folder(uuid: str) -> Folder:
+    """
+    Retrieves a folder from the API by UUID. Folder UUID can be found in the folder's URL.
+
+    :param uuid: The UUID of the folder to retrieve.
+    :return: A Folder object representing the retrieved folder.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.get(f"/folder/{uuid}")
+        response.raise_for_status()
+        return Folder(**response.json())
+
+
+def home_folder() -> Folder:
+    """
+    Retrieves the home folder from the API.
+
+    :return: A Folder object representing the home folder.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.get("/user/me/root_folders")
+        response.raise_for_status()
+        return Folder(**response.json()["user_root"])
+
+
+def list_folders(
+    parent_uuid: str | None = None,
+    name_contains: str | None = None,
+    public: bool | None = None,
+    starred: bool | None = None,
+    page: int = 0,
+    size: int = 10,
+) -> list[Folder]:
+    """
+    Retrieve a list of folders based on the specified criteria.
+
+    :param parent_uuid: UUID of the parent folder to filter by.
+    :param name_contains: Substring to search for in folder names.
+    :param public: Filter folders by their public status.
+    :param starred: Filter folders by their starred status.
+    :param page: Pagination parameter to specify the page number.
+    :param size: Pagination parameter to specify the number of items per page.
+    :return: A list of Folder objects that match the search criteria.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    params: dict[str, Any] = {
+        "page": page,
+        "size": size,
+    }
+
+    if parent_uuid is not None:
+        params["parent_uuid"] = parent_uuid
+    if name_contains is not None:
+        params["name_contains"] = name_contains
+    if public is not None:
+        params["public"] = public
+    if starred is not None:
+        params["starred"] = starred
+
+    with api_client() as client:
+        response = client.get("/folder", params=params)
+        response.raise_for_status()
+        items = response.json()["folders"]
+
+    return [Folder(**item) for item in items]
+
+
+def create_folder(
+    name: str,
+    parent_uuid: str | None = None,
+    notes: str = "",
+    starred: bool = False,
+    public: bool = False,
+) -> Folder:
+    """
+    Create a new folder.
+
+    :param name: The name of the folder.
+    :param parent_uuid: The UUID of the parent folder.
+    :param notes: A description of the folder.
+    :param starred: Whether the folder is starred.
+    :param public: Whether the folder is public.
+    :return: The newly created folder.
+    """
+    data = {
+        "name": name,
+        "parent_uuid": parent_uuid,
+        "notes": notes,
+        "starred": starred,
+        "public": public,
+    }
+    with api_client() as client:
+        response = client.post("/folder", json=data)
+        response.raise_for_status()
+        folder_data = response.json()
+    return Folder(**folder_data)
