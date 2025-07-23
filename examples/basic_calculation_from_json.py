@@ -4,7 +4,7 @@ import rowan
 
 # rowan.api_key = ""
 
-with open("examples/data/workflow_example.json", "r") as f:
+with open("examples/data/workflow_example.json") as f:
     workflow_data = json.load(f)
 
 result = rowan.submit_workflow(
@@ -12,9 +12,6 @@ result = rowan.submit_workflow(
     workflow_data=workflow_data,
     name="basic calculation from json",
     initial_molecule=workflow_data["initial_molecule"],
-)
-
-result.wait_for_result()
-result.fetch_latest(in_place=True)
+).wait_for_result().fetch_latest()
 
 print(result)
