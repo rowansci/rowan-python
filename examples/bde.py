@@ -31,4 +31,7 @@ result = rowan.submit_workflow(
     },
 )
 
+result.wait_for_result()
+result.fetch_latest(in_place=True)
+
 print(result)

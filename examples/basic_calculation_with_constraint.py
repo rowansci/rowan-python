@@ -4,7 +4,6 @@ import rowan
 
 # rowan.api_key = ""
 
-# Run calculation remotely
 result = rowan.submit_workflow(
     initial_molecule=Molecule.from_smiles("CCCC"),
     workflow_type="basic_calculation",
@@ -27,5 +26,8 @@ result = rowan.submit_workflow(
         },
     },
 )
+
+result.wait_for_result()
+result.fetch_latest(in_place=True)
 
 print(result)
