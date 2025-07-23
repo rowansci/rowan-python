@@ -68,7 +68,7 @@ class Workflow(BaseModel):
         """
         Loads workflow data from the database and updates the current instance.
 
-        :param in_place: Whether to update the current instance in-place. 
+        :param in_place: Whether to update the current instance in-place.
         :return: The updated instance (self).
         :raises HTTPError: If the API request fails.
         """
@@ -217,7 +217,7 @@ class Workflow(BaseModel):
 
 
 def submit_workflow(
-    workflow_type: str,
+    workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
     initial_smiles: str | None = None,
@@ -241,6 +241,11 @@ def submit_workflow(
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
     """
+    if workflow_type not in stjames.WORKFLOW_MAPPING:
+        raise ValueError(
+            "Invalid workflow type. Must be one of:\n    " + "\n    ".join(stjames.WORKFLOW_MAPPING)
+        )
+
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
@@ -300,7 +305,7 @@ def list_workflows(
     public: bool | None = None,
     starred: bool | None = None,
     status: int | None = None,
-    workflow_type: str | None = None,
+    workflow_type: stjames.WORKFLOW_NAME | None = None,
     page: int = 0,
     size: int = 10,
 ) -> list[Workflow]:

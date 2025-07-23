@@ -17,11 +17,15 @@ result = rowan.submit_workflow(
             "mode": "auto",
             "opt_settings": {
                 "constraints": [
-                    { "atoms": [4, 3, 2, 1], "constraint_type": "dihedral", "value": 0 }
-                    ]
-                },
-        }
-    }
+                    {
+                        "atoms": [4, 3, 2, 1],
+                        "constraint_type": "dihedral",
+                        "value": 0,
+                    },
+                ]
+            },
+        },
+    },
 )
 
 print(result)
