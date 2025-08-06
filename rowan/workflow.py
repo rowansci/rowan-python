@@ -416,7 +416,7 @@ def submit_conformer_search_workflow(
     conf_gen_mode: str = "rapid",
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
-    transistion_state: bool = False,
+    transition_state: bool = False,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -433,7 +433,7 @@ def submit_conformer_search_workflow(
     for options.
     :param solvent: The solvent to use for the final optimization. See [the list of available solvents](https://github.com/rowansci/stjames-public/blob/master/stjames/solvent.py)
         for valid values. Be aware that not all methods support solvents.
-    :param transistion_state: Whether to optimize the transition state.
+    :param transition_state: Whether to optimize the transition state.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
@@ -457,7 +457,7 @@ def submit_conformer_search_workflow(
         tasks=["optimize"],
         mode=stjames.Mode.AUTO,
         solvent_settings={"solvent": solvent, "model": solvent_model} if solvent else None,
-        opt_settings={"transition_state": transistion_state, "constraints": []},
+        opt_settings={"transition_state": transition_state, "constraints": []},
     )
 
     msos = stjames.MultiStageOptSettings(
@@ -471,7 +471,7 @@ def submit_conformer_search_workflow(
         "conf_gen_mode": conf_gen_mode,
         "mso_mode": "manual",
         "solvent": solvent,
-        "transistion_state": transistion_state,
+        "transition_state": transition_state,
     }
 
     data = {
@@ -644,7 +644,7 @@ def submit_fukui_workflow(
     optimization_method: str = "gfn2_xtb",
     fukui_method: str = "gfn1_xtb",
     solvent_settings: dict[str, str] | None = None,
-    name: str = "Redox Potential Workflow",
+    name: str = "Fukui Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
@@ -652,9 +652,9 @@ def submit_fukui_workflow(
     Submits a fukui workflow to the API.
 
     :param initial_molecule: The molecule to calculate the fukui indices of.
-    :optimization_method: The method to use for the optimization.
-    :fukui_method: The method to use for the fukui calculation.
-    :solvent_settings: The solvent settings to use for the fukui calculation.
+    :param optimization_method: The method to use for the optimization.
+    :param fukui_method: The method to use for the fukui calculation.
+    :param solvent_settings: The solvent settings to use for the fukui calculation.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
@@ -670,9 +670,9 @@ def submit_fukui_workflow(
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
 
     workflow_data = {
-        "opt_settings": optimization_settings,
+        "opt_settings": optimization_settings.model_dump(),
         "opt_engine": stjames.Method(optimization_method).default_engine(),
-        "fukui_settings": fukui_settings,
+        "fukui_settings": fukui_settings.model_dump(),
         "fukui_engine": stjames.Method(fukui_method).default_engine(),
     }
 
