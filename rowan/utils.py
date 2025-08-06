@@ -19,10 +19,10 @@ def get_api_key() -> str:
 
     :return: The API key.
     """
-    if (api_key := os.environ.get("ROWAN_API_KEY")) is not None:
-        return api_key
-    elif hasattr(rowan, "api_key"):
+    if hasattr(rowan, "api_key") and rowan.api_key:
         return rowan.api_key
+    elif (api_key := os.environ.get("ROWAN_API_KEY")) is not None:
+        return api_key
 
     raise ValueError(
         "No API key provided. You can set your API key using 'rowan.api_key = <API-KEY>',"
