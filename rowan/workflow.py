@@ -52,7 +52,7 @@ class Workflow(BaseModel):
     starred: bool
     public: bool
     workflow_type: str = Field(alias="object_type")
-    data: dict[str, Any] = Field(default={}, alias="object_data")
+    data: dict[str, Any] | None = Field(default=None, alias="object_data")
     email_when_complete: bool
     max_credits: int | None = None
     elapsed: float | None = None
