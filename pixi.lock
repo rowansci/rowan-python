@@ -1494,8 +1494,8 @@ packages:
   requires_python: '>=3.8'
 - pypi: ./
   name: rowan-python
-  version: 2.0.4
-  sha256: 3e0c928b6453dce07d8cbdbc5bc4180ba9fdeb96eb244ed811e5403ed6a1786b
+  version: 2.0.3
+  sha256: 3d9cab3000e381372c852d88802cc8d55a03c24ed2cdc423a2b81b79aee5d9dd
   requires_dist:
   - httpx
   - stjames>=0.0.83
