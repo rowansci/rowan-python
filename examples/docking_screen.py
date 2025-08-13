@@ -116,7 +116,8 @@ results = {}
 docking_result_folder = rowan.create_folder(name="Docking results")
 
 
-protein = rowan.create_protein_from_pdb_id("CDK2", "1HCK")
+protein = rowan.create_protein_from_pdb_id("CDK2", "1HCK",
+                                           project_uuid=rowan.default_project().uuid)
 
 protein.sanitize()
 time.sleep(60)

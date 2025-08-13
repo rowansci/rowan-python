@@ -19,4 +19,4 @@ result = rowan.submit_pka_workflow(
     name="Pyridine pKa",
 )
 
-print(result)
+print(result.wait_for_result().fetch_latest(in_place=True))

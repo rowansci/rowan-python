@@ -25,4 +25,4 @@ result = rowan.submit_scan_workflow(
     calculation_engine="xtb",
 )
 
-print(result)
+print(result.wait_for_result().fetch_latest(in_place=True))

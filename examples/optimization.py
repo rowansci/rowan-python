@@ -18,4 +18,4 @@ result = rowan.submit_basic_calculation_workflow(
     name="Water Optimization",
 )
 
-print(result)
+print(result.wait_for_result().fetch_latest(in_place=True))

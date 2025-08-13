@@ -21,4 +21,4 @@ H     1.26740151   0.88347299   0.53620841
     preopt=False,
 )
 
-print(result)
+print(result.wait_for_result().fetch_latest(in_place=True))

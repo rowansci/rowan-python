@@ -28,4 +28,4 @@ result = rowan.submit_conformer_search_workflow(
     initial_molecule=Molecule.from_smiles("CCOCC"),
 )
 
-print(result)
+print(result.wait_for_result().fetch_latest(in_place=True))
