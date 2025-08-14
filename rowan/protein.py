@@ -208,8 +208,11 @@ def create_protein_from_pdb_id(name: str, code: str, project_uuid: str) -> Prote
         protein_data = conversion_response.json()
 
         # Step 2: Use the converted data to create the final protein object.
-        creation_payload = {"name": name, "protein_data": protein_data,
-                            "project_uuid": project_uuid}
+        creation_payload = {
+            "name": name,
+            "protein_data": protein_data,
+            "project_uuid": project_uuid,
+        }
         final_response = client.post("/protein", json=creation_payload)
         final_response.raise_for_status()
 

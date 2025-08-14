@@ -22,7 +22,6 @@ class Project(BaseModel):
     def __repr__(self) -> str:
         return f"<Project name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
-
     def update(
         self,
         name: str | None = None,
@@ -122,6 +121,7 @@ def create_project(
         response.raise_for_status()
         project_data = response.json()
     return Project(**project_data)
+
 
 def default_project() -> Project:
     """
