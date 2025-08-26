@@ -162,7 +162,7 @@ def list_proteins(
     return [Protein(**item) for item in results]
 
 
-def upload_protein(name: str, file_path: Path) -> Protein:
+def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) -> Protein:
     """
     Uploads a protein from a PDB file to the API.
 
@@ -181,7 +181,11 @@ def upload_protein(name: str, file_path: Path) -> Protein:
         protein_data = conversion_response.json()
 
         # Step 2: Use the converted data to create the final protein object.
-        creation_payload = {"name": name, "protein_data": protein_data, "ancestor_uuid": None}
+        creation_payload = {
+            "name": name,
+            "protein_data": protein_data,
+            "project_uuid": project_uuid,
+        }
         final_response = client.post("/protein", json=creation_payload)
         final_response.raise_for_status()
 
@@ -189,7 +193,7 @@ def upload_protein(name: str, file_path: Path) -> Protein:
         return Protein(**final_response.json())
 
 
-def create_protein_from_pdb_id(name: str, code: str, project_uuid: str) -> Protein:
+def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = None) -> Protein:
     """
     Creates a protein from a PDB ID.
 
