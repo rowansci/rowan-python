@@ -1,5 +1,6 @@
-import rowan
 from stjames import Molecule
+
+import rowan
 
 # Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
 # rowan.api_key = "rowan-sk..."
