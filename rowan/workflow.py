@@ -387,20 +387,21 @@ def submit_basic_calculation_workflow(
     if isinstance(method, str):
         method = stjames.Method(method)
 
-    workflow_data = {
-        "settings": {
-            "method": method.name,
-            "tasks": tasks,
-            "mode": mode,
-        },
-        "engine": engine,
-    }
+    workflow = stjames.BasicCalculationWorkflow(
+        initial_molecule=initial_molecule,
+        settings=stjames.Settings(
+            method=method,
+            tasks=tasks,
+            mode=mode,
+        ),
+        engine=engine,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "basic_calculation",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -466,19 +467,20 @@ def submit_conformer_search_workflow(
         optimization_settings=[opt_settings],
     )
 
-    workflow_data = {
-        "multistage_opt_settings": msos.model_dump(),
-        "conf_gen_mode": conf_gen_mode,
-        "mso_mode": "manual",
-        "solvent": solvent,
-        "transition_state": transition_state,
-    }
+    workflow = stjames.ConformerSearchWorkflow(
+        initial_molecule=initial_molecule,
+        multistage_opt_settings=msos,
+        conf_gen_mode=conf_gen_mode,
+        mso_mode="manual",
+        solvent=solvent,
+        transition_state=transition_state,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "conformer_search",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -516,13 +518,17 @@ def submit_solubility_workflow(
     if not temperatures:
         temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
 
-    workflow_data = {"solvents": solvents, "temperatures": temperatures}
+    workflow = stjames.SolubilityWorkflow(
+        initial_smiles=initial_smiles,
+        solvents=solvents,
+        temperatures=temperatures,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "solubility",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -567,18 +573,19 @@ def submit_pka_workflow(
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
 
-    workflow_data = {
-        "pka_range": pka_range,
-        "deprotonate_elements": deprotonate_elements,
-        "protonate_elements": protonate_elements,
-        "mode": mode,
-    }
+    workflow = stjames.pKaWorkflow(
+        initial_molecule=initial_molecule,
+        pka_range=pka_range,
+        deprotonate_elements=deprotonate_elements,
+        protonate_elements=protonate_elements,
+        mode=mode,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "pka",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -618,17 +625,18 @@ def submit_redox_potential_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
-    workflow_data = {
-        "oxidation": oxidization,
-        "reduction": reduction,
-        "mode": mode,
-    }
+    workflow = stjames.RedoxPotentialWorkflow(
+        initial_molecule=initial_molecule,
+        oxidation=oxidization,
+        reduction=reduction,
+        mode=mode,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "redox_potential",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -668,6 +676,12 @@ def submit_fukui_workflow(
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
+
+    stjames.FukuiIndexWorkflow(
+        initial_molecule=initial_molecule,
+        optimization_settings=optimization_settings,
+        fukui_settings=fukui_settings,
+    )
 
     workflow_data = {
         "opt_settings": optimization_settings.model_dump(),
@@ -716,15 +730,16 @@ def submit_tautomer_search_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
-    workflow_data = {
-        "mode": mode,
-    }
+    workflow = stjames.TautomerWorkflow(
+        initial_molecule=initial_molecule,
+        mode=mode,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "tautomers",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -805,24 +820,27 @@ def submit_scan_workflow(
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)
 
-    workflow_data = {
-        "wavefront_propagation": wavefront_propagation,
-        "scan_settings": scan_settings,
-        "calc_engine": calculation_engine,
-        "calc_settings": {
-            "method": calculation_method.name,
-            "corrections": [],
-            "tasks": ["optimize"],
-            "mode": "auto",
-            "opt_settings": {"constraints": []},
-        },
-    }
+    calc_settings = stjames.Settings(
+        method=calculation_method,
+        tasks=["optimize"],
+        corrections=[],
+        mode="auto",
+        opt_settings={"constraints": []},
+    )
+
+    workflow = stjames.ScanWorkflow(
+        initial_molecule=initial_molecule,
+        scan_settings=scan_settings,
+        calc_settings=calc_settings,
+        calc_engine=calculation_engine,
+        wavefront_propagation=wavefront_propagation,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "scan",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -860,19 +878,20 @@ def submit_macropka_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
-    workflow_data = {
-        "min_pH": min_pH,
-        "max_pH": max_pH,
-        "min_charge": min_charge,
-        "max_charge": max_charge,
-        "compute_solvation_energy": compute_solvation_energy,
-    }
+    workflow = stjames.MacropKaWorkflow(
+        initial_smiles=initial_smiles,
+        min_pH=min_pH,
+        max_pH=max_pH,
+        min_charge=min_charge,
+        max_charge=max_charge,
+        compute_solvation_energy=compute_solvation_energy,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "macropka",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -920,25 +939,25 @@ def submit_irc_workflow(
     if isinstance(method, str):
         method = stjames.Method(method)
 
-    workflow_data = {
-        "settings": {
-            "method": method.name,
-            "tasks": [],
-            "corrections": [],
-            "mode": "auto",
-        },
-        "engine": engine,
-        "preopt": preopt,
-        "step_size": step_size,
-        "max_irc_steps": max_irc_steps,
-        "mode": "manual",
-    }
-
+    workflow = stjames.IRCWorkflow(
+        initial_molecule=initial_molecule,
+        settings=stjames.Settings(
+            method=method,
+            tasks=[],
+            corrections=[],
+            mode="auto",
+        ),
+        engine=engine,
+        preopt=preopt,
+        step_size=step_size,
+        max_irc_steps=max_irc_steps,
+        mode="manual",
+    )
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "irc",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -975,19 +994,20 @@ def submit_protein_cofolding_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """  # noqa: E501
-    workflow_data = {
-        "use_msa_server": use_msa_server,
-        "use_potentials": use_potentials,
-        "model": model,
-        "ligand_binding_affinity_index": ligand_binding_affinity_index,
-        "initial_smiles_list": initial_smiles_list,
-        "initial_protein_sequences": initial_protein_sequences,
-    }
+
+    workflow = stjames.ProteinCofoldingWorkflow(
+        use_msa_server=use_msa_server,
+        use_potentials=use_potentials,
+        model=model,
+        ligand_binding_affinity_index=ligand_binding_affinity_index,
+        initial_smiles_list=initial_smiles_list,
+        initial_protein_sequences=initial_protein_sequences,
+    )
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "protein_cofolding",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "max_credits": max_credits,
     }
 
@@ -1029,18 +1049,19 @@ def submit_docking_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    workflow_data = {
-        "target_uuid": protein,
-        "pocket": pocket,
-        "do_csearch": do_csearch,
-        "do_optimization": do_optimization,
-    }
+    workflow = stjames.DockingWorkflow(
+        initial_molecule=initial_molecule,
+        target_uuid=protein,
+        pocket=pocket,
+        do_csearch=do_csearch,
+        do_optimization=do_optimization,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "docking",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
