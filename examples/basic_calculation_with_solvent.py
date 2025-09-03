@@ -1,8 +1,4 @@
 # ruff: noqa
-
-import os
-import sys
-
 from stjames import Molecule, Method
 
 import rowan
