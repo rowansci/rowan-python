@@ -32,6 +32,7 @@ for id, smiles in PROTACs.items():
     workflows.append(
         rowan.submit_solubility_workflow(
             initial_smiles=smiles,
+            solubility_method="fastsolv",
             solvents=["CS(=O)C"],
             temperatures=[293.15],
             folder_uuid=protac_solubility_folder.uuid,
