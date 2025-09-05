@@ -493,7 +493,7 @@ def submit_conformer_search_workflow(
 
 def submit_solubility_workflow(
     initial_smiles: str,
-    solubility_method: Literal["fastsolv", "kingfisher", "esol"] | None = None,
+    solubility_method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,
     name: str = "Solubility Workflow",
@@ -513,9 +513,6 @@ def submit_solubility_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-
-    if not solubility_method:
-        solubility_method = "fastsolv"
 
     if not solvents:
         solvents = ["CCCCCC", "CC1=CC=CC=C1", "C1CCCO1", "CC(=O)OCC", "CCO", "CC#N"]
