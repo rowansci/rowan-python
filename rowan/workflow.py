@@ -492,6 +492,7 @@ def submit_conformer_search_workflow(
 
 
 def submit_solubility_workflow(
+    solubility_method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
     initial_smiles: str,
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,
@@ -502,6 +503,7 @@ def submit_solubility_workflow(
     """
     Submits a solubility workflow to the API.
 
+    :param solubility_method: The name of the desired model for solubility prediction.
     :param initial_smiles: The smiles of the molecule to calculate the solubility of.
     :param solvents: The list of solvents to use for the calculation.
     :param temperatures: The list of temperatures to use for the calculation.
@@ -519,6 +521,7 @@ def submit_solubility_workflow(
         temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
 
     workflow = stjames.SolubilityWorkflow(
+        solubility_method=solubility_method
         initial_smiles=initial_smiles,
         solvents=solvents,
         temperatures=temperatures,
@@ -857,6 +860,7 @@ def submit_macropka_workflow(
     max_pH: int = 14,
     min_charge: int = -2,
     max_charge: int = 2,
+    compute_aqueous_solubility: bool = False
     compute_solvation_energy: bool = True,
     name: str = "Macropka Workflow",
     folder_uuid: str | None = None,
@@ -870,6 +874,7 @@ def submit_macropka_workflow(
     :param max_pH: The maximum pH to use in the macropka workflow.
     :param min_charge: The minimum charge to use in the macropka workflow.
     :param max_charge: The maximum charge to use in the macropka workflow.
+    :param compute_aqueous_solubility: Whether to compute the aqueous solubility for each pH.
     :param compute_solvation_energy: Whether to compute the solvation energy.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
@@ -885,6 +890,7 @@ def submit_macropka_workflow(
         min_charge=min_charge,
         max_charge=max_charge,
         compute_solvation_energy=compute_solvation_energy,
+        compute_aqueous_solubility=compute_aqueous_solubility
     )
 
     data = {
