@@ -47,7 +47,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/67/91/612fc9a73e83e3a989fee4a011efd90f2bd9f59e44082287597166b1102f/stjames-0.0.104-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/f0/e816b819334c25a221ac1e10b2d24a8428233364b6511191cd7894f5390f/stjames-0.0.105-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl
@@ -87,7 +87,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/67/91/612fc9a73e83e3a989fee4a011efd90f2bd9f59e44082287597166b1102f/stjames-0.0.104-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/f0/e816b819334c25a221ac1e10b2d24a8428233364b6511191cd7894f5390f/stjames-0.0.105-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl
@@ -138,7 +138,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/42/14/42b2651a2f46b022ccd948bca9f2d5af0fd8929c4eec235b8d6d844fbe67/filelock-3.19.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/ec/67fbef5d497f86283db54c22eec6f6140243aae73265799baaaa19cd17fb/ghp_import-2.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2a/b1/9ff6578d789a89812ff21e4e0f80ffae20a65d5dd84e7a17873fe3b365be/griffe-1.14.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/03/699f059a54b7873a11bf53389236c06640bf47be590aa87a521d7c4bb044/griffe_pydantic-1.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/bd/63e56c639e7a2f60955bbfd061a232a7c744f105f60b6ea4621d6d079beb/griffe_pydantic-1.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl
@@ -195,7 +195,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/67/91/612fc9a73e83e3a989fee4a011efd90f2bd9f59e44082287597166b1102f/stjames-0.0.104-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/f0/e816b819334c25a221ac1e10b2d24a8428233364b6511191cd7894f5390f/stjames-0.0.105-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
@@ -238,7 +238,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/42/14/42b2651a2f46b022ccd948bca9f2d5af0fd8929c4eec235b8d6d844fbe67/filelock-3.19.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f7/ec/67fbef5d497f86283db54c22eec6f6140243aae73265799baaaa19cd17fb/ghp_import-2.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2a/b1/9ff6578d789a89812ff21e4e0f80ffae20a65d5dd84e7a17873fe3b365be/griffe-1.14.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7b/03/699f059a54b7873a11bf53389236c06640bf47be590aa87a521d7c4bb044/griffe_pydantic-1.1.6-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/bd/63e56c639e7a2f60955bbfd061a232a7c744f105f60b6ea4621d6d079beb/griffe_pydantic-1.1.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl
@@ -295,7 +295,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/67/91/612fc9a73e83e3a989fee4a011efd90f2bd9f59e44082287597166b1102f/stjames-0.0.104-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/f0/e816b819334c25a221ac1e10b2d24a8428233364b6511191cd7894f5390f/stjames-0.0.105-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl
@@ -497,12 +497,12 @@ packages:
   requires_dist:
   - colorama>=0.4
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/7b/03/699f059a54b7873a11bf53389236c06640bf47be590aa87a521d7c4bb044/griffe_pydantic-1.1.6-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/7a/bd/63e56c639e7a2f60955bbfd061a232a7c744f105f60b6ea4621d6d079beb/griffe_pydantic-1.1.7-py3-none-any.whl
   name: griffe-pydantic
-  version: 1.1.6
-  sha256: 57a838dd1c3b5842a7ebada8fd80f2585a25b69c37f73ede19ca20fa9af055e6
+  version: 1.1.7
+  sha256: 516d6dbb6a6587bd0f70c2d23f1dc1b6e2e06eff7d9d37c2db9f0f60ea527af8
   requires_dist:
-  - griffe>=1.6.3
+  - griffe>=1.14
   requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl
   name: h11
@@ -1481,8 +1481,8 @@ packages:
   requires_python: '>=3.9'
 - pypi: ./
   name: rowan-python
-  version: 2.1.2
-  sha256: fc877b3190097ecdb6b67ae3cda2010b1371ecb525c0de4cdfa9d62e46587a82
+  version: 2.1.4
+  sha256: 23ae0c35bb032d73eedf624dea086cbcd3ad59a107238df462d3ccbd448b022e
   requires_dist:
   - httpx
   - stjames>=0.0.104
@@ -1581,10 +1581,10 @@ packages:
   - pygments ; extra == 'tests'
   - littleutils ; extra == 'tests'
   - cython ; extra == 'tests'
-- pypi: https://files.pythonhosted.org/packages/67/91/612fc9a73e83e3a989fee4a011efd90f2bd9f59e44082287597166b1102f/stjames-0.0.104-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/00/f0/e816b819334c25a221ac1e10b2d24a8428233364b6511191cd7894f5390f/stjames-0.0.105-py3-none-any.whl
   name: stjames
-  version: 0.0.104
-  sha256: 00aa4daf07714e649d83b88de78eb217724f40734fafe38aeca7b44f072981a5
+  version: 0.0.105
+  sha256: e9e4a3eb3478e8761855a6274bd79647a965954f2e0ca2490c3b0a2a2441ad25
   requires_dist:
   - pydantic>=2.4
   - numpy
