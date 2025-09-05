@@ -860,8 +860,8 @@ def submit_macropka_workflow(
     max_pH: int = 14,
     min_charge: int = -2,
     max_charge: int = 2,
+    compute_solvation_energy: bool = False,
     compute_aqueous_solubility: bool = False,
-    compute_solvation_energy: bool = True,
     name: str = "Macropka Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -1027,8 +1027,9 @@ def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
-    do_csearch: bool = True,
-    do_optimization: bool = True,
+    do_csearch: bool = False,
+    do_optimization: bool = False,
+    do_pose_refinement: bool = False,
     name: str = "Docking Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -1040,6 +1041,7 @@ def submit_docking_workflow(
     :param initial_molecule: The initial molecule to be docked
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
+    :param do_pose_refinement: Whether or not to optimize output poses.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
@@ -1061,6 +1063,7 @@ def submit_docking_workflow(
         pocket=pocket,
         do_csearch=do_csearch,
         do_optimization=do_optimization,
+        do_pose_refinement=do_pose_refinement
     )
 
     data = {
@@ -1068,6 +1071,111 @@ def submit_docking_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "docking",
         "workflow_data": workflow.model_dump(),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_ion_mobility_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    temperature: float = 300,
+    protonate: bool = False,
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    name: str = "Ion-Mobility Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits an ion-mobility workflow to the API.
+
+    :param initial_molecule: The molecule used in the scan.
+    :param temperature: The temperature at which to predict CCS values.
+    :param protonate: Whether or not to automatically detect protonation site.
+        If `True`, every basic site will be protonated and values returned for the most stable.
+    :param do_csearch: Whether to perform a conformational search on the molecule.
+    :param do_optimization: Whether to perform an optimization on the molecule.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow = stjames.IonMobilityWorkflow(
+        initial_molecule=initial_molecule,
+        temperature=temperature,
+        protonate=protonate,
+        do_csearch=do_csearch,
+        do_optimization=do_optimization,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "ion_mobility",
+        "workflow_data": workflow.model_dump(),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_nmr_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    solvent: str | None = "chloroform",
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    name: str = "NMR Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits an NMR-prediction workflow to the API.
+
+    :param initial_molecule: The molecule used in the scan.
+    :param solvent: The solvent in which to compute NMR spectra.
+    :param do_csearch: Whether to perform a conformational search on the input structure.
+    :param do_optimization: Whether to perform an optimization on the input structure.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow_data = {"initial_molecule": initial_molecule, "solvent": solvent}
+
+    if not do_csearch:
+        workflow_data["conf_gen_settings"] = None
+
+    if not do_optimization:
+        workflow_data["multistage_opt_settings"] = None
+
+    workflow = stjames.NMRSpectroscopyWorkflow.model_validate(workflow_data)
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "nmr",
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
