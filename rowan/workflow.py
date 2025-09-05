@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Any, Self, TypeAlias
+from typing import Any, Literal, Self, TypeAlias
 
 import stjames
 from pydantic import BaseModel, Field
@@ -492,8 +492,8 @@ def submit_conformer_search_workflow(
 
 
 def submit_solubility_workflow(
-    solubility_method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
     initial_smiles: str,
+    solubility_method: Literal["fastsolv", "kingfisher", "esol"] | None = None,
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,
     name: str = "Solubility Workflow",
@@ -514,6 +514,9 @@ def submit_solubility_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
+    if not solubility_method:
+        solubility_method = "fastsolv"
+
     if not solvents:
         solvents = ["CCCCCC", "CC1=CC=CC=C1", "C1CCCO1", "CC(=O)OCC", "CCO", "CC#N"]
 
@@ -521,8 +524,8 @@ def submit_solubility_workflow(
         temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
 
     workflow = stjames.SolubilityWorkflow(
-        solubility_method=solubility_method
         initial_smiles=initial_smiles,
+        solubility_method=solubility_method,
         solvents=solvents,
         temperatures=temperatures,
     )
@@ -860,7 +863,7 @@ def submit_macropka_workflow(
     max_pH: int = 14,
     min_charge: int = -2,
     max_charge: int = 2,
-    compute_aqueous_solubility: bool = False
+    compute_aqueous_solubility: bool = False,
     compute_solvation_energy: bool = True,
     name: str = "Macropka Workflow",
     folder_uuid: str | None = None,
@@ -890,7 +893,7 @@ def submit_macropka_workflow(
         min_charge=min_charge,
         max_charge=max_charge,
         compute_solvation_energy=compute_solvation_energy,
-        compute_aqueous_solubility=compute_aqueous_solubility
+        compute_aqueous_solubility=compute_aqueous_solubility,
     )
 
     data = {
