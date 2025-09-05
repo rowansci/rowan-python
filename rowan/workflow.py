@@ -1084,18 +1084,19 @@ def submit_ion_mobility_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
-    workflow_data = {
-        "temperature": temperature,
-        "protonate": protonate,
-        "do_csearch": do_csearch,
-        "do_optimization": do_optimization,
-    }
+    workflow = stjames.IonMobilityWorkflow(
+        initial_molecule=initial_molecule,
+        temperature=temperature,
+        protonate=protonate,
+        do_csearch=do_csearch,
+        do_optimization=do_optimization,
+    )
 
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "ion_mobility",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1133,7 +1134,7 @@ def submit_nmr_workflow(
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
-    workflow_data = {"solvent": solvent}
+    workflow_data = {"initial_molecule": initial_molecule, "solvent": solvent}
 
     if not do_csearch:
         workflow_data["conf_gen_settings"] = None
@@ -1141,11 +1142,13 @@ def submit_nmr_workflow(
     if not do_optimization:
         workflow_data["multistage_opt_settings"] = None
 
+    workflow = stjames.NMRSpectroscopyWorkflow.model_validate(workflow_data)
+
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "nmr",
-        "workflow_data": workflow_data,
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
