@@ -1,1 +1,3 @@
-API_URL = "https://api.rowansci.com"
+import os
+
+API_URL = os.getenv("ROWAN_API_URL", default="https://api.rowansci.com")

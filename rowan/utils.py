@@ -47,6 +47,7 @@ def api_client() -> Generator[httpx.Client, None, None]:
     with httpx.Client(
         base_url=API_URL,
         headers={"X-API-Key": get_api_key()},
+        timeout=30,
     ) as client:
         yield client
 
