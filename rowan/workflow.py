@@ -352,6 +352,7 @@ def list_workflows(
 def submit_basic_calculation_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     method: stjames.Method | str = "uma_m_omol",
+    basis_set: stjames.BasisSet | str | None = None,
     tasks: list[str] | None = None,
     mode: str = "auto",
     engine: str = "omol25",
@@ -364,6 +365,7 @@ def submit_basic_calculation_workflow(
 
     :param initial_molecule: The molecule to perform the calculation on.
     :param method: The method to use for the calculation.
+    :param basis_set: The basis set to use (if any).
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     for options.
     :param tasks: A list of tasks to perform for the calculation.
@@ -391,6 +393,7 @@ def submit_basic_calculation_workflow(
         initial_molecule=initial_molecule,
         settings=stjames.Settings(
             method=method,
+            basis_set=basis_set,
             tasks=tasks,
             mode=mode,
         ),
