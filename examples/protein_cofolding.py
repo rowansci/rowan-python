@@ -12,6 +12,8 @@ result = rowan.submit_protein_cofolding_workflow(
     ],
     ligand_binding_affinity_index=0,
     name="Torcetrapib Cofolding",
+    do_pose_refinement=True,
+    compute_strain=True,
 )
 
 print(result.wait_for_result().fetch_latest(in_place=True))
