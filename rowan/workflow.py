@@ -980,6 +980,8 @@ def submit_protein_cofolding_workflow(
     ligand_binding_affinity_index: int | None = None,
     use_msa_server: bool = True,
     use_potentials: bool = False,
+    compute_strain: bool = False,
+    do_pose_refinement: bool = False,
     name: str = "Cofolding Workflow",
     model: str = stjames.CofoldingModel.BOLTZ_2.value,
     folder_uuid: str | None = None,
@@ -993,6 +995,8 @@ def submit_protein_cofolding_workflow(
     :param ligand_binding_affinity_index: The index of the ligand for which to compute the binding affinity.
     :param use_msa_server: Whether to use the MSA server for the computation.
     :param use_potentials: Whether to use potentials for the computation.
+    :param do_pose_refinement: whether to optimize non-rotatable bonds in output poses
+    :param compute_strain: whether to compute the strain of the pose (if `pose_refinement` is enabled)
     :param name: The name of the workflow.
     :param model: The model to use for the computation.
     :param folder_uuid: The UUID of the folder to store the workflow in.
@@ -1008,7 +1012,10 @@ def submit_protein_cofolding_workflow(
         ligand_binding_affinity_index=ligand_binding_affinity_index,
         initial_smiles_list=initial_smiles_list,
         initial_protein_sequences=initial_protein_sequences,
+        do_pose_refinement=do_pose_refinement,
+        compute_strain=compute_strain,
     )
+
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
@@ -1063,7 +1070,7 @@ def submit_docking_workflow(
         pocket=pocket,
         do_csearch=do_csearch,
         do_optimization=do_optimization,
-        do_pose_refinement=do_pose_refinement
+        do_pose_refinement=do_pose_refinement,
     )
 
     data = {
@@ -1175,6 +1182,44 @@ def submit_nmr_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "nmr",
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_strain_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    name: str = "Strain Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a strain workflow to the API.
+
+    :param initial_molecule: The molecule used in the scan.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump()
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+
+    workflow = stjames.StrainWorkflow(initial_molecule=initial_molecule)
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "strain",
         "workflow_data": workflow.model_dump(serialize_as_any=True),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
