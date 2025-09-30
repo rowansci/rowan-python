@@ -37,6 +37,7 @@ class Workflow(BaseModel):
     :var max_credits: The maximum number of credits to use for the workflow.
     :var elapsed: The elapsed time of the workflow.
     :var credits_charged: The number of credits charged for the workflow.
+    :var logfile: The workflow's logfile.
     ...
     """
 
@@ -57,6 +58,7 @@ class Workflow(BaseModel):
     max_credits: int | None = None
     elapsed: float | None = None
     credits_charged: float
+    logfile: str = Field(alias="object_logfile")
 
     class Config:  # noqa: D106
         validate_by_name = True
