@@ -13,7 +13,6 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         name=f"{name} {method} optimization",
         workflow_data={
             "settings": {"method": method, "tasks": ["optimize"]},
-            "engine": "omol25",
         },
     )
 
@@ -33,7 +32,6 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
                 "tasks": ["energy"],
                 "solvent_settings": {"solvent": "water", "model": "cpcmx"},
             },
-            "engine": "omol25",
         },
     )
 

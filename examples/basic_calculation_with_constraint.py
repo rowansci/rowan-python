@@ -9,7 +9,6 @@ result = rowan.submit_workflow(
     workflow_type="basic_calculation",
     name="Constrained Butane",
     workflow_data={
-        "engine": "xtb",
         "settings": {
             "method": "gfn2_xtb",
             "tasks": ["optimize"],
