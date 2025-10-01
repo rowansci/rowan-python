@@ -5,6 +5,7 @@ from typing import Any, Literal, Self, TypeAlias
 import stjames
 from pydantic import BaseModel, Field
 from rdkit import Chem
+from stjames.optimization.freezing_string_method import FSMSettings
 
 from .protein import Protein
 from .utils import api_client
@@ -1225,6 +1226,54 @@ def submit_strain_workflow(
         "workflow_type": "strain",
         "workflow_data": workflow.model_dump(serialize_as_any=True),
         "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_double_ended_ts_search_workflow(
+    reactant: dict[str, Any] | StJamesMolecule,
+    product: dict[str, Any] | StJamesMolecule,
+    calculation_settings: stjames.Settings | dict[str, Any] | None = None,
+    search_settings: FSMSettings | dict[str, Any] | None = None,
+    optimize_inputs: bool = False,
+    optimize_ts: bool = True,
+    name: str = "Double-Ended TS Search Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a double-ended transition state search workflow to the API.
+
+    :param reactant: reactant Molecule.
+    :param product: product Molecule.
+    :param calculation_settings: Settings to use for calculations.
+    :param search_settings: settings to use for the transition state search.
+    :param optimize_inputs: Whether to optimize the reactant and product before the search.
+    :param optimize_ts: Whether to optimize the found transition state.
+    :param name: name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: Workflow object representing the submitted workflow.
+    """
+    workflow = stjames.DoubleEndedTSSearchWorkflow(
+        reactant=reactant,
+        product=product,
+        calculation_settings=calculation_settings,
+        search_settings=search_settings,
+        optimize_inputs=optimize_inputs,
+        optimize_ts=optimize_ts,
+    )
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "double_ended_ts_search",
+        "workflow_data": workflow.model_dump(),
+        "initial_molecule": reactant if isinstance(reactant, dict) else reactant.model_dump(),
         "max_credits": max_credits,
     }
 
