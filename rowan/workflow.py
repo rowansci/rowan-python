@@ -366,8 +366,7 @@ def submit_basic_calculation_workflow(
 
     :param initial_molecule: The molecule to perform the calculation on.
     :param method: The method to use for the calculation.
-    :param basis_set: The basis set to use (if any).
-    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param basis_set: The basis_set to use (if any).
     for options.
     :param tasks: A list of tasks to perform for the calculation.
     :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
