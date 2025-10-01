@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "2.1.6"
+version = "2.1.7"
 description = "Rowan Python Library"
 readme = "README.md"
 requires-python = ">=3.9"
