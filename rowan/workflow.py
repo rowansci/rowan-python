@@ -356,7 +356,7 @@ def submit_basic_calculation_workflow(
     basis_set: stjames.BasisSet | str | None = None,
     tasks: list[str] | None = None,
     mode: str = "auto",
-    engine: str = "omol25",
+    engine: str | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -366,8 +366,7 @@ def submit_basic_calculation_workflow(
 
     :param initial_molecule: The molecule to perform the calculation on.
     :param method: The method to use for the calculation.
-    :param basis_set: The basis set to use (if any).
-    See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
+    :param basis_set: The basis_set to use (if any).
     for options.
     :param tasks: A list of tasks to perform for the calculation.
     :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
@@ -796,7 +795,7 @@ def submit_descriptors_workflow(
 def submit_scan_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
-    calculation_engine: str = "omol25",
+    calculation_engine: str | None = None,
     calculation_method: stjames.Method | str = "uma_m_omol",
     wavefront_propagation: bool = True,
     name: str = "Scan Workflow",
@@ -839,7 +838,7 @@ def submit_scan_workflow(
         initial_molecule=initial_molecule,
         scan_settings=scan_settings,
         calc_settings=calc_settings,
-        calc_engine=calculation_engine,
+        calc_engine=calculation_engine or calculation_method.default_engine(),
         wavefront_propagation=wavefront_propagation,
     )
 
@@ -915,7 +914,6 @@ def submit_macropka_workflow(
 def submit_irc_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
     method: stjames.Method | str = "uma_m_omol",
-    engine: str = "omol25",
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
@@ -930,7 +928,6 @@ def submit_irc_workflow(
     :param method: The computational method to use for the IRC calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     for options.
-    :param engine: The computational engine to use for the calculation. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
     :param preopt: Whether to perform a pre-optimization of the molecule.
     :param step_size: The step size to use for the IRC calculation.
     :param max_irc_steps: The maximum number of IRC steps to perform.
@@ -957,12 +954,12 @@ def submit_irc_workflow(
             corrections=[],
             mode="auto",
         ),
-        engine=engine,
         preopt=preopt,
         step_size=step_size,
         max_irc_steps=max_irc_steps,
         mode="manual",
     )
+
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
