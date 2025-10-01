@@ -51,6 +51,7 @@ result = rowan.submit_double_ended_ts_search_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/workflow/{result.uuid}")
 result.wait_for_result().fetch_latest(in_place=True)
 
+assert result and result.data
 print(result.data["forward_string_distances"])
 print(result.data["backward_string_distances"])
 
