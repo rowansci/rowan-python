@@ -120,7 +120,7 @@ ignore = [
 convention = "numpy"
 
 [tool.mypy]
-exclude = ["scripts", "benchmark", "build", "subrepos/stjames/tests", "subrepos/aimnet2calc", "feature", "examples"]
+exclude = ["examples"]
 plugins = ["pydantic.mypy"]
 warn_unused_ignores = true
 
