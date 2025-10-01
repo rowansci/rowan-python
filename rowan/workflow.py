@@ -286,7 +286,9 @@ def retrieve_workflow(uuid: str) -> Workflow:
         return Workflow(**response.json())
 
 
-def retrieve_calculation_molecules(uuid: str, return_frequencies: bool = False) -> list[dict[str, Any]]:
+def retrieve_calculation_molecules(
+    uuid: str, return_frequencies: bool = False
+) -> list[dict[str, Any]]:
     """
     Retrieves a list of molecules from a calculation.
 
@@ -296,8 +298,9 @@ def retrieve_calculation_molecules(uuid: str, return_frequencies: bool = False) 
     :raises HTTPError: If the API request fails.
     """
     with api_client() as client:
-        response = client.get(f"/calculation/{uuid}/molecules",
-                              params={"return_frequencies": return_frequencies})
+        response = client.get(
+            f"/calculation/{uuid}/molecules", params={"return_frequencies": return_frequencies}
+        )
         response.raise_for_status()
         return response.json()
 
