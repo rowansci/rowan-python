@@ -402,7 +402,7 @@ def submit_basic_calculation_workflow(
             tasks=tasks,
             mode=mode,
         ),
-        engine=engine,
+        engine=engine or method.default_engine(),
     )
 
     data = {
