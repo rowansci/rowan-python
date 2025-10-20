@@ -844,7 +844,7 @@ async def _single_conformers(
         raise NoConformersError("This molecule has no conformers")
 
     sorted_data = sorted(
-        zip(data["energies"], data["conformer_uuids"]),
+        zip(data["energies"], data["conformer_uuids"], strict=True),
         key=lambda x: x[0],
     )
 

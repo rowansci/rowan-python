@@ -1,6 +1,6 @@
-from pathlib import Path
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Literal, Self, TypeAlias
 
 import stjames
@@ -231,8 +231,9 @@ class Workflow(BaseModel):
             response = client.get(f"/workflow/{self.uuid}/get_msa_files")
             response.raise_for_status()
 
-        with open(path / f"{self.name}-msa.tar.gz", 'wb') as f:
-                f.write(response.content)
+        with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
+            f.write(response.content)
+
 
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
