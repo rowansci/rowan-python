@@ -1329,7 +1329,7 @@ def submit_pose_analysis_md_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    workflow = stjames.PoseAnalysisMoleculeDynamicsWorkflow(
+    workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
         protein_uuid=protein,
         initial_smiles=initial_smiles,
         num_trajectories=num_trajectories,
