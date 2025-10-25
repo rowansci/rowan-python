@@ -566,7 +566,7 @@ def submit_pka_workflow(
     Submits a pKa workflow to the API.
 
     :param initial_molecule: The molecule to calculate the pKa of.
-        Valid input times include `stjames.Molecule`, RDKit molecule, and SMILES.
+        Valid input types include `stjames.Molecule`, RDKit molecule, and SMILES.
     :param pka_range: The range of pKa values to calculate.
     :param method: The algorithm used to compute pKa values.
     :param solvent: The solvent in which pKa values will be computed.
