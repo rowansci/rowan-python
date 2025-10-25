@@ -1313,7 +1313,7 @@ def submit_pose_analysis_md_workflow(
     """
     Submits a pose-analysis MD workflow to the API.
 
-    :param protein: The *holo* protein on which MD will be run. 
+    :param protein: The *holo* protein on which MD will be run.
         Can be input as a uuid or a Protein object.
     :param initial_smiles: The SMILES for the ligand.
     :param num_trajectories: The number of trajectories to run.
@@ -1350,5 +1350,3 @@ def submit_pose_analysis_md_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
