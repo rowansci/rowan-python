@@ -14,7 +14,7 @@ import rowan
 # rowan.api_key = ""
 
 result = rowan.submit_pka_workflow(
-    initial_molecule=Molecule.from_smiles("n1ccccc1"),
+    initial_molecule=Molecule.from_smiles("c1ccccc1O"),
     method="aimnet2_wagen2024",
     mode="reckless",
     name="Pyridine pKa",
@@ -23,7 +23,7 @@ result = rowan.submit_pka_workflow(
 print(result.wait_for_result().fetch_latest(in_place=True))
 
 result2 = rowan.submit_pka_workflow(
-    initial_molecule="n1ccccc1",
+    initial_molecule="c1ccccc1O",
     method="chemprop_nevolianis2025",
     name="Pyridine pKa (ML)",
 )
