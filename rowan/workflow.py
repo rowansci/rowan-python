@@ -553,7 +553,7 @@ def submit_solubility_workflow(
 def submit_pka_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
     pka_range: tuple[int, int] = (2, 12),
-    method: Literal["rowan_pka", "chemprop"] = "chemprop",
+    method: Literal["aimnet2_wagen2024", "chemprop_nevolianis2025"] = "chemprop_nevolianis2025",
     solvent: str = "water",
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
@@ -581,7 +581,7 @@ def submit_pka_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    initial_smiles: str | None = None
+    initial_smiles: str = ""
     initial_stjames_mol: StJamesMolecule | None = None
 
     if isinstance(initial_molecule, dict):
@@ -612,7 +612,8 @@ def submit_pka_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "pka",
         "workflow_data": workflow.model_dump(),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": initial_stjames_mol.model_dump() if initial_stjames_mol else None,
+        "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
 
