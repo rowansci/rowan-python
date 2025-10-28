@@ -553,7 +553,7 @@ def submit_solubility_workflow(
 def submit_pka_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
     pka_range: tuple[int, int] = (2, 12),
-    method: Literal["aimnet2_wagen2024", "chemprop_nevolianis2025"] = "chemprop_nevolianis2025",
+    method: Literal["aimnet2_wagen2024", "chemprop_nevolianis2025"] = "aimnet2_wagen2024",
     solvent: str = "water",
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
