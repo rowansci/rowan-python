@@ -15,8 +15,17 @@ import rowan
 
 result = rowan.submit_pka_workflow(
     initial_molecule=Molecule.from_smiles("n1ccccc1"),
+    method="aimnet2_wagen2024",
     mode="reckless",
     name="Pyridine pKa",
 )
 
 print(result.wait_for_result().fetch_latest(in_place=True))
+
+result2 = rowan.submit_pka_workflow(
+    initial_molecule="n1ccccc1",
+    method="chemprop_nevolianis2025",
+    name="Pyridine pKa (ML)",
+)
+
+print(result2.wait_for_result().fetch_latest(in_place=True))

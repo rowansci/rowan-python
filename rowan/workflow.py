@@ -551,8 +551,10 @@ def submit_solubility_workflow(
 
 
 def submit_pka_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
     pka_range: tuple[int, int] = (2, 12),
+    method: Literal["aimnet2_wagen2024", "chemprop_nevolianis2025"] = "chemprop_nevolianis2025",
+    solvent: str = "water",
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,
     mode: str = "careful",
@@ -564,7 +566,10 @@ def submit_pka_workflow(
     Submits a pKa workflow to the API.
 
     :param initial_molecule: The molecule to calculate the pKa of.
+        Valid input types include `stjames.Molecule`, RDKit molecule, and SMILES.
     :param pka_range: The range of pKa values to calculate.
+    :param method: The algorithm used to compute pKa values.
+    :param solvent: The solvent in which pKa values will be computed.
     :param deprotonate_elements: The elements to deprotonate. Given by atomic number.
     :param protonate_elements: The elements to protonate. Given by atomic number.
     :param mode: The mode to run the calculation in. See
@@ -576,20 +581,30 @@ def submit_pka_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+    initial_smiles: str = ""
+    initial_stjames_mol: StJamesMolecule | None = None
+
+    if isinstance(initial_molecule, dict):
+        initial_stjames_mol = StJamesMolecule.model_validate(initial_molecule)
+    elif isinstance(initial_molecule, StJamesMolecule):
+        initial_stjames_mol = initial_molecule
     elif isinstance(initial_molecule, RdkitMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_stjames_mol = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+    elif isinstance(initial_molecule, str):
+        initial_smiles = initial_molecule
 
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
 
     workflow = stjames.pKaWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=initial_stjames_mol,
+        initial_smiles=initial_smiles,
         pka_range=pka_range,
         deprotonate_elements=deprotonate_elements,
         protonate_elements=protonate_elements,
         mode=mode,
+        solvent=solvent,
+        microscopic_pka_method=method,
     )
 
     data = {
@@ -597,7 +612,8 @@ def submit_pka_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "pka",
         "workflow_data": workflow.model_dump(),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": initial_stjames_mol.model_dump() if initial_stjames_mol else None,
+        "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
 
@@ -1050,7 +1066,7 @@ def submit_docking_workflow(
     """
     Submits a Docking workflow to the API.
 
-    :param protein: The protein to dock. Can be fed as a uuid or a Protein object.
+    :param protein: The protein to dock. Can be input as a uuid or a Protein object.
     :param initial_molecule: The initial molecule to be docked
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
@@ -1276,6 +1292,58 @@ def submit_double_ended_ts_search_workflow(
         "workflow_type": "double_ended_ts_search",
         "workflow_data": workflow.model_dump(),
         "initial_molecule": reactant if isinstance(reactant, dict) else reactant.model_dump(),
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_pose_analysis_md_workflow(
+    protein: str | Protein,
+    initial_smiles: str,
+    num_trajectories: int = 1,
+    simulation_time_ns: int = 10,
+    ligand_residue_name: str = "LIG",
+    name: str = "Pose-Analysis MD Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a pose-analysis MD workflow to the API.
+
+    :param protein: The *holo* protein on which MD will be run.
+        Can be input as a uuid or a Protein object.
+    :param initial_smiles: The SMILES for the ligand.
+    :param num_trajectories: The number of trajectories to run.
+    :param simulation_time_ns: How long to run the simulation for, in nanoseconds.
+    :param ligand_residue_name: The name of the residue corresponding to the ligand.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted IRC workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    if isinstance(protein, Protein):
+        protein = protein.uuid
+
+    workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
+        protein_uuid=protein,
+        initial_smiles=initial_smiles,
+        num_trajectories=num_trajectories,
+        simulation_time_ns=simulation_time_ns,
+        ligand_residue_name=ligand_residue_name,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "pose_analysis_md",
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
 
