@@ -1056,6 +1056,9 @@ def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
+    executable: str = "vina",
+    scoring_function: str = "vinardo",
+    exhaustiveness: float = 8,
     do_csearch: bool = False,
     do_optimization: bool = False,
     do_pose_refinement: bool = False,
@@ -1068,13 +1071,16 @@ def submit_docking_workflow(
 
     :param protein: The protein to dock. Can be input as a uuid or a Protein object.
     :param initial_molecule: The initial molecule to be docked
+    :param executable: Which docking implementation to use.
+    :param scoring_function: Which docking scoring function to use.
+    :param exhaustiveness: Which exhaustiveness to employ.
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param do_pose_refinement: Whether or not to optimize output poses.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted IRC workflow.
+    :return: A Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
 
@@ -1086,6 +1092,12 @@ def submit_docking_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
+    docking_settings = {
+        "executable": executable,
+        "exhaustiveness": exhaustiveness,
+        "scoring_function": scoring_function,
+    }
+
     workflow = stjames.DockingWorkflow(
         initial_molecule=initial_molecule,
         target_uuid=protein,
@@ -1093,6 +1105,7 @@ def submit_docking_workflow(
         do_csearch=do_csearch,
         do_optimization=do_optimization,
         do_pose_refinement=do_pose_refinement,
+        docking_settings=docking_settings,
     )
 
     data = {
@@ -1323,7 +1336,7 @@ def submit_pose_analysis_md_workflow(
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted IRC workflow.
+    :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
 
@@ -1344,6 +1357,59 @@ def submit_pose_analysis_md_workflow(
         "workflow_type": "pose_analysis_md",
         "workflow_data": workflow.model_dump(serialize_as_any=True),
         "initial_smiles": initial_smiles,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_batch_docking_workflow(
+    smiles_list: list[str],
+    protein: str | Protein,
+    pocket: list[list[float]],
+    executable: str = "qvina2",
+    scoring_function: str = "vina",
+    exhaustiveness: float = 8,
+    name: str = "Batch Docking Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a batch docking workflow to the API.
+
+    :param smiles_list: The SMILES strings to dock.
+    :param protein: The protein to dock. Can be input as a uuid or a Protein object.
+    :param executable: Which docking implementation to use.
+    :param scoring_function: Which docking scoring function to use.
+    :param exhaustiveness: Which exhaustiveness to employ.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted batch docking workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    docking_settings = {
+        "executable": executable,
+        "exhaustiveness": exhaustiveness,
+        "scoring_function": scoring_function,
+    }
+
+    workflow = stjames.BatchDockingWorkflow(
+        smiles_list=smiles_list,
+        target=protein,
+        pocket=pocket,
+        docking_settings=docking_settings,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "batch_docking",
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
         "max_credits": max_credits,
     }
 
