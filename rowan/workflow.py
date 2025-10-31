@@ -1,3 +1,4 @@
+from pathlib import Path
 import time
 from datetime import datetime
 from typing import Any, Literal, Self, TypeAlias
@@ -216,6 +217,22 @@ class Workflow(BaseModel):
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
+    def download_msa_files(self, path: Path | None = None) -> None:
+        if self.workflow_type != "msa":
+            raise ValueError("This workflow is not an MSA workflow.")
+
+        if path is None:
+            path = Path.cwd()
+
+        if not path.exists():
+            path.mkdir(parents=True, exist_ok=True)
+
+        with api_client() as client:
+            response = client.get(f"/workflow/{self.uuid}/get_msa_files")
+            response.raise_for_status()
+
+        with open(path / f"{self.name}-msa.tar.gz", 'wb') as f:
+                f.write(response.content)
 
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
