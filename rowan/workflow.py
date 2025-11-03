@@ -1417,7 +1417,7 @@ def submit_batch_docking_workflow(
     }
 
     workflow = stjames.BatchDockingWorkflow(
-        smiles_list=smiles_list,
+        initial_smiles_list=smiles_list,
         target=protein,
         pocket=pocket,
         docking_settings=docking_settings,
