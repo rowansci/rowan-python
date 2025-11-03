@@ -24,8 +24,8 @@ plugins:
             show_signature_annotations: false
             merge_init_into_class: true     # if you want __init__ docs on the class
             separate_signature: true          # uses Black if it’s on your PATH
-            line_length: 88 
-            unwrap_annotated: true 
+            line_length: 88
+            unwrap_annotated: true
 nav:
   - Core API: index.md
   - Rowan RDKit: rowan_rdkit.md
