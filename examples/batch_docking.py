@@ -2,7 +2,6 @@ import time
 
 import rowan
 
-
 ligands = [
     "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1",
     "CCC(C)CN=C1NCC2(CCCOC2)CN1",
