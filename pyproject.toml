@@ -42,6 +42,7 @@ rdkit-stubs = ">=0.7"
 mkdocs-material = "*"
 mkdocstrings-python = "*"
 griffe-pydantic = "*"
+python-dotenv = "*"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
