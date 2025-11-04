@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +11,9 @@ from stjames.optimization.freezing_string_method import FSMSettings
 
 from .protein import Protein
 from .utils import api_client
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 StJamesMolecule: TypeAlias = stjames.Molecule
@@ -288,6 +292,68 @@ def submit_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
+
+
+def batch_submit_workflow(
+    workflow_type: stjames.WORKFLOW_NAME,
+    workflow_data: dict[str, Any] | None = None,
+    initial_molecules: list[dict[str, Any] | StJamesMolecule | RdkitMol] | None = None,
+    initial_smileses: list[str] | None = None,
+    names: list[str] | None = None,
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a batch of workflows to the API. Each workflow will be submitted with the 
+    same workflow type, workflow data, and folder UUID, but with different initial molecules and/or 
+    SMILES strings. 
+
+    :param workflow_type: The type of workflow to submit.
+    :param workflow_data: A dictionary containing the data required to run the workflow.
+    :param initial_molecules: A list of molecule objects to use as the initial molecules in the workflow.
+    At least one of a molecule or SMILES must be provided.
+    :param initial_smileses: A list of SMILES strings to use as the initial molecules in the workflow.
+    At least one of a molecule or SMILES must be provided.
+    :param names: A list of names to give to the workflows.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow. This applies per workflow, not for the batch.
+    :return: A list of Workflow objects representing the submitted workflows.
+    :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
+    :raises HTTPError: If the API request fails.
+    """
+    if workflow_type not in stjames.WORKFLOW_MAPPING:
+        raise ValueError(
+            "Invalid workflow type. Must be one of:\n    " + "\n    ".join(stjames.WORKFLOW_MAPPING)
+        )
+
+    if initial_molecules and initial_smileses:
+        raise ValueError("You must provide either `initial_molecules` or `initial_smileses`, "
+                         "but not both.")
+
+    if names:
+        if initial_molecules and len(names) != len(initial_molecules):
+            logger.warning("The number of names is not the same as the number of initial "
+                           "molecules. Generic names of the form 'Batch Workflow {i}' "
+                           "will be used.")
+        if initial_smileses and len(names) != len(initial_smileses):
+            logger.warning("The number of names is not the same as the number of initial SMILES."
+                           "Generic names of the form 'Batch Workflow {i}' will be used.")
+
+    data = {
+        "names": names,
+        "folder_uuid": folder_uuid,
+        "workflow_type": workflow_type,
+        "workflow_data": workflow_data,
+        "max_credits": max_credits,
+        "initial_molecules": initial_molecules,
+        "initial_smileses": initial_smileses,
+    }
+
+
+    with api_client() as client:
+        response = client.post("/workflow/batch_submit", json=data)
+        response.raise_for_status()
+        return [Workflow(**workflow_data) for workflow_data in response.json()]
 
 
 def retrieve_workflow(uuid: str) -> Workflow:
