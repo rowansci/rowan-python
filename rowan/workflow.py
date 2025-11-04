@@ -221,7 +221,7 @@ class Workflow(BaseModel):
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
-    def download_msa_files(self, path: Path | None = None) -> None:
+    def download_msa_files(self, msa_format: stjames.MSAFormat, path: Path | None = None) -> None:
         if self.workflow_type != "msa":
             raise ValueError("This workflow is not an MSA workflow.")
 
@@ -232,7 +232,8 @@ class Workflow(BaseModel):
             path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
-            response = client.get(f"/workflow/{self.uuid}/get_msa_files")
+            response = client.get(f"/workflow/{self.uuid}/get_msa_files",
+                                  params={"msa_format": msa_format.value})
             response.raise_for_status()
 
         with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
@@ -1493,6 +1494,35 @@ def submit_batch_docking_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "batch_docking",
+        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_msa_workflow(
+    initial_protein_sequences: list[stjames.ProteinSequence | str],
+    output_formats: list[stjames.MSAFormat],
+    name: str = "MSA Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits an MSA workflow to the API.
+    """
+    workflow = stjames.MSAWorkflow(
+        initial_protein_sequences=initial_protein_sequences,
+        output_formats=output_formats,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "msa",
         "workflow_data": workflow.model_dump(serialize_as_any=True),
         "max_credits": max_credits,
     }
