@@ -232,8 +232,9 @@ class Workflow(BaseModel):
             path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
-            response = client.get(f"/workflow/{self.uuid}/get_msa_files",
-                                  params={"msa_format": msa_format.value})
+            response = client.get(
+                f"/workflow/{self.uuid}/get_msa_files", params={"msa_format": msa_format.value}
+            )
             response.raise_for_status()
 
         with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
@@ -305,19 +306,22 @@ def batch_submit_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a batch of workflows to the API. Each workflow will be submitted with the 
-    same workflow type, workflow data, and folder UUID, but with different initial molecules and/or 
-    SMILES strings. 
+    Submits a batch of workflows to the API. Each workflow will be submitted with the
+    same workflow type, workflow data, and folder UUID, but with different initial molecules and/or
+    SMILES strings.
 
     :param workflow_type: The type of workflow to submit.
     :param workflow_data: A dictionary containing the data required to run the workflow.
-    :param initial_molecules: A list of molecule objects to use as the initial molecules in the workflow.
+    :param initial_molecules: A list of molecule objects to use as the initial molecules in the
+    workflows.
     At least one of a molecule or SMILES must be provided.
-    :param initial_smileses: A list of SMILES strings to use as the initial molecules in the workflow.
+    :param initial_smileses: A list of SMILES strings to use as the initial molecules in the
+    workflows.
     At least one of a molecule or SMILES must be provided.
     :param names: A list of names to give to the workflows.
     :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow. This applies per workflow, not for the batch.
+    :param max_credits: The maximum number of credits to use for the workflow. This applies per
+    workflow, not for the batch.
     :return: A list of Workflow objects representing the submitted workflows.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
@@ -328,17 +332,22 @@ def batch_submit_workflow(
         )
 
     if initial_molecules and initial_smileses:
-        raise ValueError("You must provide either `initial_molecules` or `initial_smileses`, "
-                         "but not both.")
+        raise ValueError(
+            "You must provide either `initial_molecules` or `initial_smileses`, but not both."
+        )
 
     if names:
         if initial_molecules and len(names) != len(initial_molecules):
-            logger.warning("The number of names is not the same as the number of initial "
-                           "molecules. Generic names of the form 'Batch Workflow {i}' "
-                           "will be used.")
+            logger.warning(
+                "The number of names is not the same as the number of initial "
+                "molecules. Generic names of the form 'Batch Workflow {i}' "
+                "will be used."
+            )
         if initial_smileses and len(names) != len(initial_smileses):
-            logger.warning("The number of names is not the same as the number of initial SMILES."
-                           "Generic names of the form 'Batch Workflow {i}' will be used.")
+            logger.warning(
+                "The number of names is not the same as the number of initial SMILES."
+                "Generic names of the form 'Batch Workflow {i}' will be used."
+            )
 
     data = {
         "names": names,
@@ -349,7 +358,6 @@ def batch_submit_workflow(
         "initial_molecules": initial_molecules,
         "initial_smileses": initial_smileses,
     }
-
 
     with api_client() as client:
         response = client.post("/workflow/batch_submit", json=data)
