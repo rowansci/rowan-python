@@ -304,7 +304,7 @@ def batch_submit_workflow(
     names: list[str] | None = None,
     folder_uuid: str | None = None,
     max_credits: int | None = None,
-) -> Workflow:
+) -> list[Workflow]:
     """
     Submits a batch of workflows to the API. Each workflow will be submitted with the
     same workflow type, workflow data, and folder UUID, but with different initial molecules and/or
