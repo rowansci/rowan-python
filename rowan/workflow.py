@@ -1520,7 +1520,16 @@ def submit_msa_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits an MSA workflow to the API.
+    Submits a multiple sequence alignment (MSA) workflow to the API.
+
+    :param initial_protein_sequences: List of protein sequences to align, as ProteinSequence objects
+    sor strings.
+    :param output_formats: List of output formats for the resulting MSA files.
+    :param name: The name to assign to the workflow.
+    :param folder_uuid: UUID of the folder where the workflow will be stored.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted MSA workflow.
+    :raises HTTPError: If the API request fails.
     """
     workflow = stjames.MSAWorkflow(
         initial_protein_sequences=initial_protein_sequences,
