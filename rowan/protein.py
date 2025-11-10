@@ -114,6 +114,27 @@ class Protein(BaseModel):
             response = client.post(f"/protein/sanitize/{self.uuid}")
             response.raise_for_status()
 
+    def download_pdb_file(self, path: Path | None = None, name: str | None = None) -> None:
+        """
+        Downloads the PDB file for a protein
+
+        :param path: Directory to save the file to (defaults to current directory)
+        :param name: Optional custom name for the file (defaults to protein name)
+        :raises requests.HTTPError: if the request to the API fails
+        """
+        if path is None:
+            path = Path.cwd()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        with api_client() as client:
+            response = client.get(f"/protein/{self.uuid}/get_pdb_file")
+            response.raise_for_status()
+
+        file_path = path / f"{name or self.name}.pdb"
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
 
 def retrieve_protein(uuid: str) -> Protein:
     """

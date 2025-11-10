@@ -240,6 +240,35 @@ class Workflow(BaseModel):
         with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
             f.write(response.content)
 
+    def download_dcd_files(self, replicates: list[int],
+                           name: str | None = None, path: Path | None = None) -> None:
+        """
+        Downloads DCD trajectory files for specified replicates
+
+        :param replicates: List of replicate indices to download
+        :param name: Optional custom name for the tar.gz file (defaults to workflow name)
+        :param path: Directory to save the file to (defaults to current directory)
+        :raises ValueError: if workflow is not a pose analysis MD workflow
+        :raises requests.HTTPError: if the request to the API fails
+        """
+        if self.workflow_type != "pose_analysis_md":
+            raise ValueError("This workflow is not a pose analysis molecular dynamics workflow.")
+
+        if path is None:
+            path = Path.cwd()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        with api_client() as client:
+            response = client.post(
+                f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates
+            )
+            response.raise_for_status()
+
+        file_path = path / f"{name or self.name}.tar.gz"
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
 
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
