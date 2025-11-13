@@ -421,6 +421,19 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
         response.raise_for_status()
         return [Workflow(**workflow_data) for workflow_data in response.json()]
 
+def batch_poll_status(uuids: list[str]) -> list[Workflow]:
+    """
+    Polls the status of a list of workflows.
+
+    :param uuids: The UUIDs of the workflows to poll.
+    :return: A dictionary of statuses and the count of workflows in that status.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.post("/workflow/batch_status", json={"uuids": uuids})
+        response.raise_for_status()
+        return response.json()
+
 
 def retrieve_calculation_molecules(
     uuid: str, return_frequencies: bool = False

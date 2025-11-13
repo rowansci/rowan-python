@@ -57,7 +57,7 @@ class Folder(BaseModel):
         self.model_rebuild()
 
         return self
-    
+
 
     def update(
         self,
