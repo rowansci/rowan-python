@@ -57,6 +57,7 @@ class Folder(BaseModel):
         self.model_rebuild()
 
         return self
+    
 
     def update(
         self,
@@ -110,6 +111,15 @@ class Folder(BaseModel):
             response = client.delete(f"/folder/{self.uuid}")
             response.raise_for_status()
 
+    def print_folder_tree(self, max_depth: int = 10, show_uuids: bool = False) -> None:
+        """
+        Retrieves a folder tree from the API.
+
+        :param max_depth: The maximum depth of the folder tree.
+        :param show_uuids: Whether to show the UUIDs of the folders.
+        :raises HTTPError: If the API request fails.
+        """
+        print_folder_tree(self.uuid, max_depth, show_uuids)
 
 def retrieve_folder(uuid: str) -> Folder:
     """
@@ -123,19 +133,6 @@ def retrieve_folder(uuid: str) -> Folder:
         response = client.get(f"/folder/{uuid}")
         response.raise_for_status()
         return Folder(**response.json())
-
-
-def home_folder() -> Folder:
-    """
-    Retrieves the home folder from the API.
-
-    :return: A Folder object representing the home folder.
-    :raises HTTPError: If the API request fails.
-    """
-    with api_client() as client:
-        response = client.get("/user/me/root_folders")
-        response.raise_for_status()
-        return Folder(**response.json()["user_root"])
 
 
 def list_folders(
@@ -210,3 +207,22 @@ def create_folder(
         response.raise_for_status()
         folder_data = response.json()
     return Folder(**folder_data)
+
+def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) -> None:
+    """
+    Retrieves a folder tree from the API.
+
+    :param uuid: The UUID of the root of the folder tree.
+    :param max_depth: The maximum depth of the folder tree.
+    :param show_uuids: Whether to show the UUIDs of the folders.
+    :raises HTTPError: If the API request fails.
+    """
+    params: dict[str, Any] = {
+        "max_depth": max_depth,
+        "show_uuids": show_uuids,
+    }
+    with api_client() as client:
+        response = client.get(f"/folder/{uuid}/folder_tree", params=params)
+        response.raise_for_status()
+        folder_data = response.json()
+    print(folder_data)
