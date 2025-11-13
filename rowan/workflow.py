@@ -408,6 +408,20 @@ def retrieve_workflow(uuid: str) -> Workflow:
         return Workflow(**response.json())
 
 
+def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
+    """
+    Retrieves a list of workflows from the API.
+
+    :param uuids: The UUIDs of the workflows to retrieve.
+    :return: A list of Workflow objects representing the retrieved workflows.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.post("/workflow/batch_retrieve", json={"uuids": uuids})
+        response.raise_for_status()
+        return [Workflow(**workflow_data) for workflow_data in response.json()]
+
+
 def retrieve_calculation_molecules(
     uuid: str, return_frequencies: bool = False
 ) -> list[dict[str, Any]]:
