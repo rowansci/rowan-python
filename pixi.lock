@@ -1548,11 +1548,11 @@ packages:
   requires_python: '>=3.9'
 - pypi: ./
   name: rowan-python
-  version: 2.1.9
-  sha256: d6fdbc61eb40000173e38b026fee19b4401a08485c97b04700cb10b451356300
+  version: 2.1.10
+  sha256: 1ba305d3b9b98cce45fe2c3ab1d0925bc9b7fac2aa16c664cc827dd2d9e502e9
   requires_dist:
   - httpx
-  - stjames>=0.0.125
+  - stjames>=0.0.128
   - setuptools
   - rdkit
   - nest-asyncio
