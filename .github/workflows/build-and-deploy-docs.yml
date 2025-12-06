@@ -39,4 +39,4 @@ jobs:
       - name: Deploy with rsync
         run: |
           rsync -avz --delete ./ \
-            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:/var/www/rowan-python
+            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:{{ secrets.DOCS_TARGET_DIR }}
