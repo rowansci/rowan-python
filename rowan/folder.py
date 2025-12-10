@@ -58,7 +58,6 @@ class Folder(BaseModel):
 
         return self
 
-
     def update(
         self,
         name: str | None = None,
@@ -120,6 +119,7 @@ class Folder(BaseModel):
         :raises HTTPError: If the API request fails.
         """
         print_folder_tree(self.uuid, max_depth, show_uuids)
+
 
 def retrieve_folder(uuid: str) -> Folder:
     """
@@ -207,6 +207,7 @@ def create_folder(
         response.raise_for_status()
         folder_data = response.json()
     return Folder(**folder_data)
+
 
 def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) -> None:
     """

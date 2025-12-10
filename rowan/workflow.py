@@ -242,8 +242,9 @@ class Workflow(BaseModel):
         with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
             f.write(response.content)
 
-    def download_dcd_files(self, replicates: list[int],
-                           name: str | None = None, path: Path | None = None) -> None:
+    def download_dcd_files(
+        self, replicates: list[int], name: str | None = None, path: Path | None = None
+    ) -> None:
         """
         Downloads DCD trajectory files for specified replicates
 
@@ -262,9 +263,7 @@ class Workflow(BaseModel):
         path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates
-            )
+            response = client.post(f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates)
             response.raise_for_status()
 
         file_path = path / f"{name or self.name}.tar.gz"
@@ -422,6 +421,7 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
         response = client.post("/workflow/batch_retrieve", json={"uuids": uuids})
         response.raise_for_status()
         return [Workflow(**workflow_data) for workflow_data in response.json()]
+
 
 def batch_poll_status(uuids: list[str]) -> list[Workflow]:
     """
@@ -1599,6 +1599,74 @@ def submit_msa_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "msa",
         "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_admet_workflow(
+    initial_smiles: str,
+    name: str = "ADMET Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits an ADMET workflow to the API.
+
+    :param initial_smiles: The molecule used in the workflow.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    workflow = stjames.ADMETWorkflow(initial_smiles=initial_smiles)
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "admet",
+        "workflow_data": workflow.model_dump(),
+        "initial_smiles": initial_smiles,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_membrane_permeability_workflow(
+    initial_smiles: str,
+    name: str = "ADMET Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a membrane permeability workflow to the API.
+
+    :param initial_smiles: The molecule used in the workflow.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to store the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+
+    workflow = stjames.MembranePermeabilityWorkflow(initial_smiles=initial_smiles)
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "membrane_permeability",
+        "workflow_data": workflow.model_dump(),
+        "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
 
