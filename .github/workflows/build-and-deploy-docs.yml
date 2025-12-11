@@ -1,0 +1,42 @@
+name: Build & Deploy Rowan Python Docs
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      
+      - name: Install Pixi
+        uses: prefix-dev/setup-pixi@v0.9.1
+        with:
+          pixi-version: "latest"
+          activate-environment: true
+
+      - name: Build MkDocs site
+        run: pixi run mkdocs-build
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DOCS_SSH_KEY }}
+          known_hosts: "unnecessary"
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -H ${{ secrets.DOCS_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: |
+          rsync -avz --delete ./ \
+            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:{{ secrets.DOCS_TARGET_DIR }}
