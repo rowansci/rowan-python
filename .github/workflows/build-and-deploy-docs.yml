@@ -3,6 +3,7 @@ name: Build & Deploy Rowan Python Docs
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
