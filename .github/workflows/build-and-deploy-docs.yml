@@ -40,4 +40,4 @@ jobs:
       - name: Deploy with rsync
         run: |
           rsync -avz --delete ./ \
-            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:{{ secrets.DOCS_TARGET_DIR }}
+            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:${{ secrets.DOCS_TARGET_DIR }}
