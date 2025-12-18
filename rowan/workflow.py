@@ -312,11 +312,13 @@ def submit_workflow(
     if initial_smiles is not None:
         data["initial_smiles"] = initial_smiles
     elif isinstance(initial_molecule, StJamesMolecule):
-        data["initial_molecule"] = initial_molecule.model_dump()
+        data["initial_molecule"] = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, dict):
         data["initial_molecule"] = initial_molecule
     elif isinstance(initial_molecule, RdkitMol):
-        data["initial_molecule"] = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump()
+        data["initial_molecule"] = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
     else:
         raise ValueError("You must provide either `initial_smiles` or a valid `initial_molecule`.")
 
@@ -538,7 +540,7 @@ def submit_basic_calculation_workflow(
         tasks = ["optimize"]
 
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -560,7 +562,7 @@ def submit_basic_calculation_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "basic_calculation",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -601,7 +603,7 @@ def submit_conformer_search_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -639,7 +641,7 @@ def submit_conformer_search_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "conformer_search",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -690,7 +692,7 @@ def submit_solubility_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "solubility",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -762,8 +764,10 @@ def submit_pka_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "pka",
-        "workflow_data": workflow.model_dump(),
-        "initial_molecule": initial_stjames_mol.model_dump() if initial_stjames_mol else None,
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_stjames_mol.model_dump(mode="json")
+        if initial_stjames_mol
+        else None,
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -799,7 +803,7 @@ def submit_redox_potential_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -814,7 +818,7 @@ def submit_redox_potential_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "redox_potential",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -848,7 +852,7 @@ def submit_fukui_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -862,9 +866,9 @@ def submit_fukui_workflow(
     )
 
     workflow_data = {
-        "opt_settings": optimization_settings.model_dump(),
+        "opt_settings": optimization_settings.model_dump(mode="json"),
         "opt_engine": stjames.Method(optimization_method).default_engine(),
-        "fukui_settings": fukui_settings.model_dump(),
+        "fukui_settings": fukui_settings.model_dump(mode="json"),
         "fukui_engine": stjames.Method(fukui_method).default_engine(),
     }
 
@@ -904,7 +908,7 @@ def submit_tautomer_search_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -917,7 +921,7 @@ def submit_tautomer_search_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "tautomers",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -945,7 +949,7 @@ def submit_descriptors_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -991,7 +995,7 @@ def submit_scan_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1018,7 +1022,7 @@ def submit_scan_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "scan",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1072,7 +1076,7 @@ def submit_macropka_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "macropka",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -1111,7 +1115,7 @@ def submit_irc_workflow(
     """
 
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1136,7 +1140,7 @@ def submit_irc_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "irc",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1193,7 +1197,7 @@ def submit_protein_cofolding_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "protein_cofolding",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "max_credits": max_credits,
     }
 
@@ -1236,7 +1240,7 @@ def submit_docking_workflow(
     """
 
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1263,7 +1267,7 @@ def submit_docking_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "docking",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1300,7 +1304,7 @@ def submit_ion_mobility_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1316,7 +1320,7 @@ def submit_ion_mobility_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "ion_mobility",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1350,7 +1354,7 @@ def submit_nmr_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1368,7 +1372,7 @@ def submit_nmr_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "nmr",
-        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1396,7 +1400,7 @@ def submit_strain_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump()
+        initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, RdkitMol):
         initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
 
@@ -1406,7 +1410,7 @@ def submit_strain_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "strain",
-        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": initial_molecule,
         "max_credits": max_credits,
     }
@@ -1454,8 +1458,10 @@ def submit_double_ended_ts_search_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "double_ended_ts_search",
-        "workflow_data": workflow.model_dump(),
-        "initial_molecule": reactant if isinstance(reactant, dict) else reactant.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": reactant
+        if isinstance(reactant, dict)
+        else reactant.model_dump(mode="json"),
         "max_credits": max_credits,
     }
 
@@ -1506,7 +1512,7 @@ def submit_pose_analysis_md_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "pose_analysis_md",
-        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -1560,7 +1566,7 @@ def submit_batch_docking_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "batch_docking",
-        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "max_credits": max_credits,
     }
 
@@ -1598,7 +1604,7 @@ def submit_msa_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "msa",
-        "workflow_data": workflow.model_dump(serialize_as_any=True),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "max_credits": max_credits,
     }
 
@@ -1631,7 +1637,7 @@ def submit_admet_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "admet",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
@@ -1665,7 +1671,7 @@ def submit_membrane_permeability_workflow(
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "membrane_permeability",
-        "workflow_data": workflow.model_dump(),
+        "workflow_data": workflow.model_dump(mode="json"),
         "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
