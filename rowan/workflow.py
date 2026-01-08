@@ -1649,7 +1649,8 @@ def submit_admet_workflow(
 
 
 def submit_membrane_permeability_workflow(
-    initial_smiles: str,
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
+    method: Literal["gnn-mtl", "pypermm"] = "gnn-mtl",
     name: str = "ADMET Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -1657,7 +1658,8 @@ def submit_membrane_permeability_workflow(
     """
     Submits a membrane permeability workflow to the API.
 
-    :param initial_smiles: The molecule used in the workflow.
+    :param initial_molecule: The molecule used in the workflow.
+    :param method: The method used to compute membrane permeability.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
@@ -1665,16 +1667,38 @@ def submit_membrane_permeability_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
-    workflow = stjames.MembranePermeabilityWorkflow(initial_smiles=initial_smiles)
-
     data = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "membrane_permeability",
-        "workflow_data": workflow.model_dump(mode="json"),
-        "initial_smiles": initial_smiles,
         "max_credits": max_credits,
     }
+
+    match method:
+        case "gnn-mtl":
+            assert isinstance(initial_molecule, str)
+            workflow = stjames.MembranePermeabilityWorkflow(
+                initial_smiles=initial_molecule,
+                membrane_permeability_method="chemprop_ohlsson2025",
+            )
+
+            data["initial_smiles"] = initial_molecule
+
+        case "pypermm":
+            if isinstance(initial_molecule, str):
+                raise ValueError("Cannot specify molecule as SMILES for PyPermm")
+            elif isinstance(initial_molecule, StJamesMolecule):
+                initial_molecule = initial_molecule.model_dump(mode="json")
+            elif isinstance(initial_molecule, RdkitMol):
+                initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+            workflow = stjames.MembranePermeabilityWorkflow(
+                initial_molecule=initial_molecule,
+                membrane_permeability_method="pypermm",
+            )
+
+            data["initial_molecule"] = initial_molecule.model_dump(mode="json")
+
+    data["workflow_data"] = workflow.model_dump(mode="json")
 
     with api_client() as client:
         response = client.post("/workflow", json=data)
