@@ -1,6 +1,6 @@
-import rowan
-
 from rdkit import Chem
+
+import rowan
 
 smiles = "CC1=C(N=CN1)CSCCNC(=NC)NC#N"
 

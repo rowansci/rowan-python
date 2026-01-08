@@ -1667,7 +1667,7 @@ def submit_membrane_permeability_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
 
-    data = {
+    data: dict[str, Any] = {
         "name": name,
         "folder_uuid": folder_uuid,
         "workflow_type": "membrane_permeability",
@@ -1690,13 +1690,16 @@ def submit_membrane_permeability_workflow(
             elif isinstance(initial_molecule, StJamesMolecule):
                 initial_molecule = initial_molecule.model_dump(mode="json")
             elif isinstance(initial_molecule, RdkitMol):
-                initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+                initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+                    mode="json"
+                )
+
             workflow = stjames.MembranePermeabilityWorkflow(
                 initial_molecule=initial_molecule,
                 membrane_permeability_method="pypermm",
             )
 
-            data["initial_molecule"] = initial_molecule.model_dump(mode="json")
+            data["initial_molecule"] = initial_molecule
 
     data["workflow_data"] = workflow.model_dump(mode="json")
 
