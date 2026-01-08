@@ -1,23 +1,23 @@
-from rdkit import Chem
-
 import rowan
 
+from rdkit import Chem
 
-# rowan.api_key = ""
+smiles = "CC1=C(N=CN1)CSCCNC(=NC)NC#N"
 
-oseltamivir_SMILES = "C1CCOC(=O)C1=C[C@@H](OC(CC)CC)[C@H](NC(C)=O)[C@@H]([NH3+])C1CCC1"
-
-result = rowan.submit_membrane_permeability_workflow(
-    oseltamivir_SMILES,
-    name="Oseltamivir Membrane Permeability",
+gnn_mtl_result = rowan.submit_membrane_permeability_workflow(
+    smiles,
+    name="GNN=MTL permeability",
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
-
-result = rowan.submit_membrane_permeability_workflow(
-    Chem.MolFromSmiles(oseltamivir_SMILES),
+pypermm_result = rowan.submit_membrane_permeability_workflow(
+    Chem.MolFromSmiles(smiles),
     method="pypermm",
     name="Oseltamivir Membrane Permeability (PyPermm)",
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
+gnn_mtl_result.wait_for_result().fetch_latest(in_place=True)
+pypermm_result.wait_for_result().fetch_latest(in_place=True)
+
+
+print(f"Caco-2 Papp (GNN-MTL): {gnn_mtl_result.data['caco_2_P_app']}")
+print(f"Caco-2 P0 (PyPermm): {pypermm_result.data['caco_2_logP']}")
