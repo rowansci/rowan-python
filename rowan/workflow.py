@@ -1701,6 +1701,9 @@ def submit_membrane_permeability_workflow(
 
             data["initial_molecule"] = initial_molecule
 
+        case _:
+            raise ValueError(f"Unexpected {method=}")
+
     data["workflow_data"] = workflow.model_dump(mode="json")
 
     with api_client() as client:
