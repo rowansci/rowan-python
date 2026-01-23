@@ -13,7 +13,9 @@ from stjames.optimization.freezing_string_method import (
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
+
 HCN = Molecule.from_xyz(
     """\
 H 0 0 -1.1
@@ -37,8 +39,7 @@ fsm_settings = FSMSettings(
 )
 
 
-# Run calculation remotely
-result = rowan.submit_double_ended_ts_search_workflow(
+workflow = rowan.submit_double_ended_ts_search_workflow(
     reactant=HCN,
     product=CNH,
     calculation_settings=Settings(method=Method.GFN2_XTB),
@@ -48,11 +49,11 @@ result = rowan.submit_double_ended_ts_search_workflow(
     name="H-C≡N Isomerization",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{result.uuid}")
-result.wait_for_result().fetch_latest(in_place=True)
+print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
 
-assert result and result.data
-print(result.data["forward_string_distances"])
-print(result.data["backward_string_distances"])
+assert workflow and workflow.data
+print(workflow.data["forward_string_distances"])
+print(workflow.data["backward_string_distances"])
 
-print(result)
+print(workflow)

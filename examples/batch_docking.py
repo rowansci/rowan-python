@@ -2,6 +2,9 @@ import time
 
 import rowan
 
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
+
 ligands = [
     "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1",
     "CCC(C)CN=C1NCC2(CCCOC2)CN1",
@@ -104,9 +107,6 @@ ligands = [
     "CCC(CC)N=C1NCC2=C(O)SC(=N)N=C12",
     "CC(C)C(CN)C1NCC2=C(SC=C2C)C1C",
 ]
-
-workflows = []
-results = {}
 
 protein = rowan.create_protein_from_pdb_id(
     "CDK2", "1HCK", project_uuid=rowan.default_project().uuid

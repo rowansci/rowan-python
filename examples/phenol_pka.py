@@ -2,6 +2,9 @@ import stjames
 
 import rowan
 
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
+
 phenols_to_compute = {
     "p-nitrophenol": "Oc1ccc(N(=O)=O)cc1",
     "p-(trifluoromethyl)phenol": "Oc1ccc(C(F)(F)F)cc1",
@@ -14,7 +17,7 @@ phenols_to_compute = {
     "p-(dimethylamino)phenol": "CN(C)c1ccc(O)cc1",
 }
 
-pka_folder = rowan.create_folder(name="phenol pKa results")
+pka_folder = rowan.create_folder(name="Phenol pKa workflow")
 
 workflows = []
 for name, smiles in phenols_to_compute.items():

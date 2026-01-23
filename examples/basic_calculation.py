@@ -1,12 +1,11 @@
-# ruff: noqa
-from stjames import Molecule, Method
+from stjames import Method, Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-
-result = rowan.submit_basic_calculation_workflow(
+workflow = rowan.submit_basic_calculation_workflow(
     initial_molecule=Molecule.from_smiles("CC(=C)C=C"),
     method=Method.OMOL25_CONSERVING_S,
     tasks=["energy"],
@@ -15,7 +14,6 @@ result = rowan.submit_basic_calculation_workflow(
     name="Isoprene Energy",
 )
 
-result.wait_for_result()
-result.fetch_latest(in_place=True)
-
-print(result)
+print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

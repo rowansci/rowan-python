@@ -8,9 +8,10 @@ from stjames import Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-result = rowan.submit_basic_calculation_workflow(
+workflow = rowan.submit_basic_calculation_workflow(
     initial_molecule=Molecule.from_smiles("O"),
     method="GFN2-xTB",
     tasks=["optimize"],
@@ -18,4 +19,6 @@ result = rowan.submit_basic_calculation_workflow(
     name="Water Optimization",
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
+print(f"View optimization privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

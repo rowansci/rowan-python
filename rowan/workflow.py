@@ -22,7 +22,7 @@ StJamesMolecule: TypeAlias = stjames.Molecule
 class Workflow(BaseModel):
     """A Rowan workflow.
 
-    Don’t instantiate this class directly. Instead use one of the submit workflow functions.
+    Don't instantiate this class directly. Instead use one of the submit workflow functions.
     Workflow data is not loaded by default to avoid unnecessary downloads that could impact
     performance. Call `load_data()` to fetch and attach the workflow data to this `Workflow` object.
 
@@ -575,7 +575,7 @@ def submit_basic_calculation_workflow(
 
 def submit_conformer_search_workflow(
     initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
-    conf_gen_mode: str = "rapid",
+    conf_gen_settings: stjames.ConformerGenSettings,
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
     transition_state: bool = False,
@@ -587,9 +587,7 @@ def submit_conformer_search_workflow(
     Submits a conformer search workflow to the API.
 
     :param initial_molecule: The molecule to perform the conformer search on.
-    :param conf_gen_mode: The mode to use for conformer generation. See
-    [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
-    for options.
+    :param conf_gen_settings: settings for conformer generation
     :param final_method: The method to use for the final optimization.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     for options.
@@ -631,8 +629,7 @@ def submit_conformer_search_workflow(
     workflow = stjames.ConformerSearchWorkflow(
         initial_molecule=initial_molecule,
         multistage_opt_settings=msos,
-        conf_gen_mode=conf_gen_mode,
-        mso_mode="manual",
+        conf_gen_settings=conf_gen_settings,
         solvent=solvent,
         transition_state=transition_state,
     )

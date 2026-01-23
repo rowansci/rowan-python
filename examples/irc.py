@@ -2,9 +2,10 @@ from stjames import Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-result = rowan.submit_irc_workflow(
+workflow = rowan.submit_irc_workflow(
     initial_molecule=Molecule.from_xyz_lines(
         """7
 SMILES `N=C([O-])[OH2+]`
@@ -21,4 +22,6 @@ H     1.26740151   0.88347299   0.53620841
     preopt=False,
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
+print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

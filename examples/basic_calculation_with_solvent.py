@@ -1,13 +1,13 @@
-# ruff: noqa
-from stjames import Molecule, Method
+from stjames import Method, Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
 
 def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, name: str) -> float:
-    opt = rowan.submit_workflow(
+    opt_workflow = rowan.submit_workflow(
         initial_molecule=molecule,
         workflow_type="basic_calculation",
         name=f"{name} {method} optimization",
@@ -16,13 +16,13 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         },
     )
 
-    opt.wait_for_result()
-    opt.fetch_latest(in_place=True)
+    print(f"View workflow privately at: https://labs.rowansci.com/workflow/{opt_workflow.uuid}")
+    opt_workflow.wait_for_result().fetch_latest(in_place=True)
 
-    calculation_uuid = opt.data["calculation_uuid"]
+    calculation_uuid = opt_workflow.data["calculation_uuid"]
     optimized_molecule = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
 
-    sp = rowan.submit_workflow(
+    sp_workflow = rowan.submit_workflow(
         initial_molecule=optimized_molecule,
         workflow_type="basic_calculation",
         name=f"{name} {method} single point",
@@ -35,10 +35,10 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         },
     )
 
-    sp.wait_for_result()
-    sp.fetch_latest(in_place=True)
+    print(f"View workflow privately at: https://labs.rowansci.com/workflow/{sp_workflow.uuid}")
+    sp_workflow.wait_for_result().fetch_latest(in_place=True)
 
-    calculation_uuid = sp.data["calculation_uuid"]
+    calculation_uuid = sp_workflow.data["calculation_uuid"]
     final_molecule = rowan.retrieve_calculation_molecules(calculation_uuid)[0]
     return final_molecule["energy"]
 
