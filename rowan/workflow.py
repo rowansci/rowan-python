@@ -1252,7 +1252,7 @@ def submit_docking_workflow(
 
     workflow = stjames.DockingWorkflow(
         initial_molecule=initial_molecule,
-        target_uuid=protein,
+        protein=protein,
         pocket=pocket,
         do_csearch=do_csearch,
         do_optimization=do_optimization,
@@ -1498,7 +1498,7 @@ def submit_pose_analysis_md_workflow(
         protein = protein.uuid
 
     workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
-        protein_uuid=protein,
+        protein=protein,
         initial_smiles=initial_smiles,
         num_trajectories=num_trajectories,
         simulation_time_ns=simulation_time_ns,
@@ -1555,6 +1555,7 @@ def submit_batch_docking_workflow(
     workflow = stjames.BatchDockingWorkflow(
         initial_smiles_list=smiles_list,
         target=protein,
+        protein=protein,
         pocket=pocket,
         docking_settings=docking_settings,
     )
