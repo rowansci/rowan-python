@@ -14,6 +14,6 @@ workflow = rowan.submit_basic_calculation_workflow(
     name="Isoprene Energy",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

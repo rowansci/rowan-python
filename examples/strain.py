@@ -12,6 +12,6 @@ workflow = rowan.submit_strain_workflow(
     name="test autogen hexane strain",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/strain/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

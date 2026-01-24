@@ -10,6 +10,6 @@ workflow = rowan.submit_admet_workflow(
     name="Oseltamivir ADMET",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/solubility/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

@@ -22,6 +22,6 @@ H     1.26740151   0.88347299   0.53620841
     preopt=False,
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/irc/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

@@ -16,7 +16,7 @@ cofolding_workflow = rowan.submit_protein_cofolding_workflow(
 )
 
 print(
-    f"View cofolding workflow privately at: https://labs.rowansci.com/workflow/{cofolding_workflow.uuid}"
+    f"View cofolding workflow privately at: https://labs.rowansci.com/protein-cofolding/{cofolding_workflow.uuid}"
 )
 cofolding_workflow.wait_for_result().fetch_latest(in_place=True)
 
@@ -28,7 +28,9 @@ md_workflow = rowan.submit_pose_analysis_md_workflow(
     name="Downstream molecular dynamics",
 )
 
-print(f"View MD workflow privately at: https://labs.rowansci.com/workflow/{md_workflow.uuid}")
+print(
+    f"View MD workflow privately at: https://labs.rowansci.com/pose-analysis-md/{md_workflow.uuid}"
+)
 md_workflow.wait_for_result().fetch_latest(in_place=True)
 
 # print ligand RMSD by frame

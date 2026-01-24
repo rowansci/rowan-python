@@ -9,7 +9,7 @@ workflow = rowan.submit_nmr_workflow(
     Molecule.from_smiles("O[C@H]1[C@H](C(C)C)CC[C@@H](C)C1"),
     name="menthol NMR",
 )
-print(f"View nmr workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View nmr workflow privately at: https://labs.rowansci.com/nmr/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 
 # print hydrogen peaks

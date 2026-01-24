@@ -15,6 +15,6 @@ workflow = rowan.submit_workflow(
     initial_molecule=workflow_data["initial_molecule"],
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

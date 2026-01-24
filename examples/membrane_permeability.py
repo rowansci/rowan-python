@@ -18,17 +18,11 @@ pypermm_workflow = rowan.submit_membrane_permeability_workflow(
     name="Oseltamivir Membrane Permeability (PyPermm)",
 )
 
-print(
-    f"View GNN=MTL permeability privately at: https://labs.rowansci.com/workflow/{gnn_mtl_workflow.uuid}"
-)
-print(
-    f"View Oseltamivir membrane permeability privately at: https://labs.rowansci.com/workflow/{pypermm_workflow.uuid}"
-)
+print("View these workflows privately:")
+print(f"\thttps://labs.rowansci.com/membrane-permeability/{gnn_mtl_workflow.uuid}")
+print(f"\thttps://labs.rowansci.com/mambrane-permeability/{pypermm_workflow.uuid}")
 gnn_mtl_workflow.wait_for_result().fetch_latest(in_place=True)
 pypermm_workflow.wait_for_result().fetch_latest(in_place=True)
 
 print(f"Caco-2 Papp (GNN-MTL): {gnn_mtl_workflow.data['caco_2_P_app']}")
 print(f"Caco-2 P0 (PyPermm): {pypermm_workflow.data['caco_2_logP']}")
-print("View these workflows privately:")
-print(f"\thttps://labs.rowansci.com/workflow/{gnn_mtl_workflow.uuid}")
-print(f"\thttps://labs.rowansci.com/workflow/{pypermm_workflow.uuid}")

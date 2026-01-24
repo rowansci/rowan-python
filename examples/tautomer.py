@@ -11,6 +11,6 @@ workflow = rowan.submit_tautomer_search_workflow(
     name="2-Pyridone Tautomers",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/tautomers/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

@@ -49,7 +49,9 @@ workflow = rowan.submit_double_ended_ts_search_workflow(
     name="H-C≡N Isomerization",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(
+    f"View workflow privately at: https://labs.rowansci.com/double-ended-ts-search/{workflow.uuid}"
+)
 workflow.wait_for_result().fetch_latest(in_place=True)
 
 assert workflow and workflow.data

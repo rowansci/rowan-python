@@ -19,6 +19,6 @@ workflow = rowan.submit_redox_potential_workflow(
     reduction=True,
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/redox-potential/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

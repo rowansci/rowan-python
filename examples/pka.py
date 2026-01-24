@@ -22,7 +22,7 @@ workflow = rowan.submit_pka_workflow(
 )
 
 print(
-    f"View pKa with aimnet2_wagen2024 privately at: https://labs.rowansci.com/workflow/{workflow.uuid}"
+    f"View pKa with aimnet2_wagen2024 privately at: https://labs.rowansci.com/pka/{workflow.uuid}"
 )
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)
@@ -34,7 +34,7 @@ workflow2 = rowan.submit_pka_workflow(
 )
 
 print(
-    f"View pKa with chemprop_nevolianis2025 privately at: https://labs.rowansci.com/workflow/{workflow2.uuid}"
+    f"View pKa with chemprop_nevolianis2025 privately at: https://labs.rowansci.com/pka/{workflow2.uuid}"
 )
 workflow2.wait_for_result().fetch_latest(in_place=True)
 print(workflow2)

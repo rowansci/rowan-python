@@ -16,7 +16,7 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         },
     )
 
-    print(f"View workflow privately at: https://labs.rowansci.com/workflow/{opt_workflow.uuid}")
+    print(f"View workflow privately at: https://labs.rowansci.com/calculation/{opt_workflow.uuid}")
     opt_workflow.wait_for_result().fetch_latest(in_place=True)
 
     calculation_uuid = opt_workflow.data["calculation_uuid"]
@@ -35,7 +35,7 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         },
     )
 
-    print(f"View workflow privately at: https://labs.rowansci.com/workflow/{sp_workflow.uuid}")
+    print(f"View workflow privately at: https://labs.rowansci.com/calculation/{sp_workflow.uuid}")
     sp_workflow.wait_for_result().fetch_latest(in_place=True)
 
     calculation_uuid = sp_workflow.data["calculation_uuid"]
