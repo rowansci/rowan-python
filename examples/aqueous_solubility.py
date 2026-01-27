@@ -1,11 +1,11 @@
 import rowan
 
-# rowan.api_key = ""
-
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
 oseltamivir_SMILES = "C1CCOC(=O)C1=C[C@@H](OC(CC)CC)[C@H](NC(C)=O)[C@@H]([NH3+])C1CCC1"
 
-result = rowan.submit_solubility_workflow(
+workflow = rowan.submit_solubility_workflow(
     initial_smiles=oseltamivir_SMILES,
     solubility_method="kingfisher",
     solvents=["O"],
@@ -13,5 +13,6 @@ result = rowan.submit_solubility_workflow(
     name="Oseltamivir aqueous solubility",
 )
 
-# Solubility units are log(mol/L) and temperature units are kelvin
-print(result.wait_for_result().fetch_latest(in_place=True))
+print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)  # Solubility in log(mol/L), temperature in kelvin

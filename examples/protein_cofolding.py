@@ -1,9 +1,9 @@
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-# Run calculation remotely
-result = rowan.submit_protein_cofolding_workflow(
+workflow = rowan.submit_protein_cofolding_workflow(
     initial_protein_sequences=[
         "ASKGTSHEAGIVCRITKPALLVLNHETAKVIQTAFQRASYPDITGEKAMMLLGQVKYGLHNIQISHLSIASSQVELVEAKSIDVSIQDVSVVFKGTLKYGYTTAWWLGIDQSIDFEIDSAIDLQINTQLTADSGRVRTDAPDCYLSFHKLLLHLQGEREPGWIKQLFTNFISFTLKLVLKGQICKEINVISNIMADFVQTRAASILSDGDIGVDISLTGDPVITASYLESHHKGHFIYKDVSEDLPLPTFSPTLLGDSRMLYFWFSERVFHSLAKVAFQDGRLMLSLMGDEFKAVLETWGFNTNQEIFQEVVGGFPSQAQVTVHCLKMPKISCQNKGVVVDSSVMVKFLFPRPDQQHSVAYTFEEDIVTTVQASYSKKKLFLSLLDFQITPKTVSNLTESSSESIQSFLQSMITAVGIPEVMSRLEVVFTALMNSKGVSLFDIINPEIITRDGFLLLQMDFGFPEHLLVDFLQSLS"
     ],
@@ -13,7 +13,9 @@ result = rowan.submit_protein_cofolding_workflow(
     ligand_binding_affinity_index=0,
     name="Torcetrapib Cofolding",
     do_pose_refinement=True,
-    compute_strain=True,
+    compute_strain=False,
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
+print(f"View workflow privately at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

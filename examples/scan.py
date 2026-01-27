@@ -8,10 +8,10 @@ from stjames import Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-# Run calculation remotely
-result = rowan.submit_scan_workflow(
+workflow = rowan.submit_scan_workflow(
     initial_molecule=Molecule.from_smiles("O"),
     name="Water Angle scan",
     scan_settings={
@@ -25,4 +25,6 @@ result = rowan.submit_scan_workflow(
     calculation_engine="xtb",
 )
 
-print(result.wait_for_result().fetch_latest(in_place=True))
+print(f"View workflow privately at: https://labs.rowansci.com/scan/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

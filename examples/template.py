@@ -1,4 +1,4 @@
-from stjames import Method, Molecule
+from stjames import Molecule
 
 import rowan
 
@@ -7,13 +7,8 @@ import rowan
 
 workflow = rowan.submit_basic_calculation_workflow(
     initial_molecule=Molecule.from_smiles("CC(=C)C=C"),
-    method=Method.OMOL25_CONSERVING_S,
-    tasks=["energy"],
-    mode="auto",
-    engine="omol25",
-    name="Isoprene Energy",
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)

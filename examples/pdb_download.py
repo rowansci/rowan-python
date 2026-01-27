@@ -2,7 +2,8 @@ from pathlib import Path
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
 proteins = rowan.list_proteins()
 for protein in proteins:

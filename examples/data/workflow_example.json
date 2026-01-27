@@ -1,12 +1,12 @@
 {
   "mode": "auto",
-  "engine": "omol25",
   "messages": [],
   "settings": {
     "mode": "rapid",
     "tasks": [
       "optimize"
     ],
+    "engine": "omol25",
     "method": "omol25_conserving_s",
     "basis_set": null,
     "corrections": [],

@@ -18,10 +18,10 @@ from stjames import Molecule
 
 import rowan
 
-# rowan.api_key = ""
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
 
-# Run calculation remotely
-result = rowan.submit_workflow(
+workflow = rowan.submit_workflow(
     initial_molecule=Molecule.from_smiles("CCCC"),
     workflow_type="bde",
     name="Butane BDE",
@@ -31,7 +31,6 @@ result = rowan.submit_workflow(
     },
 )
 
-result.wait_for_result()
-result.fetch_latest(in_place=True)
-
-print(result)
+print(f"View workflow privately at: https://labs.rowansci.com/bde/{workflow.uuid}")
+workflow.wait_for_result().fetch_latest(in_place=True)
+print(workflow)

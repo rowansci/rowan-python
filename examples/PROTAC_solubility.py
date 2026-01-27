@@ -2,6 +2,9 @@
 
 import rowan
 
+# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# rowan.api_key = "rowan-sk..."
+
 PROTACs = {
     4564: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)CCCCCCCCCN3C=C(CCCOC(=O)NCC4=CC=C(C(=O)NC5=CC=CC=C5N)C=C4)N=N3)C(C)(C)C)C=C2)SC=N1",
     2438: "CC(=O)N[C@H](C(=O)N1C[C@H](O)C[C@H]1C(=O)NCC1=CC=C(C2=C(C)N=CS2)C=C1OCCCCCCCCCCCC(=O)NC1=CC=C(C(=O)NC2=CC=CC=C2N)C=C1)C(C)(C)C",
