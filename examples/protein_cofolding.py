@@ -13,7 +13,7 @@ workflow = rowan.submit_protein_cofolding_workflow(
     ligand_binding_affinity_index=0,
     name="Torcetrapib Cofolding",
     do_pose_refinement=True,
-    compute_strain=True,
+    compute_strain=False,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
