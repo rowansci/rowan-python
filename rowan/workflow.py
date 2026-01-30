@@ -72,6 +72,21 @@ class Workflow(BaseModel):
     def __repr__(self) -> str:
         return f"<Workflow name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
+    def __str__(self) -> str:
+        created = self.created_at.strftime("%Y-%m-%d %H:%M:%S") if self.created_at else "N/A"
+        elapsed = f"{self.elapsed:.2f}s" if self.elapsed is not None else "not submitted"
+        status = self.status.name.lower() if self.status is not None else "not submitted"
+        lines = [
+            f"Workflow: {self.name}",
+            f"  UUID:     {self.uuid}",
+            f"  Type:     {self.workflow_type}",
+            f"  Status:   {status}",
+            f"  Created:  {created}",
+            f"  Elapsed:  {elapsed}",
+            f"  Credits charged:  {self.credits_charged}",
+        ]
+        return "\n".join(lines)
+
     def fetch_latest(self, in_place: bool = False) -> Self:
         """
         Loads workflow data from the database and updates the current instance.
