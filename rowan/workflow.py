@@ -1899,3 +1899,330 @@ def submit_protein_md_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
+
+
+def submit_bde_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    mode: str = "rapid",
+    atoms: list[int] | None = None,
+    all_CH: bool = False,
+    all_CX: bool = False,
+    name: str = "BDE Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a bond dissociation energy (BDE) workflow to the API.
+
+    :param initial_molecule: The molecule to calculate BDEs for.
+    :param mode: The mode to run the calculation in.
+    :param atoms: List of atom indices (1-indexed) to dissociate.
+    :param all_CH: Whether to dissociate all C-H bonds.
+    :param all_CX: Whether to dissociate all C-X bonds (X = halogen).
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    workflow = stjames.BDEWorkflow(
+        initial_molecule=initial_molecule,
+        mode=mode,
+        atoms=atoms or [],
+        all_CH=all_CH,
+        all_CX=all_CX,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "bde",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_electronic_properties_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    method: stjames.Method | str = "b97_3c",
+    basis_set: str | None = None,
+    compute_density_cube: bool = True,
+    compute_electrostatic_potential_cube: bool = True,
+    compute_num_occupied_orbitals: int = 1,
+    compute_num_virtual_orbitals: int = 1,
+    name: str = "Electronic Properties Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits an electronic properties workflow to the API.
+
+    :param initial_molecule: The molecule to calculate electronic properties for.
+    :param method: The method to use for the calculation.
+    :param basis_set: The basis set to use (if any).
+    :param compute_density_cube: Whether to compute the density cube.
+    :param compute_electrostatic_potential_cube: Whether to compute the electrostatic potential cube.
+    :param compute_num_occupied_orbitals: Number of occupied orbitals to save.
+    :param compute_num_virtual_orbitals: Number of virtual orbitals to save.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    if isinstance(method, str):
+        method = stjames.Method(method)
+
+    settings = stjames.Settings(method=method, basis_set=basis_set)
+
+    workflow = stjames.ElectronicPropertiesWorkflow(
+        initial_molecule=initial_molecule,
+        settings=settings,
+        compute_density_cube=compute_density_cube,
+        compute_electrostatic_potential_cube=compute_electrostatic_potential_cube,
+        compute_num_occupied_orbitals=compute_num_occupied_orbitals,
+        compute_num_virtual_orbitals=compute_num_virtual_orbitals,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "electronic_properties",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_hydrogen_bond_basicity_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    name: str = "Hydrogen Bond Basicity Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a hydrogen bond basicity workflow to the API.
+
+    :param initial_molecule: The molecule to calculate hydrogen bond basicity for.
+    :param do_csearch: Whether to perform a conformational search.
+    :param do_optimization: Whether to perform an optimization.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    workflow = stjames.HydrogenBondBasicityWorkflow(
+        initial_molecule=initial_molecule,
+        do_csearch=do_csearch,
+        do_optimization=do_optimization,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "hydrogen_bond_basicity",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_multistage_optimization_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    mode: str = "rapid",
+    solvent: str | None = None,
+    xtb_preopt: bool = True,
+    transition_state: bool = False,
+    frequencies: bool = False,
+    name: str = "Multistage Optimization Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a multistage optimization workflow to the API.
+
+    :param initial_molecule: The molecule to optimize.
+    :param mode: The mode to run the calculation in.
+    :param solvent: The solvent to use for the final single-point calculation.
+    :param xtb_preopt: Whether to pre-optimize with xTB.
+    :param transition_state: Whether this is a transition state optimization.
+    :param frequencies: Whether to calculate frequencies.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    workflow = stjames.MultiStageOptWorkflow(
+        initial_molecule=initial_molecule,
+        mode=mode,
+        solvent=solvent,
+        xtb_preopt=xtb_preopt,
+        transition_state=transition_state,
+        frequencies=frequencies,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "multistage_opt",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_spin_states_workflow(
+    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    states: list[int],
+    mode: str = "rapid",
+    solvent: str | None = None,
+    xtb_preopt: bool = True,
+    frequencies: bool = False,
+    name: str = "Spin States Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a spin states workflow to the API.
+
+    :param initial_molecule: The molecule to calculate spin states for.
+    :param states: List of multiplicities to calculate (e.g., [1, 3, 5] for singlet, triplet, quintet).
+    :param mode: The mode to run the calculation in.
+    :param solvent: The solvent to use for the calculation.
+    :param xtb_preopt: Whether to pre-optimize with xTB.
+    :param frequencies: Whether to calculate frequencies.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, RdkitMol):
+        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    workflow = stjames.SpinStatesWorkflow(
+        initial_molecule=initial_molecule,
+        states=states,
+        mode=mode,
+        solvent=solvent,
+        xtb_preopt=xtb_preopt,
+        frequencies=frequencies,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "spin_states",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+def submit_protein_binder_design_workflow(
+    binder_design_input: dict[str, Any],
+    protocol: str = "protein-anything",
+    num_designs: int = 10,
+    budget: int = 2,
+    name: str = "Protein Binder Design Workflow",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a protein binder design workflow to the API.
+
+    :param binder_design_input: Input specification for the binder design (BoltzGenInput format).
+    :param protocol: The protocol to use.
+    :param num_designs: Number of designs to generate.
+    :param budget: Number of designs to return in the final diversity-optimized set.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    workflow = stjames.ProteinBinderDesignWorkflow(
+        binder_design_input=binder_design_input,
+        binder_design_settings={
+            "protocol": protocol,
+            "num_designs": num_designs,
+            "budget": budget,
+        },
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "protein_binder_design",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+

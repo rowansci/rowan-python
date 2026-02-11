@@ -1,5 +1,5 @@
 """
-Calculate the Bond Dissociation Energy (BDE) of a molecule using the Rowan API.
+Perform a multistage geometry optimization using the Rowan API.
 
 Available modes:
 - "reckless": Fastest, least accurate
@@ -7,7 +7,7 @@ Available modes:
 - "careful": More accurate, slower
 - "meticulous": Most accurate, slowest
 
-See documentation at: https://docs.rowansci.com/science/workflows/bond-dissociation-energy
+See documentation at: https://docs.rowansci.com/science/workflows/multistage-optimization
 """
 
 from stjames import Molecule
@@ -17,13 +17,12 @@ import rowan
 # Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
 # rowan.api_key = "rowan-sk..."
 
-workflow = rowan.submit_bde_workflow(
-    initial_molecule=Molecule.from_smiles("CCCC"),
+workflow = rowan.submit_multistage_optimization_workflow(
+    initial_molecule=Molecule.from_smiles("C1CCC1"),  # cyclobutane
     mode="rapid",
-    all_CH=True,
-    name="Butane BDE",
+    name="Multistage optimization cyclobutane",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/bde/{workflow.uuid}")
+print(f"View workflow at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)
