@@ -28,6 +28,6 @@ workflow = rowan.submit_spin_states_workflow(
     name="Methylene spin states",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/spin-states/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/spin-states/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)

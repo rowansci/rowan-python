@@ -22,10 +22,10 @@ workflow = rowan.submit_electronic_properties_workflow(
     compute_density_cube=True,
     compute_electrostatic_potential_cube=True,
     compute_num_occupied_orbitals=3,  # HOMO, HOMO-1, HOMO-2
-    compute_num_virtual_orbitals=3,   # LUMO, LUMO+1, LUMO+2
+    compute_num_virtual_orbitals=3,  # LUMO, LUMO+1, LUMO+2
     name="Benzene electronic properties",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/orbitals/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/orbitals/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)

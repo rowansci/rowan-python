@@ -386,13 +386,12 @@ def batch_submit_workflow(
     if names:
         if initial_molecules and len(names) != len(initial_molecules):
             logger.warning(
-                "The number of names is not the same as the number of initial "
-                "molecules. Generic names of the form 'Batch Workflow {i}' "
-                "will be used."
+                "The number of names is not the same as the number of initial molecules. "
+                "Generic names of the form 'Batch Workflow {i}' will be used."
             )
         if initial_smileses and len(names) != len(initial_smileses):
             logger.warning(
-                "The number of names is not the same as the number of initial SMILES."
+                "The number of names is not the same as the number of initial SMILES. "
                 "Generic names of the form 'Batch Workflow {i}' will be used."
             )
 
@@ -1181,18 +1180,20 @@ def submit_protein_cofolding_workflow(
 
     :param initial_protein_sequences: The sequences of the proteins to be cofolded.
     :param initial_smiles_list: A list of SMILES strings for the ligands to be cofolded with.
-    :param ligand_binding_affinity_index: The index of the ligand for which to compute the binding affinity.
+    :param ligand_binding_affinity_index: The index of the ligand for which to compute
+        the binding affinity.
     :param use_msa_server: Whether to use the MSA server for the computation.
     :param use_potentials: Whether to use potentials for the computation.
-    :param do_pose_refinement: whether to optimize non-rotatable bonds in output poses
-    :param compute_strain: whether to compute the strain of the pose (if `pose_refinement` is enabled)
+    :param do_pose_refinement: Whether to optimize non-rotatable bonds in output poses.
+    :param compute_strain: Whether to compute the strain of the pose
+        (if `pose_refinement` is enabled).
     :param name: The name of the workflow.
     :param model: The model to use for the computation.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
-    """  # noqa: E501
+    """
 
     workflow = stjames.ProteinCofoldingWorkflow(
         use_msa_server=use_msa_server,
@@ -1353,9 +1354,9 @@ def submit_nmr_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits an NMR-prediction workflow to the API.
+    Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
 
-    :param initial_molecule: The molecule used in the scan.
+    :param initial_molecule: The molecule to predict NMR spectra for.
     :param solvent: The solvent in which to compute NMR spectra.
     :param do_csearch: Whether to perform a conformational search on the input structure.
     :param do_optimization: Whether to perform an optimization on the input structure.
@@ -1506,7 +1507,7 @@ def submit_pose_analysis_md_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a pose-analysis MD workflow to the API.
+    Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
 
     :param protein: The *holo* protein on which MD will be run.
         Can be input as a UUID or a Protein object.
@@ -1633,7 +1634,7 @@ def submit_msa_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a multiple sequence alignment (MSA) workflow to the API.
+    Submits a Multiple Sequence Alignment (MSA) workflow to the API.
 
     :param initial_protein_sequences: List of protein sequences to align, as ProteinSequence objects
     sor strings.
@@ -1670,9 +1671,10 @@ def submit_admet_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits an ADMET workflow to the API.
+    Submits an Absorption, Distribution, Metabolism, Excretion, and Toxicity (ADMET)
+    workflow to the API.
 
-    :param initial_smiles: The molecule used in the workflow.
+    :param initial_smiles: The molecule to calculate ADMET properties for.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
@@ -1845,7 +1847,7 @@ def submit_protein_md_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a pose-analysis MD workflow to the API.
+    Submits a Protein Molecular Dynamics (MD) workflow to the API.
 
     :param protein: The *holo* protein on which MD will be run.
         Can be input as a UUID or a Protein object.
@@ -1974,7 +1976,8 @@ def submit_electronic_properties_workflow(
     :param method: The method to use for the calculation.
     :param basis_set: The basis set to use (if any).
     :param compute_density_cube: Whether to compute the density cube.
-    :param compute_electrostatic_potential_cube: Whether to compute the electrostatic potential cube.
+    :param compute_electrostatic_potential_cube: Whether to compute the electrostatic
+        potential cube.
     :param compute_num_occupied_orbitals: Number of occupied orbitals to save.
     :param compute_num_virtual_orbitals: Number of virtual orbitals to save.
     :param name: The name of the workflow.
@@ -2139,7 +2142,8 @@ def submit_spin_states_workflow(
     Submits a spin states workflow to the API.
 
     :param initial_molecule: The molecule to calculate spin states for.
-    :param states: List of multiplicities to calculate (e.g., [1, 3, 5] for singlet, triplet, quintet).
+    :param states: List of multiplicities to calculate
+        (e.g., [1, 3, 5] for singlet, triplet, quintet).
     :param mode: The mode to run the calculation in.
     :param solvent: The solvent to use for the calculation.
     :param xtb_preopt: Whether to pre-optimize with xTB.
@@ -2224,5 +2228,3 @@ def submit_protein_binder_design_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-

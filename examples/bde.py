@@ -1,5 +1,15 @@
 """
-Calculate the Bond Dissociation Energy (BDE) of a molecule using the Rowan API.
+Calculate the Bond-Dissociation Energy (BDE) of a molecule using the Rowan API.
+
+| Calculation |   Initial    |    Final     |          Single        | Optimizes  |
+| Mode        | Optimization | Optimization |          Point         | Fragments? |
+|-------------|--------------|--------------|------------------------|------------|
+| Reckless    |              |    GFN-FF    |        GFN2-xTB        |     No     |
+| Rapid       |              |   GFN2-xTB   |        r²SCAN-3c       |     Yes    |
+| Careful     |              |   r²SCAN-3c  |        ωB97X-3c        |     Yes    |
+| Meticulous  |  r²SCAN-3c   |   ωB97X-3c   | ωB97M-D3BJ/def2-TZVPPD |     Yes    |
+
+Rapid is recommended for most work.
 
 Available modes:
 - "reckless": Fastest, least accurate
@@ -24,6 +34,6 @@ workflow = rowan.submit_bde_workflow(
     name="Butane BDE",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/bde/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/bde/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)

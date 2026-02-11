@@ -23,6 +23,6 @@ workflow = rowan.submit_multistage_optimization_workflow(
     name="Multistage optimization cyclobutane",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)

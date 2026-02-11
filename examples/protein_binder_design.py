@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """
 Design protein binders using BoltzGen via the Rowan API.
 
@@ -35,7 +36,8 @@ binder_design_input = {
     "ligand_entities": [
         {
             "id": "B",
-            "smiles": "C1CNC[C@@H]1OC2=C(C=C(C=C2NC(=O)C3=CC(=NC=N3)C(=O)NC4=CC(=CC(=C4O[C@@H]5CCNC5)NC(=O)CCCCN=C(N)N)C(F)(F)F)C(F)(F)F)NC(=O)CCCCN=C(N)N",  # brilacidin
+            # brilacidin - antimicrobial small molecule
+            "smiles": "C1CNC[C@@H]1OC2=C(C=C(C=C2NC(=O)C3=CC(=NC=N3)C(=O)NC4=CC(=CC(=C4O[C@@H]5CCNC5)NC(=O)CCCCN=C(N)N)C(F)(F)F)C(F)(F)F)NC(=O)CCCCN=C(N)N",
         },
     ],
 }
@@ -48,6 +50,8 @@ workflow = rowan.submit_protein_binder_design_workflow(
     name="Brilacidin binder design",
 )
 
-print(f"View workflow at: https://labs.rowansci.com/protein-binder-design/{workflow.uuid}")
+print(
+    f"View workflow privately at: https://labs.rowansci.com/protein-binder-design/{workflow.uuid}"
+)
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow.data)
