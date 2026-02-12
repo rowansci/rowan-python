@@ -1,7 +1,5 @@
 """
-Run an optimization calculation on a molecule using Rowan.
-
-See documentation at: https://docs.rowansci.com/science/quantum-chemistry/geometry-optimization
+Retrieve a previously run water optimization and frequency calculation.
 """
 
 from stjames import Molecule
@@ -11,17 +9,9 @@ import rowan
 # Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
 # rowan.api_key = "rowan-sk..."
 
-workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule=Molecule.from_smiles("O"),
-    method="GFN2-xTB",
-    tasks=["optimize", "frequencies"],
-    engine="xtb",
-    name="Water Optimization",
-)
-
-print(f"View optimization privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+workflow_uuid = "2e8632bf-6d68-4099-b0c7-96378c7b7261"
+workflow = rowan.retrieve_workflow(workflow_uuid)
+print(f"View workflow at: https://labs.rowansci.com/calculation/{workflow_uuid}")
 
 calc_uuid = workflow.data["calculation_uuid"]
 mol_json = rowan.retrieve_calculation_molecules(calc_uuid, return_frequencies=True)
