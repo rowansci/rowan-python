@@ -95,9 +95,10 @@ apply_nest_asyncio()
 
 
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
-    stjames_mol_dict = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
-
-    return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())
+    calc = rowan.retrieve_calculation(calculation_uuid)
+    if calc.molecule is None:
+        raise ValueError(f"Calculation {calculation_uuid} has no molecules")
+    return Chem.MolFromXYZBlock(calc.molecule.to_xyz())
 
 
 def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
@@ -518,11 +519,12 @@ async def _single_energy(
 
     results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
 
-    energies = [
-        rowan.retrieve_calculation_molecules(data["calculation_uuid"])[-1]["energy"]
-        for data in results
-        if data is not None
-    ]
+    energies: list[float] = []
+    for data in results:
+        if data is not None:
+            calc = rowan.retrieve_calculation(data["calculation_uuid"])
+            if calc.energy is not None:
+                energies.append(calc.energy)
 
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
 
@@ -667,14 +669,15 @@ async def _single_optimize(
 
     results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
     calculations = [
-        rowan.retrieve_calculation_molecules(data["calculation_uuid"])
-        for data in results
-        if data is not None
+        rowan.retrieve_calculation(data["calculation_uuid"]) for data in results if data is not None
     ]
-    optimization_atoms = [cacluation[-1]["atoms"] for cacluation in calculations]
-    optimized_positions = [[atom["position"] for atom in atoms] for atoms in optimization_atoms]
-
-    energies = [cacluation[-1]["energy"] for cacluation in calculations]
+    optimized_positions: list[list[tuple[float, float, float]]] = []
+    energies: list[float] = []
+    for calc in calculations:
+        if calc.molecule is not None:
+            optimized_positions.append([atom.position for atom in calc.molecule.atoms])
+            if calc.energy is not None:
+                energies.append(calc.energy)
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
         conformer.SetPositions(np.array(optimized_positions[i]))
@@ -861,8 +864,10 @@ async def _single_conformers(
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)  # type: ignore [attr-defined]
 
     for i, conformer in enumerate(mol.GetConformers()):
-        atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
-        pos = [atom["position"] for atom in atoms]
+        calc = rowan.retrieve_calculation(lowest_n_uuids[i])
+        if calc.molecule is None:
+            raise ValueError(f"Calculation {lowest_n_uuids[i]} has no molecules")
+        pos = [atom.position for atom in calc.molecule.atoms]
         conformer.SetPositions(np.array(pos))
 
     return {
@@ -1003,8 +1008,10 @@ async def _single_charges(
         data = rowan.retrieve_workflow(uuid).data
         if data is None:
             raise KeyError("Workflow data not found")
-        molecules = rowan.retrieve_calculation_molecules(data["calculation_uuid"])
-        return molecules[-1]["mulliken_charges"]
+        calc = rowan.retrieve_calculation(data["calculation_uuid"])
+        if calc.molecule is None or calc.molecule.mulliken_charges is None:
+            raise KeyError("Calculation has no mulliken charges")
+        return calc.molecule.mulliken_charges
 
     return [
         {"conformer_index": i, "charges": grab_charges(uuid)}
