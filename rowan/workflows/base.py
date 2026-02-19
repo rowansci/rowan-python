@@ -348,6 +348,7 @@ class WorkflowResult:
     workflow_data: dict
     workflow_type: str
     _workflow: Any = field(default=None, init=False)
+    _cache: dict = field(default_factory=dict, init=False)
 
     _stjames_class: ClassVar[type | None] = None
 

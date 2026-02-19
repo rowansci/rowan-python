@@ -5,6 +5,8 @@ from typing import Any
 import stjames
 from stjames.optimization.freezing_string_method import FSMSettings
 
+from ..calculation import Calculation, retrieve_calculation
+from ..molecule import Molecule
 from ..utils import api_client
 from .base import StJamesMolecule, Workflow, WorkflowResult, register_result
 
@@ -15,6 +17,14 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
     _stjames_class = stjames.DoubleEndedTSSearchWorkflow
 
+    def __post_init__(self) -> None:
+        """Parse workflow data and eagerly fetch TS calculation."""
+        super().__post_init__()
+        # Eagerly fetch TS calculation
+        ts_uuid = getattr(self._workflow, "ts_guess_calculation_uuid", None)
+        if ts_uuid:
+            self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
+
     def __repr__(self) -> str:
         ts_uuid = self.ts_guess_calculation_uuid
         n_pts = len(self.distances) if self.distances else 0
@@ -24,6 +34,17 @@ class DoubleEndedTSSearchResult(WorkflowResult):
     def ts_guess_calculation_uuid(self) -> str | None:
         """UUID of the transition state guess calculation."""
         return self._workflow.ts_guess_calculation_uuid
+
+    @property
+    def ts_guess_calculation(self) -> Calculation | None:
+        """The transition state guess Calculation with full molecule data."""
+        return self._cache.get("ts_calculation")
+
+    @property
+    def molecules(self) -> list[Molecule]:
+        """Molecules along the reaction path (trajectory)."""
+        calc = self.ts_guess_calculation
+        return calc.molecules if calc else []
 
     @property
     def distances(self) -> list[float] | None:

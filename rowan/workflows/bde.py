@@ -25,13 +25,12 @@ class BDEResult(WorkflowResult):
     _stjames_class = stjames.BDEWorkflow
 
     def __repr__(self) -> str:
-        e = self.optimization_energy
         n = len(self.bdes)
-        return f"<BDEResult optimization_energy={e} bdes={n}>"
+        return f"<BDEResult energy={self.energy} bdes={n}>"
 
     @property
-    def optimization_energy(self) -> float | None:
-        """Energy of optimized initial molecule."""
+    def energy(self) -> float | None:
+        """Energy of the molecule (Hartree)."""
         return self._workflow.optimization_energy
 
     @property
@@ -44,11 +43,6 @@ class BDEResult(WorkflowResult):
             )
             for b in self._workflow.bdes
         ]
-
-    @property
-    def energies(self) -> tuple[float | None, ...]:
-        """Convenience: extract energies from bdes."""
-        return self._workflow.energies
 
 
 def submit_bde_workflow(

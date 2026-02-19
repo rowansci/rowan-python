@@ -6,9 +6,6 @@ from .analogue_docking import (
     AnalogueDockingResult,
     submit_analogue_docking_workflow,
 )
-from .analogue_docking import (
-    DockingScore as AnalogueDockingScore,
-)
 from .base import (
     RESULT_REGISTRY,
     Workflow,
@@ -76,6 +73,9 @@ from .solubility import SolubilityEntry, SolubilityResult, submit_solubility_wor
 from .spin_states import SpinState, SpinStatesResult, submit_spin_states_workflow
 from .strain import StrainResult, submit_strain_workflow
 from .tautomer_search import Tautomer, TautomerResult, submit_tautomer_search_workflow
+
+# Backwards compatibility alias
+AnalogueDockingScore = DockingScore
 
 __all__ = [
     "RESULT_REGISTRY",

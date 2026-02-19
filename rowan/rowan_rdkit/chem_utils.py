@@ -1009,9 +1009,9 @@ async def _single_charges(
         if data is None:
             raise KeyError("Workflow data not found")
         calc = rowan.retrieve_calculation(data["calculation_uuid"])
-        if calc.molecule is None or calc.molecule.mulliken_charges is None:
-            raise KeyError("Calculation has no mulliken charges")
-        return calc.molecule.mulliken_charges
+        if calc.molecule is None or calc.molecule.charges is None:
+            raise KeyError("Calculation has no charges")
+        return calc.molecule.charges
 
     return [
         {"conformer_index": i, "charges": grab_charges(uuid)}

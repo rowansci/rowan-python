@@ -5,6 +5,8 @@ from typing import Any
 import stjames
 from rdkit import Chem
 
+from ..calculation import Calculation, retrieve_calculation
+from ..molecule import Molecule
 from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
 
@@ -29,8 +31,64 @@ class ConformerSearchResult(WorkflowResult):
 
     @property
     def energies(self) -> list[float]:
-        """Conformer energies."""
+        """Conformer energies (Hartree)."""
         return list(self._workflow.energies)
+
+    @property
+    def radii_of_gyration(self) -> list[float]:
+        """Radius of gyration for each conformer (Å)."""
+        return [p.radius_of_gyration for p in self._workflow.conformer_properties]
+
+    @property
+    def sasa(self) -> list[float]:
+        """Solvent accessible surface area for each conformer (Ų)."""
+        return [p.solvent_accessible_surface_area for p in self._workflow.conformer_properties]
+
+    @property
+    def polar_sasa(self) -> list[float]:
+        """Polar solvent accessible surface area for each conformer (Ų)."""
+        return [
+            p.polar_solvent_accessible_surface_area for p in self._workflow.conformer_properties
+        ]
+
+    def get_conformers(self, n: int | None = None) -> list[Molecule]:
+        """
+        Fetch conformer molecules.
+
+        :param n: Number of conformers to fetch (default: all). Conformers are
+            ordered by energy, so n=5 returns the 5 lowest-energy conformers.
+        :return: List of Molecule objects.
+
+        Note: Makes one API call per conformer.
+        """
+        count = len(self.conformer_uuids) if n is None else min(n, len(self.conformer_uuids))
+        molecules = []
+        for i in range(count):
+            calc = self.get_conformer(i)
+            if calc.molecule:
+                molecules.append(calc.molecule)
+        return molecules
+
+    def get_conformer(self, index: int, stage: int = -1) -> Calculation:
+        """
+        Fetch a conformer's calculation data by index.
+
+        :param index: The conformer index (0-based).
+        :param stage: The optimization stage (-1 for final stage).
+        :return: A Calculation object with molecule and energy data.
+        :raises IndexError: If the index is out of range.
+        :raises ValueError: If the conformer UUID is None.
+        """
+        uuids = self.conformer_uuids
+        if index < 0 or index >= len(uuids):
+            raise IndexError(f"Conformer index {index} out of range (0-{len(uuids) - 1})")
+
+        stage_uuids = uuids[index]
+        uuid = stage_uuids[stage]
+        if uuid is None:
+            raise ValueError(f"Conformer {index} has no calculation at stage {stage}")
+
+        return retrieve_calculation(uuid)
 
 
 def submit_conformer_search_workflow(

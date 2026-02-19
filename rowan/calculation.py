@@ -5,7 +5,13 @@ from typing import Self
 import stjames
 from pydantic import BaseModel, ConfigDict
 
+from .molecule import Molecule
 from .utils import api_client
+
+
+def _parse_molecules(data: list[dict]) -> list[Molecule]:
+    """Parse molecule dicts into Molecule objects."""
+    return [Molecule._from_stjames(stjames.Molecule.model_validate(m)) for m in data]
 
 
 class Calculation(BaseModel):
@@ -25,28 +31,37 @@ class Calculation(BaseModel):
     status: int | None = None
     elapsed: float | None = None
     engine: str | None = None
-    molecules: list[stjames.Molecule] = []
+    _molecules: list[Molecule] = []
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    def __init__(self, molecules: list[Molecule] | None = None, **kwargs):
+        super().__init__(**kwargs)
+        object.__setattr__(self, "_molecules", molecules or [])
+
     def __repr__(self) -> str:
-        n_mols = len(self.molecules)
+        n_mols = len(self._molecules)
         energy = self.energy
         e_str = f"{energy:.6f}" if energy is not None else "None"
         return f"<Calculation energy={e_str} molecules={n_mols} uuid='{self.uuid}'>"
 
     @property
+    def molecules(self) -> list[Molecule]:
+        """List of molecules (geometries) from this calculation."""
+        return self._molecules
+
+    @property
     def energy(self) -> float | None:
         """Energy of the final molecule (Hartree)."""
-        if self.molecules:
-            return self.molecules[-1].energy
+        if self._molecules:
+            return self._molecules[-1].energy
         return None
 
     @property
-    def molecule(self) -> stjames.Molecule | None:
+    def molecule(self) -> Molecule | None:
         """The final molecule geometry."""
-        if self.molecules:
-            return self.molecules[-1]
+        if self._molecules:
+            return self._molecules[-1]
         return None
 
     def refresh(self, in_place: bool = True) -> Self:
@@ -61,14 +76,23 @@ class Calculation(BaseModel):
             response.raise_for_status()
             data = response.json()
 
+        molecules = _parse_molecules(data.get("molecules", []))
+
         if not in_place:
-            return self.__class__(uuid=self.uuid, **data)
+            return self.__class__(
+                uuid=self.uuid,
+                name=data.get("name"),
+                status=data.get("status"),
+                elapsed=data.get("elapsed"),
+                engine=data.get("engine"),
+                molecules=molecules,
+            )
 
         self.name = data.get("name")
         self.status = data.get("status")
         self.elapsed = data.get("elapsed")
         self.engine = data.get("engine")
-        self.molecules = [stjames.Molecule.model_validate(m) for m in data.get("molecules", [])]
+        object.__setattr__(self, "_molecules", molecules)
         return self
 
 
@@ -85,7 +109,7 @@ def retrieve_calculation(uuid: str) -> Calculation:
         response.raise_for_status()
         data = response.json()
 
-    molecules = [stjames.Molecule.model_validate(m) for m in data.get("molecules", [])]
+    molecules = _parse_molecules(data.get("molecules", []))
 
     return Calculation(
         uuid=uuid,

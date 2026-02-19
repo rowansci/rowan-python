@@ -1,6 +1,5 @@
 """Analogue docking workflow - dock analogues using a template ligand."""
 
-from dataclasses import dataclass
 from typing import Any
 
 import stjames
@@ -9,18 +8,7 @@ from rdkit import Chem
 from ..protein import Protein
 from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
-
-
-@dataclass(frozen=True, slots=True)
-class DockingScore:
-    """A docking pose with its score."""
-
-    score: float
-    pose: str | None = None
-    complex_pdb: str | None = None
-    posebusters_valid: bool = False
-    strain: float | None = None
-    rmsd: float | None = None
+from .docking import DockingScore
 
 
 @register_result("analogue_docking")

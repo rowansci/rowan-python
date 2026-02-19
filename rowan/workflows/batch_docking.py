@@ -14,7 +14,7 @@ class BatchDockingResult(WorkflowResult):
     _stjames_class = stjames.BatchDockingWorkflow
 
     def __repr__(self) -> str:
-        scores = self.best_scores
+        scores = self.scores
         valid = {k: v for k, v in scores.items() if v is not None}
         if valid:
             best_smiles = min(valid.keys(), key=lambda k: valid[k])
@@ -24,8 +24,8 @@ class BatchDockingResult(WorkflowResult):
         return f"<BatchDockingResult ligands={len(scores)} best=({best_score}, {best_smiles!r})>"
 
     @property
-    def best_scores(self) -> dict[str, float | None]:
-        """Best docking scores indexed by SMILES."""
+    def scores(self) -> dict[str, float | None]:
+        """Docking scores indexed by SMILES."""
         smiles_list = self._workflow.initial_smiles_list
         scores = self._workflow.best_scores
         return dict(zip(smiles_list, scores, strict=True))

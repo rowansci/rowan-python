@@ -5,6 +5,8 @@ from typing import Any
 import stjames
 from rdkit import Chem
 
+from ..calculation import Calculation, retrieve_calculation
+from ..molecule import Molecule
 from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
 
@@ -13,14 +15,105 @@ from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_
 class BasicCalculationResult(WorkflowResult):
     """Result from a basic calculation workflow."""
 
-    # TODO: Add properties for energy, geometry, etc. once we figure out
-    # how to fetch/embed calculation results from the calculation_uuid
-
     _stjames_class = stjames.BasicCalculationWorkflow
 
-    def __repr__(self) -> str:
+    def __post_init__(self) -> None:
+        """Parse workflow data and eagerly fetch calculation."""
+        super().__post_init__()
+        # Eagerly fetch calculation data so molecule is immediately available
         calc_uuid = getattr(self._workflow, "calculation_uuid", None)
-        return f"<BasicCalculationResult calculation_uuid={calc_uuid!r}>"
+        if calc_uuid:
+            self._cache["calculation"] = retrieve_calculation(calc_uuid)
+
+    def __repr__(self) -> str:
+        energy = self.energy
+        e_str = f"{energy:.6f}" if energy is not None else "None"
+        parts = [f"energy={e_str}"]
+        if self.solvent:
+            parts.append(f"solvent={self.solvent!r}")
+        return f"<BasicCalculationResult {' '.join(parts)}>"
+
+    @property
+    def calculation_uuid(self) -> str | None:
+        """UUID of the calculation."""
+        return getattr(self._workflow, "calculation_uuid", None)
+
+    @property
+    def calculation(self) -> Calculation | None:
+        """The Calculation object with full molecule data."""
+        return self._cache.get("calculation")
+
+    @property
+    def method(self) -> stjames.Method | None:
+        """The computational method used."""
+        settings = getattr(self._workflow, "settings", None)
+        return settings.method if settings else None
+
+    @property
+    def engine(self) -> str | None:
+        """The compute engine used."""
+        return getattr(self._workflow, "engine", None)
+
+    @property
+    def solvent(self) -> str | None:
+        """The solvent used (if any)."""
+        settings = getattr(self._workflow, "settings", None)
+        if settings and settings.solvent_settings:
+            return settings.solvent_settings.get("solvent")
+        return None
+
+    @property
+    def tasks(self) -> list[str] | None:
+        """The tasks performed (e.g., ['optimize'], ['energy'], ['frequency'])."""
+        settings = getattr(self._workflow, "settings", None)
+        return list(settings.tasks) if settings and settings.tasks else None
+
+    @property
+    def molecule(self) -> Molecule | None:
+        """The final molecule geometry with all computed properties."""
+        calc = self.calculation
+        return calc.molecule if calc else None
+
+    @property
+    def molecules(self) -> list:
+        """All molecules from the calculation (e.g., optimization trajectory)."""
+        calc = self.calculation
+        return calc.molecules if calc else []
+
+    @property
+    def energy(self) -> float | None:
+        """Energy of the final molecule (Hartree)."""
+        mol = self.molecule
+        return mol.energy if mol else None
+
+    @property
+    def optimization_energies(self) -> list[float]:
+        """Energies for each optimization step (if optimization was performed)."""
+        return [m.energy for m in self.molecules if m.energy is not None]
+
+    @property
+    def charges(self) -> list[float] | None:
+        """Partial charges on each atom."""
+        mol = self.molecule
+        return mol.charges if mol else None
+
+    @property
+    def spin_densities(self) -> list[float] | None:
+        """Spin densities on each atom (for open-shell systems)."""
+        mol = self.molecule
+        return mol.spin_densities if mol else None
+
+    @property
+    def dipole(self) -> tuple[float, float, float] | None:
+        """Dipole moment vector (Debye)."""
+        mol = self.molecule
+        return mol.dipole if mol else None
+
+    @property
+    def frequencies(self) -> list[float] | None:
+        """Vibrational frequencies in cm^-1 (if frequency calculation was performed)."""
+        mol = self.molecule
+        return mol.frequencies if mol else None
 
 
 def submit_basic_calculation_workflow(
