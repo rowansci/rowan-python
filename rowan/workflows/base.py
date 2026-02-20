@@ -13,6 +13,7 @@ import stjames
 from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
 
+from ..molecule import Molecule as RowanMolecule
 from ..utils import api_client
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ logger.setLevel(logging.INFO)
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 StJamesMolecule: TypeAlias = stjames.Molecule
+MoleculeInput: TypeAlias = dict[str, Any] | RowanMolecule | StJamesMolecule | RdkitMol
 
 
 class WorkflowError(Exception):
@@ -395,10 +397,29 @@ def create_result(workflow_data: dict, workflow_type: str) -> WorkflowResult:
     )
 
 
+def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
+    """
+    Convert any molecule input type to a dict for API submission.
+
+    :param mol: A molecule as Molecule, stjames.Molecule, RDKit Mol, or dict.
+    :return: Dict representation suitable for API submission.
+    """
+    if isinstance(mol, RowanMolecule):
+        return mol._to_stjames().model_dump(mode="json")
+    elif isinstance(mol, stjames.Molecule):
+        return mol.model_dump(mode="json")
+    elif isinstance(mol, Chem.Mol):
+        return stjames.Molecule.from_rdkit(mol, cid=0).model_dump(mode="json")
+    elif isinstance(mol, dict):
+        return mol
+    else:
+        raise TypeError(f"Cannot convert {type(mol)} to molecule dict")
+
+
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | None = None,
+    initial_molecule: MoleculeInput | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
     folder_uuid: str | None = None,
@@ -433,14 +454,8 @@ def submit_workflow(
 
     if initial_smiles is not None:
         data["initial_smiles"] = initial_smiles
-    elif isinstance(initial_molecule, StJamesMolecule):
-        data["initial_molecule"] = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, dict):
-        data["initial_molecule"] = initial_molecule
-    elif isinstance(initial_molecule, RdkitMol):
-        data["initial_molecule"] = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
-            mode="json"
-        )
+    elif initial_molecule is not None:
+        data["initial_molecule"] = molecule_to_dict(initial_molecule)
     else:
         raise ValueError("You must provide either `initial_smiles` or a valid `initial_molecule`.")
 
@@ -469,7 +484,7 @@ def retrieve_workflow(uuid: str) -> Workflow:
 def batch_submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
-    initial_molecules: list[dict[str, Any] | StJamesMolecule | RdkitMol] | None = None,
+    initial_molecules: list[MoleculeInput] | None = None,
     initial_smileses: list[str] | None = None,
     names: list[str] | None = None,
     folder_uuid: str | None = None,
@@ -526,13 +541,16 @@ def batch_submit_workflow(
 
 __all__ = [
     "RESULT_REGISTRY",
+    "MoleculeInput",
     "RdkitMol",
+    "RowanMolecule",
     "StJamesMolecule",
     "Workflow",
     "WorkflowError",
     "WorkflowResult",
     "batch_submit_workflow",
     "create_result",
+    "molecule_to_dict",
     "register_result",
     "retrieve_workflow",
     "submit_workflow",

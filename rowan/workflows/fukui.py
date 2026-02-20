@@ -41,7 +41,7 @@ class FukuiResult(WorkflowResult):
 
 
 def submit_fukui_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     optimization_method: str = "gfn2_xtb",
     fukui_method: str = "gfn1_xtb",
     solvent_settings: dict[str, str] | None = None,
@@ -65,7 +65,7 @@ def submit_fukui_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)

@@ -32,9 +32,13 @@ from .electronic_properties import (
     submit_electronic_properties_workflow,
 )
 from .fukui import FukuiResult, submit_fukui_workflow
-from .hydrogen_bond_basicity import (
+from .hydrogen_bond_donor_acceptor_strength import (
+    HydrogenBondAcceptorSite,
     HydrogenBondBasicityResult,
+    HydrogenBondDonorAcceptorStrengthResult,
+    HydrogenBondDonorSite,
     submit_hydrogen_bond_basicity_workflow,
+    submit_hydrogen_bond_donor_acceptor_strength_workflow,
 )
 from .ion_mobility import IonMobilityResult, submit_ion_mobility_workflow
 from .irc import IRCResult, submit_irc_workflow
@@ -94,7 +98,10 @@ __all__ = [
     "DoubleEndedTSSearchResult",
     "ElectronicPropertiesResult",
     "FukuiResult",
+    "HydrogenBondAcceptorSite",
     "HydrogenBondBasicityResult",
+    "HydrogenBondDonorAcceptorStrengthResult",
+    "HydrogenBondDonorSite",
     "IRCResult",
     "IonMobilityResult",
     "MSAResult",
@@ -140,6 +147,7 @@ __all__ = [
     "submit_electronic_properties_workflow",
     "submit_fukui_workflow",
     "submit_hydrogen_bond_basicity_workflow",
+    "submit_hydrogen_bond_donor_acceptor_strength_workflow",
     "submit_ion_mobility_workflow",
     "submit_irc_workflow",
     "submit_macropka_workflow",

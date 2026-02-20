@@ -45,12 +45,12 @@ class SpinStatesResult(WorkflowResult):
 
     @property
     def energies(self) -> list[float]:
-        """Convenience: extract energies from spin_states."""
+        """Energies for each spin state (Hartree)."""
         return self._workflow.energies
 
 
 def submit_spin_states_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     states: list[int],
     mode: str = "rapid",
     solvent: str | None = None,
@@ -79,7 +79,7 @@ def submit_spin_states_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
             mode="json"
         )
 

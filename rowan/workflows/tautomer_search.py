@@ -47,7 +47,7 @@ class TautomerResult(WorkflowResult):
 
 
 def submit_tautomer_search_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     mode: str = "careful",
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
@@ -67,7 +67,7 @@ def submit_tautomer_search_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     workflow = stjames.TautomerWorkflow(
         initial_molecule=initial_molecule,

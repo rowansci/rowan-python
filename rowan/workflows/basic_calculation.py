@@ -1,6 +1,5 @@
 """Basic calculation workflow - perform quantum chemical calculations."""
 
-from typing import Any
 
 import stjames
 from rdkit import Chem
@@ -8,7 +7,14 @@ from rdkit import Chem
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    MoleculeInput,
+    RowanMolecule,
+    StJamesMolecule,
+    Workflow,
+    WorkflowResult,
+    register_result,
+)
 
 
 @register_result("basic_calculation")
@@ -20,7 +26,6 @@ class BasicCalculationResult(WorkflowResult):
     def __post_init__(self) -> None:
         """Parse workflow data and eagerly fetch calculation."""
         super().__post_init__()
-        # Eagerly fetch calculation data so molecule is immediately available
         calc_uuid = getattr(self._workflow, "calculation_uuid", None)
         if calc_uuid:
             self._cache["calculation"] = retrieve_calculation(calc_uuid)
@@ -35,7 +40,7 @@ class BasicCalculationResult(WorkflowResult):
 
     @property
     def calculation_uuid(self) -> str | None:
-        """UUID of the calculation."""
+        """The UUID of the calculation."""
         return getattr(self._workflow, "calculation_uuid", None)
 
     @property
@@ -117,8 +122,8 @@ class BasicCalculationResult(WorkflowResult):
 
 
 def submit_basic_calculation_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
-    method: stjames.Method | str = "uma_m_omol",
+    initial_molecule: MoleculeInput,
+    method: stjames.Method | str = "omol25_conserving_s",
     basis_set: stjames.BasisSet | str | None = None,
     tasks: list[str] | None = None,
     mode: str = "auto",
@@ -145,10 +150,12 @@ def submit_basic_calculation_workflow(
     if not tasks:
         tasks = ["optimize"]
 
-    if isinstance(initial_molecule, StJamesMolecule):
+    if isinstance(initial_molecule, RowanMolecule):
+        initial_molecule = initial_molecule._to_stjames().model_dump(mode="json")
+    elif isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(method, str):
         method = stjames.Method(method)

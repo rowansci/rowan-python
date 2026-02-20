@@ -32,7 +32,7 @@ class RedoxPotentialResult(WorkflowResult):
 
 
 def submit_redox_potential_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     reduction: bool = False,
     oxidization: bool = True,
     mode: str = "rapid",
@@ -56,7 +56,7 @@ def submit_redox_potential_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     workflow = stjames.RedoxPotentialWorkflow(
         initial_molecule=initial_molecule,

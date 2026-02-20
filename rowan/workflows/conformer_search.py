@@ -25,6 +25,11 @@ class ConformerSearchResult(WorkflowResult):
         return f"<ConformerSearchResult conformers={n} energy_range=({e_min}, {e_max})>"
 
     @property
+    def num_conformers(self) -> int:
+        """Number of conformers found."""
+        return len(self._workflow.conformer_uuids)
+
+    @property
     def conformer_uuids(self) -> list[list[str | None]]:
         """List of conformer UUIDs (nested for multistage optimization)."""
         return self._workflow.conformer_uuids
@@ -61,7 +66,8 @@ class ConformerSearchResult(WorkflowResult):
 
         Note: Makes one API call per conformer.
         """
-        count = len(self.conformer_uuids) if n is None else min(n, len(self.conformer_uuids))
+        uuids = self._workflow.conformer_uuids
+        count = len(uuids) if n is None else min(n, len(uuids))
         molecules = []
         for i in range(count):
             calc = self.get_conformer(i)
@@ -79,7 +85,7 @@ class ConformerSearchResult(WorkflowResult):
         :raises IndexError: If the index is out of range.
         :raises ValueError: If the conformer UUID is None.
         """
-        uuids = self.conformer_uuids
+        uuids = self._workflow.conformer_uuids
         if index < 0 or index >= len(uuids):
             raise IndexError(f"Conformer index {index} out of range (0-{len(uuids) - 1})")
 
@@ -92,7 +98,7 @@ class ConformerSearchResult(WorkflowResult):
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     conf_gen_settings: stjames.ConformerGenSettings,
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: str | None = None,
@@ -118,7 +124,7 @@ def submit_conformer_search_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(final_method, str):
         final_method = stjames.Method(final_method)

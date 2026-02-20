@@ -1,0 +1,128 @@
+"""Hydrogen bond donor/acceptor strength workflow."""
+
+from dataclasses import dataclass
+from typing import Any
+
+import stjames
+from rdkit import Chem
+
+from ..utils import api_client
+from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+
+
+@dataclass(frozen=True, slots=True)
+class HydrogenBondAcceptorSite:
+    """A hydrogen bond acceptor site."""
+
+    atom_idx: int
+    pkbhx: float
+    position: tuple[float, float, float]
+    name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class HydrogenBondDonorSite:
+    """A hydrogen bond donor site."""
+
+    atom_idx: int
+    pk_alpha: float
+    position: tuple[float, float, float]
+
+
+@register_result("hydrogen_bond_basicity")
+class HydrogenBondDonorAcceptorStrengthResult(WorkflowResult):
+    """Result from a hydrogen bond donor/acceptor strength workflow."""
+
+    _stjames_class = stjames.HydrogenBondBasicityWorkflow
+
+    def __repr__(self) -> str:
+        n_acc = len(self.acceptor_sites)
+        n_don = len(self.donor_sites)
+        return f"<HydrogenBondDonorAcceptorStrengthResult acceptors={n_acc} donors={n_don}>"
+
+    @property
+    def acceptor_sites(self) -> list[HydrogenBondAcceptorSite]:
+        """Hydrogen bond acceptor sites with pKBHX values."""
+        return [
+            HydrogenBondAcceptorSite(
+                atom_idx=s.atom_idx,
+                pkbhx=s.pkbhx,
+                position=s.position,
+                name=s.name,
+            )
+            for s in self._workflow.hba_sites
+        ]
+
+    @property
+    def donor_sites(self) -> list[HydrogenBondDonorSite]:
+        """Hydrogen bond donor sites with pK_alpha values."""
+        return [
+            HydrogenBondDonorSite(
+                atom_idx=s.atom_idx,
+                pk_alpha=s.pk_alpha,
+                position=s.position,
+            )
+            for s in self._workflow.hbd_sites
+        ]
+
+
+def submit_hydrogen_bond_donor_acceptor_strength_workflow(
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    name: str = "Hydrogen-Bond Acceptor/Donor Strength",
+    folder_uuid: str | None = None,
+    max_credits: int | None = None,
+) -> Workflow:
+    """
+    Submits a hydrogen bond donor/acceptor strength workflow to the API.
+
+    :param initial_molecule: The molecule to calculate HBA/HBD strength for.
+    :param do_csearch: Whether to perform a conformational search.
+    :param do_optimization: Whether to perform an optimization.
+    :param name: The name of the workflow.
+    :param folder_uuid: The UUID of the folder to place the workflow in.
+    :param max_credits: The maximum number of credits to use for the workflow.
+    :return: A Workflow object representing the submitted workflow.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    if isinstance(initial_molecule, StJamesMolecule):
+        initial_molecule = initial_molecule.model_dump(mode="json")
+    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
+            mode="json"
+        )
+
+    workflow = stjames.HydrogenBondBasicityWorkflow(
+        initial_molecule=initial_molecule,
+        do_csearch=do_csearch,
+        do_optimization=do_optimization,
+    )
+
+    data = {
+        "name": name,
+        "folder_uuid": folder_uuid,
+        "workflow_type": "hydrogen_bond_basicity",
+        "workflow_data": workflow.model_dump(mode="json"),
+        "initial_molecule": initial_molecule,
+        "max_credits": max_credits,
+    }
+
+    with api_client() as client:
+        response = client.post("/workflow", json=data)
+        response.raise_for_status()
+        return Workflow(**response.json())
+
+
+# Backwards compatibility aliases
+HydrogenBondBasicityResult = HydrogenBondDonorAcceptorStrengthResult
+submit_hydrogen_bond_basicity_workflow = submit_hydrogen_bond_donor_acceptor_strength_workflow
+
+__all__ = [
+    "HydrogenBondAcceptorSite",
+    "HydrogenBondBasicityResult",
+    "HydrogenBondDonorAcceptorStrengthResult",
+    "HydrogenBondDonorSite",
+    "submit_hydrogen_bond_basicity_workflow",
+    "submit_hydrogen_bond_donor_acceptor_strength_workflow",
+]

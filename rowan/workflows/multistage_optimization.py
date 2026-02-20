@@ -21,7 +21,7 @@ class MultiStageOptResult(WorkflowResult):
 
 
 def submit_multistage_optimization_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     mode: str = "rapid",
     solvent: str | None = None,
     xtb_preopt: bool = True,
@@ -49,7 +49,7 @@ def submit_multistage_optimization_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
             mode="json"
         )
 

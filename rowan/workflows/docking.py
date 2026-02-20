@@ -1,14 +1,12 @@
 """Docking workflow - molecular docking to protein targets."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..protein import Protein
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,13 +56,13 @@ class DockingResult(WorkflowResult):
 def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     executable: str = "vina",
     scoring_function: str = "vinardo",
     exhaustiveness: float = 8,
-    do_csearch: bool = False,
-    do_optimization: bool = False,
-    do_pose_refinement: bool = False,
+    do_csearch: bool = True,
+    do_optimization: bool = True,
+    do_pose_refinement: bool = True,
     name: str = "Docking Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -87,10 +85,7 @@ def submit_docking_workflow(
     :return: A Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(protein, Protein):
         protein = protein.uuid

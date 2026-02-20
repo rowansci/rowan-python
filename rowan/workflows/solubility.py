@@ -61,7 +61,7 @@ def submit_solubility_workflow(
     :param initial_smiles: The smiles of the molecule to calculate the solubility of.
     :param solubility_method: The name of the desired model for solubility prediction.
     :param solvents: The list of solvents to use for the calculation.
-    :param temperatures: The list of temperatures to use for the calculation.
+    :param temperatures: The list of temperatures to use for the calculation (K).
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.

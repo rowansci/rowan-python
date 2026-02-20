@@ -63,7 +63,7 @@ class NMRResult(WorkflowResult):
 
 
 def submit_nmr_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     solvent: str | None = "chloroform",
     do_csearch: bool = True,
     do_optimization: bool = True,
@@ -87,7 +87,7 @@ def submit_nmr_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     workflow_data = {"initial_molecule": initial_molecule, "solvent": solvent}
 

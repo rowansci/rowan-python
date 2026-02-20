@@ -26,7 +26,7 @@ class ScanResult(WorkflowResult):
 
 
 def submit_scan_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
     calculation_engine: str | None = None,
     calculation_method: stjames.Method | str = "uma_m_omol",
@@ -52,7 +52,7 @@ def submit_scan_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)

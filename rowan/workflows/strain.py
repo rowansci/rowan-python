@@ -30,7 +30,7 @@ class StrainResult(WorkflowResult):
 
 
 def submit_strain_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     name: str = "Strain Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -48,7 +48,7 @@ def submit_strain_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     workflow = stjames.StrainWorkflow(initial_molecule=initial_molecule)
 

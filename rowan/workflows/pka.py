@@ -72,7 +72,7 @@ class pKaResult(WorkflowResult):
 
 
 def submit_pka_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | str,
     pka_range: tuple[int, int] = (2, 12),
     method: Literal["aimnet2_wagen2024", "chemprop_nevolianis2025"] = "aimnet2_wagen2024",
     solvent: str = "water",
@@ -101,14 +101,14 @@ def submit_pka_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     initial_smiles: str = ""
-    initial_stjames_mol: StJamesMolecule | None = None
+    initial_stjames_mol: stjames.Molecule | None = None
 
     if isinstance(initial_molecule, dict):
-        initial_stjames_mol = StJamesMolecule.model_validate(initial_molecule)
+        initial_stjames_mol = stjames.Molecule.model_validate(initial_molecule)
     elif isinstance(initial_molecule, StJamesMolecule):
         initial_stjames_mol = initial_molecule
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_stjames_mol = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_stjames_mol = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
     elif isinstance(initial_molecule, str):
         initial_smiles = initial_molecule
 

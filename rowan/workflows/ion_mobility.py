@@ -42,7 +42,7 @@ class IonMobilityResult(WorkflowResult):
 
 
 def submit_ion_mobility_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     temperature: float = 300,
     protonate: bool = False,
     do_csearch: bool = True,
@@ -55,7 +55,7 @@ def submit_ion_mobility_workflow(
     Submits an ion-mobility workflow to the API.
 
     :param initial_molecule: The molecule used in the scan.
-    :param temperature: The temperature at which to predict CCS values.
+    :param temperature: The temperature at which to predict CCS values (K).
     :param protonate: Whether or not to automatically detect protonation site.
         If `True`, every basic site will be protonated and values returned for the most stable.
     :param do_csearch: Whether to perform a conformational search on the molecule.
@@ -69,7 +69,7 @@ def submit_ion_mobility_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0)
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
 
     workflow = stjames.IonMobilityWorkflow(
         initial_molecule=initial_molecule,

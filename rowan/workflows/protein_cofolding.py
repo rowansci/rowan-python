@@ -52,7 +52,7 @@ def submit_protein_cofolding_workflow(
     use_potentials: bool = False,
     compute_strain: bool = False,
     do_pose_refinement: bool = False,
-    name: str = "Cofolding Workflow",
+    name: str = "Protein–Ligand Co-Folding",
     model: str = stjames.CofoldingModel.BOLTZ_2.value,
     folder_uuid: str | None = None,
     max_credits: int | None = None,

@@ -52,7 +52,7 @@ class AnalogueDockingResult(WorkflowResult):
 
 def submit_analogue_docking_workflow(
     analogues: list[str],
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     protein: str | Protein,
     executable: str = "vina",
     scoring_function: str = "vinardo",
@@ -85,7 +85,7 @@ def submit_analogue_docking_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
             mode="json"
         )
 

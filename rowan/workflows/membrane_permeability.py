@@ -6,7 +6,14 @@ import stjames
 from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    RdkitMol,
+    RowanMolecule,
+    StJamesMolecule,
+    Workflow,
+    WorkflowResult,
+    register_result,
+)
 
 
 @register_result("membrane_permeability")
@@ -16,12 +23,48 @@ class MembranePermeabilityResult(WorkflowResult):
     _stjames_class = stjames.MembranePermeabilityWorkflow
 
     def __repr__(self) -> str:
-        perm = getattr(self._workflow, "permeability", None)
-        return f"<MembranePermeabilityResult permeability={perm}>"
+        caco = self.caco2_log_p
+        bbb = self.bbb_log_p
+        return f"<MembranePermeabilityResult caco2_logP={caco} bbb_logP={bbb}>"
+
+    @property
+    def caco2_p_app(self) -> float | None:
+        """Caco-2 apparent permeability (cm/s)."""
+        return self._workflow.caco_2_P_app
+
+    @property
+    def caco2_log_p(self) -> float | None:
+        """Caco-2 log permeability."""
+        return self._workflow.caco_2_logP
+
+    @property
+    def blm_log_p(self) -> float | None:
+        """Black lipid membrane log permeability."""
+        return self._workflow.blm_logP
+
+    @property
+    def pampa_log_p(self) -> float | None:
+        """PAMPA log permeability."""
+        return self._workflow.pampa_logP
+
+    @property
+    def plasma_log_p(self) -> float | None:
+        """Plasma membrane log permeability."""
+        return self._workflow.plasma_logP
+
+    @property
+    def bbb_log_p(self) -> float | None:
+        """Blood-brain barrier log permeability."""
+        return self._workflow.bbb_logP
+
+    @property
+    def energy_profile(self) -> list[tuple[float, float]]:
+        """Energy profile across the membrane as (position (Å), energy (kcal/mol)) pairs."""
+        return list(self._workflow.energy_profile)
 
 
 def submit_membrane_permeability_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol | str,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | RowanMolecule | str,
     method: Literal["gnn-mtl", "pypermm"] = "gnn-mtl",
     name: str = "Membrane Permeability Workflow",
     folder_uuid: str | None = None,
@@ -58,10 +101,12 @@ def submit_membrane_permeability_workflow(
         case "pypermm":
             if isinstance(initial_molecule, str):
                 raise ValueError("Cannot specify molecule as SMILES for PyPermm")
+            elif isinstance(initial_molecule, RowanMolecule):
+                initial_molecule = initial_molecule._to_stjames().model_dump(mode="json")
             elif isinstance(initial_molecule, StJamesMolecule):
                 initial_molecule = initial_molecule.model_dump(mode="json")
             elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-                initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+                initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
                     mode="json"
                 )
 

@@ -8,7 +8,7 @@ from stjames.optimization.freezing_string_method import FSMSettings
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
-from .base import StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import Workflow, WorkflowResult, register_result
 
 
 @register_result("double_ended_ts_search")
@@ -41,10 +41,27 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         return self._cache.get("ts_calculation")
 
     @property
+    def ts_molecule(self) -> Molecule | None:
+        """The transition state molecule."""
+        calc = self.ts_guess_calculation
+        return calc.molecule if calc else None
+
+    @property
+    def ts_energy(self) -> float | None:
+        """Energy of the transition state (Hartree)."""
+        mol = self.ts_molecule
+        return mol.energy if mol else None
+
+    @property
     def molecules(self) -> list[Molecule]:
         """Molecules along the reaction path (trajectory)."""
         calc = self.ts_guess_calculation
         return calc.molecules if calc else []
+
+    @property
+    def path_energies(self) -> list[float]:
+        """Energies along the reaction path (Hartree)."""
+        return [m.energy for m in self.molecules if m.energy is not None]
 
     @property
     def distances(self) -> list[float] | None:
@@ -53,8 +70,8 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
 
 def submit_double_ended_ts_search_workflow(
-    reactant: dict[str, Any] | StJamesMolecule,
-    product: dict[str, Any] | StJamesMolecule,
+    reactant: dict[str, Any] | stjames.Molecule,
+    product: dict[str, Any] | stjames.Molecule,
     calculation_settings: stjames.Settings | dict[str, Any] | None = None,
     search_settings: FSMSettings | dict[str, Any] | None = None,
     optimize_inputs: bool = False,

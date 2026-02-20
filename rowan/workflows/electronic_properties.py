@@ -1,5 +1,6 @@
 """Electronic properties workflow - calculate electronic properties."""
 
+from dataclasses import dataclass
 from typing import Any
 
 import stjames
@@ -9,6 +10,15 @@ from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
 
 
+@dataclass(frozen=True, slots=True)
+class MolecularOrbital:
+    """A molecular orbital with cube data."""
+
+    points: tuple[tuple[float, float, float, float], ...]  # (x, y, z, value)
+    occupation: int
+    energy: float
+
+
 @register_result("electronic_properties")
 class ElectronicPropertiesResult(WorkflowResult):
     """Result from an electronic properties workflow."""
@@ -16,13 +26,75 @@ class ElectronicPropertiesResult(WorkflowResult):
     _stjames_class = stjames.ElectronicPropertiesWorkflow
 
     def __repr__(self) -> str:
-        homo = getattr(self._workflow, "homo_energy", None)
-        lumo = getattr(self._workflow, "lumo_energy", None)
-        return f"<ElectronicPropertiesResult HOMO={homo} LUMO={lumo}>"
+        return f"<ElectronicPropertiesResult dipole={self.dipole}>"
+
+    @property
+    def dipole(self) -> tuple[float, float, float] | None:
+        """Dipole moment vector (Debye)."""
+        return self._workflow.dipole
+
+    @property
+    def quadrupole(
+        self,
+    ) -> tuple[
+        tuple[float, float, float],
+        tuple[float, float, float],
+        tuple[float, float, float],
+    ] | None:
+        """Quadrupole moment tensor (Debye·Å)."""
+        return self._workflow.quadrupole
+
+    @property
+    def mulliken_charges(self) -> list[float] | None:
+        """Mulliken partial charges on each atom."""
+        return self._workflow.mulliken_charges
+
+    @property
+    def lowdin_charges(self) -> list[float] | None:
+        """Löwdin partial charges on each atom."""
+        return self._workflow.lowdin_charges
+
+    @property
+    def wiberg_bond_orders(self) -> list[tuple[int, int, float]]:
+        """Wiberg bond orders as (atom1, atom2, order) tuples."""
+        return self._workflow.wiberg_bond_orders
+
+    @property
+    def mayer_bond_orders(self) -> list[tuple[int, int, float]]:
+        """Mayer bond orders as (atom1, atom2, order) tuples."""
+        return self._workflow.mayer_bond_orders
+
+    @property
+    def density_cube(self) -> list[tuple[float, float, float, float]] | None:
+        """Electron density cube as list of (x, y, z, value) points."""
+        cube = self._workflow.density_cube
+        if cube is None:
+            return None
+        return [(p.x, p.y, p.z, p.val) for p in cube.cube_points]
+
+    @property
+    def electrostatic_potential_cube(self) -> list[tuple[float, float, float, float]] | None:
+        """Electrostatic potential cube as list of (x, y, z, value) points."""
+        cube = self._workflow.electrostatic_potential_cube
+        if cube is None:
+            return None
+        return [(p.x, p.y, p.z, p.val) for p in cube.cube_points]
+
+    @property
+    def molecular_orbitals(self) -> dict[int, MolecularOrbital]:
+        """Molecular orbitals indexed by orbital number."""
+        return {
+            k: MolecularOrbital(
+                points=tuple((p.x, p.y, p.z, p.val) for p in v.cube_points),
+                occupation=v.occupation,
+                energy=v.energy,
+            )
+            for k, v in self._workflow.molecular_orbitals.items()
+        }
 
 
 def submit_electronic_properties_workflow(
-    initial_molecule: dict[str, Any] | StJamesMolecule | RdkitMol,
+    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     method: stjames.Method | str = "b97_3c",
     basis_set: str | None = None,
     compute_density_cube: bool = True,
@@ -53,7 +125,7 @@ def submit_electronic_properties_workflow(
     if isinstance(initial_molecule, StJamesMolecule):
         initial_molecule = initial_molecule.model_dump(mode="json")
     elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = StJamesMolecule.from_rdkit(initial_molecule, cid=0).model_dump(
+        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
             mode="json"
         )
 
@@ -86,4 +158,8 @@ def submit_electronic_properties_workflow(
         return Workflow(**response.json())
 
 
-__all__ = ["ElectronicPropertiesResult", "submit_electronic_properties_workflow"]
+__all__ = [
+    "ElectronicPropertiesResult",
+    "MolecularOrbital",
+    "submit_electronic_properties_workflow",
+]

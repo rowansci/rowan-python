@@ -77,6 +77,15 @@ class MacropKaResult(WorkflowResult):
         ]
 
     @property
+    def microstate_weights_by_ph(self) -> list[tuple[float, list[float]]]:
+        """Microstate weights by pH as (pH, weights) pairs.
+
+        Each weights list corresponds to the microstates in the same order
+        as the `microstates` property.
+        """
+        return list(self._workflow.microstate_weights_by_pH)
+
+    @property
     def logd_by_ph(self) -> list[tuple[float, float]]:
         """Distribution constant by pH as (pH, logD) pairs."""
         return list(self._workflow.logD_by_pH)
@@ -94,7 +103,7 @@ def submit_macropka_workflow(
     min_charge: int = -2,
     max_charge: int = 2,
     compute_solvation_energy: bool = False,
-    compute_aqueous_solubility: bool = False,
+    compute_aqueous_solubility: bool = True,
     name: str = "Macropka Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -108,7 +117,7 @@ def submit_macropka_workflow(
     :param min_charge: The minimum charge to use in the macropka workflow.
     :param max_charge: The maximum charge to use in the macropka workflow.
     :param compute_solvation_energy: Whether to compute the solvation energy.
-    :param compute_aqueous_solubility: Whether to compute the aqueous solubility for each pH.
+    :param compute_aqueous_solubility: Whether to compute aqueous solubility for each pH.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
