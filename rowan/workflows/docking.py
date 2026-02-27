@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import stjames
 
-from ..protein import Protein
+from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
@@ -51,6 +51,74 @@ class DockingResult(WorkflowResult):
     def conformers(self) -> list[str]:
         """UUIDs of optimized conformers."""
         return list(self._workflow.conformers)
+
+    def get_pose(self, index: int = 0) -> Protein:
+        """
+        Fetch a docked pose structure.
+
+        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
+        :return: Protein object with the docked ligand pose.
+        :raises IndexError: If index is out of range.
+        :raises ValueError: If the pose has no structure UUID.
+        """
+        scores = self.scores
+        if index < 0 or index >= len(scores):
+            raise IndexError(f"Pose index {index} out of range (0-{len(scores) - 1})")
+
+        uuid = scores[index].pose
+        if not uuid:
+            raise ValueError(f"Pose {index} has no structure UUID")
+
+        cache_key = f"pose_{index}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_protein(uuid)
+        return self._cache[cache_key]
+
+    def get_poses(self) -> list[Protein]:
+        """
+        Fetch all docked pose structures.
+
+        :return: List of Protein objects for each pose (ordered by score).
+        """
+        poses: list[Protein] = []
+        for i, score in enumerate(self.scores):
+            if score.pose:
+                poses.append(self.get_pose(i))
+        return poses
+
+    def get_complex(self, index: int = 0) -> Protein:
+        """
+        Fetch a protein-ligand complex structure.
+
+        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
+        :return: Protein object with the full protein-ligand complex.
+        :raises IndexError: If index is out of range.
+        :raises ValueError: If the complex has no structure UUID.
+        """
+        scores = self.scores
+        if index < 0 or index >= len(scores):
+            raise IndexError(f"Pose index {index} out of range (0-{len(scores) - 1})")
+
+        uuid = scores[index].complex_pdb
+        if not uuid:
+            raise ValueError(f"Pose {index} has no complex UUID")
+
+        cache_key = f"complex_{index}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_protein(uuid)
+        return self._cache[cache_key]
+
+    def get_complexes(self) -> list[Protein]:
+        """
+        Fetch all protein-ligand complex structures.
+
+        :return: List of Protein objects for each complex (ordered by score).
+        """
+        complexes: list[Protein] = []
+        for i, score in enumerate(self.scores):
+            if score.complex_pdb:
+                complexes.append(self.get_complex(i))
+        return complexes
 
 
 def submit_docking_workflow(

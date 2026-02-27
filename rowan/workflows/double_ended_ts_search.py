@@ -58,10 +58,28 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         calc = self.ts_guess_calculation
         return calc.molecules if calc else []
 
-    @property
-    def path_energies(self) -> list[float]:
-        """Energies along the reaction path (Hartree)."""
-        return [m.energy for m in self.molecules if m.energy is not None]
+    def get_path_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get energies along the reaction path.
+
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the lowest energy point). If False (default), return absolute energies
+            in Hartree.
+        :return: List of energies along the reaction path.
+        """
+        energies: list[float | None] = [m.energy for m in self.molecules]
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
 
     @property
     def distances(self) -> list[float] | None:

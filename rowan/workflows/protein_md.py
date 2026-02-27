@@ -1,10 +1,12 @@
 """Protein MD workflow - molecular dynamics simulations for proteins."""
 
+from pathlib import Path
+
 import stjames
 
-from ..protein import Protein
+from ..protein import Protein, retrieve_protein
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
 
 @register_result("protein_md")
@@ -14,14 +16,82 @@ class ProteinMDResult(WorkflowResult):
     _stjames_class = stjames.ProteinMolecularDynamicsWorkflow
 
     def __repr__(self) -> str:
-        n_traj = getattr(self._workflow, "num_trajectories", None)
-        sim_time = getattr(self._workflow, "simulation_time_ns", None)
-        return f"<ProteinMDResult trajectories={n_traj} simulation_ns={sim_time}>"
+        n_traj = len(self.trajectory_uuids)
+        return f"<ProteinMDResult trajectories={n_traj}>"
+
+    @property
+    def trajectory_uuids(self) -> list[str]:
+        """UUIDs of all trajectory calculations."""
+        raw = getattr(self._workflow, "trajectories", []) or []
+        return [t.uuid for t in raw]
+
+    @property
+    def minimized_protein_uuid(self) -> str | None:
+        """UUID of the energy-minimized protein structure."""
+        return getattr(self._workflow, "minimized_protein_uuid", None)
+
+    def get_minimized_protein(self) -> Protein | None:
+        """
+        Fetch the energy-minimized protein structure.
+
+        :return: Protein object or None if not available.
+        """
+        uuid = self.minimized_protein_uuid
+        if not uuid:
+            return None
+        if "minimized_protein" not in self._cache:
+            self._cache["minimized_protein"] = retrieve_protein(uuid)
+        return self._cache["minimized_protein"]
+
+    @property
+    def bonds(self) -> list[tuple[int, int]]:
+        """Bond connectivity as pairs of atom indices."""
+        raw = getattr(self._workflow, "bonds", []) or []
+        return [tuple(bond) for bond in raw]
+
+    @property
+    def messages(self) -> list[Message]:
+        """Any messages or warnings from the workflow."""
+        return parse_messages(getattr(self._workflow, "messages", None))
+
+    def download_trajectories(
+        self,
+        replicates: list[int],
+        name: str | None = None,
+        path: Path | None = None,
+    ) -> Path:
+        """
+        Download DCD trajectory files for specified replicates.
+
+        :param replicates: List of replicate indices to download.
+        :param name: Custom name for the tar.gz file (without extension).
+        :param path: Directory to save the file to. Defaults to current directory.
+        :return: Path to the downloaded tar.gz file.
+        :raises HTTPError: If the API request fails.
+        """
+        if path is None:
+            path = Path.cwd()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        with api_client() as client:
+            response = client.post(
+                f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
+                json=replicates,
+            )
+            response.raise_for_status()
+
+        file_name = f"{name or 'trajectories'}.tar.gz"
+        file_path = path / file_name
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
+        return file_path
 
 
 def submit_protein_md_workflow(
     protein: str | Protein,
-    num_trajectories: int = 1,
+    num_trajectories: int = 4,
     equilibration_time_ns: float = 1,
     simulation_time_ns: float = 10,
     temperature: float = 300,

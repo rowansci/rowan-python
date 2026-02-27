@@ -5,7 +5,7 @@ from typing import Any
 import stjames
 from rdkit import Chem
 
-from ..protein import Protein
+from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
 from .docking import DockingScore
@@ -48,6 +48,94 @@ class AnalogueDockingResult(WorkflowResult):
             ]
             for smiles, scores in self._workflow.analogue_scores.items()
         }
+
+    def get_pose(self, smiles: str, index: int = 0) -> Protein:
+        """
+        Fetch a docked pose structure for a specific analogue.
+
+        :param smiles: SMILES string of the analogue.
+        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
+        :return: Protein object with the docked ligand pose.
+        :raises KeyError: If the SMILES is not found.
+        :raises IndexError: If index is out of range.
+        :raises ValueError: If the pose has no structure UUID.
+        """
+        scores = self.analogue_scores.get(smiles)
+        if scores is None:
+            raise KeyError(f"Analogue '{smiles}' not found")
+        if index < 0 or index >= len(scores):
+            raise IndexError(f"Pose index {index} out of range (0-{len(scores) - 1})")
+
+        uuid = scores[index].pose
+        if not uuid:
+            raise ValueError(f"Pose {index} for '{smiles}' has no structure UUID")
+
+        cache_key = f"pose_{smiles}_{index}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_protein(uuid)
+        return self._cache[cache_key]
+
+    def get_poses(self, smiles: str) -> list[Protein]:
+        """
+        Fetch all docked pose structures for a specific analogue.
+
+        :param smiles: SMILES string of the analogue.
+        :return: List of Protein objects for each pose (ordered by score).
+        :raises KeyError: If the SMILES is not found.
+        """
+        scores = self.analogue_scores.get(smiles)
+        if scores is None:
+            raise KeyError(f"Analogue '{smiles}' not found")
+
+        poses: list[Protein] = []
+        for i, score in enumerate(scores):
+            if score.pose:
+                poses.append(self.get_pose(smiles, i))
+        return poses
+
+    def get_complex(self, smiles: str, index: int = 0) -> Protein:
+        """
+        Fetch a protein-ligand complex structure for a specific analogue.
+
+        :param smiles: SMILES string of the analogue.
+        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
+        :return: Protein object with the full protein-ligand complex.
+        :raises KeyError: If the SMILES is not found.
+        :raises IndexError: If index is out of range.
+        :raises ValueError: If the complex has no structure UUID.
+        """
+        scores = self.analogue_scores.get(smiles)
+        if scores is None:
+            raise KeyError(f"Analogue '{smiles}' not found")
+        if index < 0 or index >= len(scores):
+            raise IndexError(f"Pose index {index} out of range (0-{len(scores) - 1})")
+
+        uuid = scores[index].complex_pdb
+        if not uuid:
+            raise ValueError(f"Pose {index} for '{smiles}' has no complex UUID")
+
+        cache_key = f"complex_{smiles}_{index}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_protein(uuid)
+        return self._cache[cache_key]
+
+    def get_complexes(self, smiles: str) -> list[Protein]:
+        """
+        Fetch all protein-ligand complex structures for a specific analogue.
+
+        :param smiles: SMILES string of the analogue.
+        :return: List of Protein objects for each complex (ordered by score).
+        :raises KeyError: If the SMILES is not found.
+        """
+        scores = self.analogue_scores.get(smiles)
+        if scores is None:
+            raise KeyError(f"Analogue '{smiles}' not found")
+
+        complexes: list[Protein] = []
+        for i, score in enumerate(scores):
+            if score.complex_pdb:
+                complexes.append(self.get_complex(smiles, i))
+        return complexes
 
 
 def submit_analogue_docking_workflow(

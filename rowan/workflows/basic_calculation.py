@@ -33,10 +33,7 @@ class BasicCalculationResult(WorkflowResult):
     def __repr__(self) -> str:
         energy = self.energy
         e_str = f"{energy:.6f}" if energy is not None else "None"
-        parts = [f"energy={e_str}"]
-        if self.solvent:
-            parts.append(f"solvent={self.solvent!r}")
-        return f"<BasicCalculationResult {' '.join(parts)}>"
+        return f"<BasicCalculationResult energy={e_str}>"
 
     @property
     def calculation_uuid(self) -> str | None:
@@ -47,31 +44,6 @@ class BasicCalculationResult(WorkflowResult):
     def calculation(self) -> Calculation | None:
         """The Calculation object with full molecule data."""
         return self._cache.get("calculation")
-
-    @property
-    def method(self) -> stjames.Method | None:
-        """The computational method used."""
-        settings = getattr(self._workflow, "settings", None)
-        return settings.method if settings else None
-
-    @property
-    def engine(self) -> str | None:
-        """The compute engine used."""
-        return getattr(self._workflow, "engine", None)
-
-    @property
-    def solvent(self) -> str | None:
-        """The solvent used (if any)."""
-        settings = getattr(self._workflow, "settings", None)
-        if settings and settings.solvent_settings:
-            return settings.solvent_settings.get("solvent")
-        return None
-
-    @property
-    def tasks(self) -> list[str] | None:
-        """The tasks performed (e.g., ['optimize'], ['energy'], ['frequency'])."""
-        settings = getattr(self._workflow, "settings", None)
-        return list(settings.tasks) if settings and settings.tasks else None
 
     @property
     def molecule(self) -> Molecule | None:
@@ -91,10 +63,28 @@ class BasicCalculationResult(WorkflowResult):
         mol = self.molecule
         return mol.energy if mol else None
 
-    @property
-    def optimization_energies(self) -> list[float]:
-        """Energies for each optimization step (if optimization was performed)."""
-        return [m.energy for m in self.molecules if m.energy is not None]
+    def get_optimization_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get energies for each optimization step.
+
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the lowest energy step). If False (default), return absolute energies
+            in Hartree.
+        :return: List of energies for each optimization step.
+        """
+        energies: list[float | None] = [m.energy for m in self.molecules]
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
 
     @property
     def charges(self) -> list[float] | None:

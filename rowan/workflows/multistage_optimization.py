@@ -1,12 +1,19 @@
 """Multistage optimization workflow - optimize molecules with staged methods."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
+from ..calculation import Calculation, retrieve_calculation
+from ..molecule import Molecule
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    Mode,
+    MoleculeInput,
+    SolventInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+)
 
 
 @register_result("multistage_opt")
@@ -15,15 +22,78 @@ class MultiStageOptResult(WorkflowResult):
 
     _stjames_class = stjames.MultiStageOptWorkflow
 
+    def __post_init__(self) -> None:
+        """Parse workflow data and eagerly fetch final calculation."""
+        super().__post_init__()
+        uuids = self.calculation_uuids
+        if uuids:
+            self._cache["final_calculation"] = retrieve_calculation(uuids[-1])
+
     def __repr__(self) -> str:
-        final_energy = getattr(self._workflow, "final_energy", None)
-        return f"<MultiStageOptResult final_energy={final_energy}>"
+        energy = self.energy
+        e_str = f"{energy:.6f}" if energy is not None else "None"
+        return f"<MultiStageOptResult energy={e_str}>"
+
+    @property
+    def calculation_uuids(self) -> list[str]:
+        """UUIDs of all calculations in the optimization stages."""
+        calcs = getattr(self._workflow, "calculations", None) or []
+        return [c for c in calcs if c is not None]
+
+    @property
+    def calculations(self) -> list[Calculation]:
+        """
+        All optimization stage calculations (lazily fetched).
+
+        Typically includes xTB pre-optimization, DFT optimization, and final
+        single-point. Access `final_calculation` for just the last stage.
+        """
+        if "calculations" not in self._cache:
+            uuids = self.calculation_uuids
+            calcs = []
+            for i, uuid in enumerate(uuids):
+                # Reuse eagerly-fetched final calculation
+                if i == len(uuids) - 1 and "final_calculation" in self._cache:
+                    calcs.append(self._cache["final_calculation"])
+                else:
+                    calcs.append(retrieve_calculation(uuid))
+            self._cache["calculations"] = calcs
+        return self._cache["calculations"]
+
+    @property
+    def final_calculation(self) -> Calculation | None:
+        """The final Calculation object with full molecule data (eagerly fetched)."""
+        return self._cache.get("final_calculation")
+
+    @property
+    def molecule(self) -> Molecule | None:
+        """The final optimized molecule geometry."""
+        calc = self.final_calculation
+        return calc.molecule if calc else None
+
+    @property
+    def energy(self) -> float | None:
+        """Energy of the final optimized molecule (Hartree)."""
+        mol = self.molecule
+        return mol.energy if mol else None
+
+    @property
+    def charges(self) -> list[float] | None:
+        """Partial charges on each atom."""
+        mol = self.molecule
+        return mol.charges if mol else None
+
+    @property
+    def dipole(self) -> tuple[float, float, float] | None:
+        """Dipole moment vector (Debye)."""
+        mol = self.molecule
+        return mol.dipole if mol else None
 
 
 def submit_multistage_optimization_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
-    mode: str = "rapid",
-    solvent: str | None = None,
+    initial_molecule: MoleculeInput,
+    mode: Mode = Mode.RAPID,
+    solvent: SolventInput = None,
     xtb_preopt: bool = True,
     transition_state: bool = False,
     frequencies: bool = False,
@@ -36,7 +106,7 @@ def submit_multistage_optimization_workflow(
 
     :param initial_molecule: The molecule to optimize.
     :param mode: The mode to run the calculation in.
-    :param solvent: The solvent to use for the final single-point calculation.
+    :param solvent: The solvent for the final single-point calculation.
     :param xtb_preopt: Whether to pre-optimize with xTB.
     :param transition_state: Whether this is a transition state optimization.
     :param frequencies: Whether to calculate frequencies.
@@ -46,15 +116,10 @@ def submit_multistage_optimization_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
-            mode="json"
-        )
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.MultiStageOptWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         mode=mode,
         solvent=solvent,
         xtb_preopt=xtb_preopt,
@@ -67,7 +132,7 @@ def submit_multistage_optimization_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "multistage_opt",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "max_credits": max_credits,
     }
 

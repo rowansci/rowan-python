@@ -1,14 +1,18 @@
 """IRC workflow - Intrinsic Reaction Coordinate calculations."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    MoleculeInput,
+    SolventInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+)
 
 
 @register_result("irc")
@@ -100,21 +104,57 @@ class IRCResult(WorkflowResult):
         calcs = self.get_backward_calculations()
         return [c.molecule for c in calcs if c.molecule]
 
-    @property
-    def forward_energies(self) -> list[float]:
-        """Energies along the forward IRC path (Hartree, lazily fetched)."""
-        return [m.energy for m in self.forward_molecules if m.energy is not None]
+    def get_forward_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get energies along the forward IRC path.
 
-    @property
-    def backward_energies(self) -> list[float]:
-        """Energies along the backward IRC path (Hartree, lazily fetched)."""
-        return [m.energy for m in self.backward_molecules if m.energy is not None]
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the lowest energy point). If False (default), return absolute energies
+            in Hartree.
+        :return: List of energies along the forward path.
+        """
+        energies: list[float | None] = [m.energy for m in self.forward_molecules]
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
+
+    def get_backward_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get energies along the backward IRC path.
+
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the lowest energy point). If False (default), return absolute energies
+            in Hartree.
+        :return: List of energies along the backward path.
+        """
+        energies: list[float | None] = [m.energy for m in self.backward_molecules]
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
 
 
 def submit_irc_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol | None = None,
+    initial_molecule: MoleculeInput,
     method: stjames.Method | str = "uma_m_omol",
-    solvent: str | None = None,
+    solvent: SolventInput = None,
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
@@ -125,10 +165,10 @@ def submit_irc_workflow(
     """
     Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
-    :param initial_molecule: The initial molecule to perform the IRC calculation on.
+    :param initial_molecule: The transition state molecule to start IRC from.
     :param method: The computational method to use for the IRC calculation.
     :param solvent: The solvent to use for the calculation.
-    :param preopt: Whether to perform a pre-optimization of the molecule.
+    :param preopt: Whether to perform a pre-optimization of the TS.
     :param step_size: The step size to use for the IRC calculation.
     :param max_irc_steps: The maximum number of IRC steps to perform.
     :param name: The name of the workflow.
@@ -137,16 +177,13 @@ def submit_irc_workflow(
     :return: A Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
         method = stjames.Method(method)
 
     workflow = stjames.IRCWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         settings=stjames.Settings(
             method=method,
             tasks=[],
@@ -165,7 +202,7 @@ def submit_irc_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "irc",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "max_credits": max_credits,
     }
 

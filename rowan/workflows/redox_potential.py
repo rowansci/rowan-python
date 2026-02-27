@@ -5,8 +5,18 @@ from typing import Any
 import stjames
 from rdkit import Chem
 
+from ..calculation import Calculation, retrieve_calculation
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    Message,
+    Mode,
+    RdkitMol,
+    StJamesMolecule,
+    Workflow,
+    WorkflowResult,
+    parse_messages,
+    register_result,
+)
 
 
 @register_result("redox_potential")
@@ -18,24 +28,76 @@ class RedoxPotentialResult(WorkflowResult):
     def __repr__(self) -> str:
         ox = self.oxidation_potential
         red = self.reduction_potential
-        return f"<RedoxPotentialResult oxidation={ox} reduction={red}>"
+        parts = []
+        if ox is not None:
+            parts.append(f"oxidation={ox:.3f}V")
+        if red is not None:
+            parts.append(f"reduction={red:.3f}V")
+        return f"<RedoxPotentialResult {' '.join(parts)}>"
 
     @property
     def oxidation_potential(self) -> float | None:
-        """Oxidation potential in V."""
-        return self._workflow.oxidation_potential
+        """Oxidation potential in V (vs SHE)."""
+        return getattr(self._workflow, "oxidation_potential", None)
 
     @property
     def reduction_potential(self) -> float | None:
-        """Reduction potential in V."""
-        return self._workflow.reduction_potential
+        """Reduction potential in V (vs SHE)."""
+        return getattr(self._workflow, "reduction_potential", None)
+
+    @property
+    def neutral_molecule_uuid(self) -> str | None:
+        """UUID of the optimized neutral molecule calculation."""
+        return getattr(self._workflow, "neutral_molecule", None)
+
+    @property
+    def cation_molecule_uuid(self) -> str | None:
+        """UUID of the optimized cation (oxidized) molecule calculation."""
+        return getattr(self._workflow, "cation_molecule", None)
+
+    @property
+    def anion_molecule_uuid(self) -> str | None:
+        """UUID of the optimized anion (reduced) molecule calculation."""
+        return getattr(self._workflow, "anion_molecule", None)
+
+    def get_neutral_molecule(self) -> Calculation | None:
+        """Fetch the optimized neutral molecule calculation."""
+        uuid = self.neutral_molecule_uuid
+        if not uuid:
+            return None
+        if "neutral_molecule" not in self._cache:
+            self._cache["neutral_molecule"] = retrieve_calculation(uuid)
+        return self._cache["neutral_molecule"]
+
+    def get_cation_molecule(self) -> Calculation | None:
+        """Fetch the optimized cation (oxidized) molecule calculation."""
+        uuid = self.cation_molecule_uuid
+        if not uuid:
+            return None
+        if "cation_molecule" not in self._cache:
+            self._cache["cation_molecule"] = retrieve_calculation(uuid)
+        return self._cache["cation_molecule"]
+
+    def get_anion_molecule(self) -> Calculation | None:
+        """Fetch the optimized anion (reduced) molecule calculation."""
+        uuid = self.anion_molecule_uuid
+        if not uuid:
+            return None
+        if "anion_molecule" not in self._cache:
+            self._cache["anion_molecule"] = retrieve_calculation(uuid)
+        return self._cache["anion_molecule"]
+
+    @property
+    def messages(self) -> list[Message]:
+        """Any messages or warnings from the workflow."""
+        return parse_messages(getattr(self._workflow, "messages", None))
 
 
 def submit_redox_potential_workflow(
     initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
     reduction: bool = False,
-    oxidization: bool = True,
-    mode: str = "rapid",
+    oxidation: bool = True,
+    mode: Mode = Mode.RAPID,
     name: str = "Redox Potential Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -45,7 +107,7 @@ def submit_redox_potential_workflow(
 
     :param initial_molecule: The molecule to calculate the redox potential of.
     :param reduction: Whether to calculate the reduction potential.
-    :param oxidization: Whether to calculate the oxidization potential.
+    :param oxidation: Whether to calculate the oxidation potential.
     :param mode: The mode to run the calculation in.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
@@ -60,7 +122,7 @@ def submit_redox_potential_workflow(
 
     workflow = stjames.RedoxPotentialWorkflow(
         initial_molecule=initial_molecule,
-        oxidation=oxidization,
+        oxidation=oxidation,
         reduction=reduction,
         mode=mode,
     )

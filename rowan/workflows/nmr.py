@@ -1,13 +1,18 @@
 """NMR workflow - predict Nuclear Magnetic Resonance spectra."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    MoleculeInput,
+    SolventInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,17 +38,41 @@ class NMRResult(WorkflowResult):
 
     @property
     def chemical_shifts(self) -> list[float | None]:
-        """Per-atom NMR chemical shifts (ensemble average)."""
+        """
+        Per-atom NMR chemical shifts (Boltzmann-weighted ensemble average).
+
+        Index corresponds to atom index in the molecule. Returns None for
+        atoms without NMR-active nuclei (e.g., oxygen).
+        """
         return list(self._workflow.chemical_shifts)
 
     @property
+    def per_conformer_chemical_shifts(self) -> list[list[float | None]]:
+        """
+        Chemical shifts for each conformer before Boltzmann averaging.
+
+        Outer list is per-conformer, inner list is per-atom.
+        """
+        return [list(shifts) for shifts in self._workflow.per_conformer_chemical_shifts]
+
+    @property
     def boltzmann_weights(self) -> list[float]:
-        """Boltzmann weights for conformers."""
+        """Boltzmann weights for each conformer (sum to 1.0)."""
         return list(self._workflow.boltzmann_weights)
 
     @property
+    def conformer_uuids(self) -> list[str]:
+        """UUIDs of the conformer calculations."""
+        return list(self._workflow.conformers or [])
+
+    @property
     def predicted_peaks(self) -> dict[int, list[NMRPeak]]:
-        """Predicted NMR peaks by nucleus atomic number."""
+        """
+        Predicted NMR peaks grouped by nucleus atomic number.
+
+        Keys are atomic numbers (1 for 1H, 6 for 13C). Peaks with equivalent
+        atoms are merged and shifts are averaged.
+        """
         return {
             nucleus: [
                 NMRPeak(
@@ -58,13 +87,18 @@ class NMRResult(WorkflowResult):
 
     @property
     def symmetry_equivalent_nuclei(self) -> list[list[int]]:
-        """0-indexed atoms which are equivalent to one another."""
+        """
+        Groups of symmetry-equivalent atom indices (0-indexed).
+
+        Atoms in the same group have equivalent chemical environments
+        and are averaged together in predicted_peaks.
+        """
         return self._workflow.symmetry_equivalent_nuclei
 
 
 def submit_nmr_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
-    solvent: str | None = "chloroform",
+    initial_molecule: MoleculeInput,
+    solvent: SolventInput = "chloroform",
     do_csearch: bool = True,
     do_optimization: bool = True,
     name: str = "NMR Workflow",
@@ -75,21 +109,18 @@ def submit_nmr_workflow(
     Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
 
     :param initial_molecule: The molecule to predict NMR spectra for.
-    :param solvent: The solvent in which to compute NMR spectra.
-    :param do_csearch: Whether to perform a conformational search on the input structure.
-    :param do_optimization: Whether to perform an optimization on the input structure.
+    :param solvent: The solvent for NMR calculation (default: chloroform).
+    :param do_csearch: Whether to perform a conformational search.
+    :param do_optimization: Whether to optimize conformer geometries.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    mol_dict = molecule_to_dict(initial_molecule)
 
-    workflow_data = {"initial_molecule": initial_molecule, "solvent": solvent}
+    workflow_data = {"initial_molecule": mol_dict, "solvent": solvent}
 
     if not do_csearch:
         workflow_data["conf_gen_settings"] = None
@@ -104,7 +135,7 @@ def submit_nmr_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "nmr",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "max_credits": max_credits,
     }
 

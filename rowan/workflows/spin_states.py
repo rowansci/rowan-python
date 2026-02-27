@@ -1,13 +1,19 @@
 """Spin states workflow - calculate energies of different spin multiplicities."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    Mode,
+    MoleculeInput,
+    SolventInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,17 +49,35 @@ class SpinStatesResult(WorkflowResult):
             for ss in self._workflow.spin_states
         ]
 
-    @property
-    def energies(self) -> list[float]:
-        """Energies for each spin state (Hartree)."""
-        return self._workflow.energies
+    def get_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get energies for each spin state.
+
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the ground state / lowest energy spin state). If False (default),
+            return absolute energies in Hartree.
+        :return: List of energies for each spin state.
+        """
+        energies: list[float | None] = list(self._workflow.energies)
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
 
 
 def submit_spin_states_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     states: list[int],
-    mode: str = "rapid",
-    solvent: str | None = None,
+    mode: Mode = Mode.RAPID,
+    solvent: SolventInput = None,
     xtb_preopt: bool = True,
     frequencies: bool = False,
     name: str = "Spin States Workflow",
@@ -76,15 +100,10 @@ def submit_spin_states_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
-            mode="json"
-        )
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.SpinStatesWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         states=states,
         mode=mode,
         solvent=solvent,
@@ -97,7 +116,7 @@ def submit_spin_states_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "spin_states",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "max_credits": max_credits,
     }
 

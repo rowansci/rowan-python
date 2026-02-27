@@ -1,14 +1,18 @@
 """Conformer search workflow - find low-energy molecular conformations."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import (
+    MoleculeInput,
+    SolventInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+)
 
 
 @register_result("conformer_search")
@@ -18,11 +22,8 @@ class ConformerSearchResult(WorkflowResult):
     _stjames_class = stjames.ConformerSearchWorkflow
 
     def __repr__(self) -> str:
-        energies = self.energies
-        n = len(energies)
-        e_min = min(energies) if energies else None
-        e_max = max(energies) if energies else None
-        return f"<ConformerSearchResult conformers={n} energy_range=({e_min}, {e_max})>"
+        n = self.num_conformers
+        return f"<ConformerSearchResult conformers={n}>"
 
     @property
     def num_conformers(self) -> int:
@@ -34,10 +35,28 @@ class ConformerSearchResult(WorkflowResult):
         """List of conformer UUIDs (nested for multistage optimization)."""
         return self._workflow.conformer_uuids
 
-    @property
-    def energies(self) -> list[float]:
-        """Conformer energies (Hartree)."""
-        return list(self._workflow.energies)
+    def get_energies(self, relative: bool = False) -> list[float | None]:
+        """
+        Get conformer energies.
+
+        :param relative: If True, return relative energies in kcal/mol (relative to
+            the lowest energy conformer). If False (default), return absolute
+            energies in Hartree.
+        :return: List of conformer energies ordered by energy (lowest first).
+        """
+        energies: list[float | None] = list(self._workflow.energies)
+
+        if relative:
+            valid = [e for e in energies if e is not None]
+            if valid:
+                min_e = min(valid)
+                hartree_to_kcal = 627.509
+                energies = [
+                    (e - min_e) * hartree_to_kcal if e is not None else None
+                    for e in energies
+                ]
+
+        return energies
 
     @property
     def radii_of_gyration(self) -> list[float]:
@@ -94,14 +113,17 @@ class ConformerSearchResult(WorkflowResult):
         if uuid is None:
             raise ValueError(f"Conformer {index} has no calculation at stage {stage}")
 
-        return retrieve_calculation(uuid)
+        cache_key = f"conformer_{index}_{stage}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_calculation(uuid)
+        return self._cache[cache_key]
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     conf_gen_settings: stjames.ConformerGenSettings,
     final_method: stjames.Method | str = "aimnet2_wb97md3",
-    solvent: str | None = None,
+    solvent: SolventInput = None,
     transition_state: bool = False,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
@@ -111,7 +133,7 @@ def submit_conformer_search_workflow(
     Submits a conformer search workflow to the API.
 
     :param initial_molecule: The molecule to perform the conformer search on.
-    :param conf_gen_settings: settings for conformer generation
+    :param conf_gen_settings: Settings for conformer generation.
     :param final_method: The method to use for the final optimization.
     :param solvent: The solvent to use for the final optimization.
     :param transition_state: Whether to optimize the transition state.
@@ -121,10 +143,7 @@ def submit_conformer_search_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(final_method, str):
         final_method = stjames.Method(final_method)
@@ -148,7 +167,7 @@ def submit_conformer_search_workflow(
     )
 
     workflow = stjames.ConformerSearchWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         multistage_opt_settings=msos,
         conf_gen_settings=conf_gen_settings,
         solvent=solvent,
@@ -160,7 +179,7 @@ def submit_conformer_search_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "conformer_search",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "max_credits": max_credits,
     }
 

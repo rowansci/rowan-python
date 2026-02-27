@@ -1,10 +1,33 @@
 """Pose-analysis MD workflow - molecular dynamics simulations for ligand-protein complexes."""
 
+from dataclasses import dataclass
+from pathlib import Path
+
 import stjames
 
-from ..protein import Protein
+from ..protein import Protein, retrieve_protein
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
+
+
+@dataclass(frozen=True, slots=True)
+class TrajectoryResult:
+    """Results from a single MD trajectory replicate."""
+
+    uuid: str
+    """UUID of the trajectory calculation."""
+
+    ligand_rmsd: list[float]
+    """Ligand RMSD values over time (Angstrom)."""
+
+    contacts: dict
+    """Contact analysis data between ligand and protein."""
+
+    cluster_indices_by_frame: list[int]
+    """Cluster assignment for each frame (0-indexed)."""
+
+    cluster_centroid_indices: list[int]
+    """Frame indices of cluster centroids."""
 
 
 @register_result("pose_analysis_md")
@@ -14,15 +37,99 @@ class PoseAnalysisMDResult(WorkflowResult):
     _stjames_class = stjames.PoseAnalysisMolecularDynamicsWorkflow
 
     def __repr__(self) -> str:
-        n_traj = getattr(self._workflow, "num_trajectories", None)
-        sim_time = getattr(self._workflow, "simulation_time_ns", None)
-        return f"<PoseAnalysisMDResult trajectories={n_traj} simulation_ns={sim_time}>"
+        n_traj = len(self.trajectories)
+        n_clust = self.num_clusters
+        return f"<PoseAnalysisMDResult trajectories={n_traj} clusters={n_clust}>"
+
+    @property
+    def num_clusters(self) -> int | None:
+        """Number of conformational clusters identified across all trajectories."""
+        return getattr(self._workflow, "num_clusters", None)
+
+    @property
+    def trajectories(self) -> list[TrajectoryResult]:
+        """
+        Results from each trajectory replicate.
+
+        Each trajectory contains RMSD values, contact analysis, and cluster assignments.
+        """
+        raw = getattr(self._workflow, "trajectories", []) or []
+        results: list[TrajectoryResult] = []
+        for t in raw:
+            results.append(
+                TrajectoryResult(
+                    uuid=t.uuid,
+                    ligand_rmsd=list(t.ligand_rmsd or []),
+                    contacts=dict(t.contacts) if t.contacts else {},
+                    cluster_indices_by_frame=list(t.cluster_indices_by_frame or []),
+                    cluster_centroid_indices=list(t.cluster_centroid_indices or []),
+                )
+            )
+        return results
+
+    @property
+    def minimized_protein_uuid(self) -> str | None:
+        """UUID of the energy-minimized protein structure."""
+        return getattr(self._workflow, "minimized_protein_uuid", None)
+
+    def get_minimized_protein(self) -> Protein | None:
+        """
+        Fetch the energy-minimized protein structure.
+
+        :return: Protein object or None if not available.
+        """
+        uuid = self.minimized_protein_uuid
+        if not uuid:
+            return None
+        if "minimized_protein" not in self._cache:
+            self._cache["minimized_protein"] = retrieve_protein(uuid)
+        return self._cache["minimized_protein"]
+
+    @property
+    def messages(self) -> list[Message]:
+        """Any messages or warnings from the workflow."""
+        return parse_messages(getattr(self._workflow, "messages", None))
+
+
+    def download_trajectories(
+        self,
+        replicates: list[int],
+        name: str | None = None,
+        path: Path | None = None,
+    ) -> Path:
+        """
+        Download DCD trajectory files for specified replicates.
+
+        :param replicates: List of replicate indices to download.
+        :param name: Custom name for the tar.gz file (without extension).
+        :param path: Directory to save the file to. Defaults to current directory.
+        :return: Path to the downloaded tar.gz file.
+        :raises HTTPError: If the API request fails.
+        """
+        if path is None:
+            path = Path.cwd()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        with api_client() as client:
+            response = client.post(
+                f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
+                json=replicates,
+            )
+            response.raise_for_status()
+
+        file_name = f"{name or 'trajectories'}.tar.gz"
+        file_path = path / file_name
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
+        return file_path
 
 
 def submit_pose_analysis_md_workflow(
     protein: str | Protein,
     initial_smiles: str,
-    num_trajectories: int = 1,
+    num_trajectories: int = 4,
     equilibration_time_ns: float = 1,
     simulation_time_ns: float = 10,
     temperature: float = 300,
@@ -34,7 +141,7 @@ def submit_pose_analysis_md_workflow(
     ionic_strength_M: float = 0.10,
     water_buffer: float = 6.0,
     ligand_residue_name: str = "LIG",
-    protein_restraint_cutoff: float | None = None,
+    protein_restraint_cutoff: float = 7.0,
     protein_restraint_constant: float = 100,
     save_solvent: bool = False,
     name: str = "Pose-Analysis MD Workflow",
@@ -106,4 +213,4 @@ def submit_pose_analysis_md_workflow(
         return Workflow(**response.json())
 
 
-__all__ = ["PoseAnalysisMDResult", "submit_pose_analysis_md_workflow"]
+__all__ = ["PoseAnalysisMDResult", "TrajectoryResult", "submit_pose_analysis_md_workflow"]

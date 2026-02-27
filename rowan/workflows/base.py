@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,44 @@ logger.setLevel(logging.INFO)
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 StJamesMolecule: TypeAlias = stjames.Molecule
 MoleculeInput: TypeAlias = dict[str, Any] | RowanMolecule | StJamesMolecule | RdkitMol
+
+# Re-export stjames types for convenience
+Mode = stjames.Mode
+Solvent = stjames.Solvent
+MessageType = stjames.MessageType
+
+SolventInput: TypeAlias = Solvent | str | None
+
+
+@dataclass(frozen=True, slots=True)
+class Message:
+    """A workflow message (error, warning, or info)."""
+
+    title: str
+    """Short message title."""
+
+    body: str
+    """Full message content."""
+
+    type: str
+    """Message type: 'error', 'warning', or 'info'."""
+
+
+def parse_messages(raw_messages: list | None) -> list[Message]:
+    """Parse raw message dicts into Message objects."""
+    if not raw_messages:
+        return []
+    messages: list[Message] = []
+    for m in raw_messages:
+        if isinstance(m, dict):
+            messages.append(
+                Message(
+                    title=m.get("title", ""),
+                    body=m.get("body", ""),
+                    type=m.get("type", ""),
+                )
+            )
+    return messages
 
 
 class WorkflowError(Exception):
@@ -209,7 +248,7 @@ class Workflow(BaseModel):
             status = self.status.name.lower()
             raise WorkflowError(f"Workflow '{self.name}' {status} (uuid={self.uuid})")
 
-        return create_result(self.data or {}, self.workflow_type)
+        return create_result(self.data or {}, self.workflow_type, self.uuid)
 
     def peek(self) -> "WorkflowResult":
         """
@@ -224,7 +263,7 @@ class Workflow(BaseModel):
         :return: A WorkflowResult with current data (may be partial).
         """
         self.fetch_latest(in_place=True)
-        return create_result(self.data or {}, self.workflow_type)
+        return create_result(self.data or {}, self.workflow_type, self.uuid)
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
         """
@@ -288,20 +327,32 @@ class Workflow(BaseModel):
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
-    def download_msa_files(self, msa_format: stjames.MSAFormat, path: Path | None = None) -> None:
-        """Download MSA files for an MSA workflow."""
+    def download_msa_files(
+        self, msa_format: stjames.MSAFormat, path: Path | None = None
+    ) -> None:
+        """
+        Download MSA files for an MSA workflow.
+
+        .. deprecated::
+            Use ``workflow.result().download_files()`` instead.
+        """
+        warnings.warn(
+            "download_msa_files() is deprecated. Use workflow.result().download_files() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if self.workflow_type != "msa":
             raise ValueError("This workflow is not an MSA workflow.")
 
         if path is None:
             path = Path.cwd()
 
-        if not path.exists():
-            path.mkdir(parents=True, exist_ok=True)
+        path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
             response = client.get(
-                f"/workflow/{self.uuid}/get_msa_files", params={"msa_format": msa_format.value}
+                f"/workflow/{self.uuid}/get_msa_files",
+                params={"msa_format": msa_format.value},
             )
             response.raise_for_status()
 
@@ -314,10 +365,19 @@ class Workflow(BaseModel):
         """
         Downloads DCD trajectory files for specified replicates.
 
+        .. deprecated::
+            Use ``workflow.result().download_trajectories()`` instead.
+
         :param replicates: List of replicate indices to download
         :param name: Optional custom name for the tar.gz file
         :param path: Directory to save the file to
         """
+        warnings.warn(
+            "download_dcd_files() is deprecated. "
+            "Use workflow.result().download_trajectories() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if self.workflow_type != "pose_analysis_md":
             raise ValueError("This workflow is not a pose analysis molecular dynamics workflow.")
 
@@ -327,7 +387,9 @@ class Workflow(BaseModel):
         path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
-            response = client.post(f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates)
+            response = client.post(
+                f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates
+            )
             response.raise_for_status()
 
         file_path = path / f"{name or self.name}.tar.gz"
@@ -345,10 +407,12 @@ class WorkflowResult:
 
     :param workflow_data: The raw data dict from the workflow
     :param workflow_type: The workflow type string
+    :param workflow_uuid: The UUID of the parent workflow (for API calls)
     """
 
     workflow_data: dict
     workflow_type: str
+    workflow_uuid: str
     _workflow: Any = field(default=None, init=False)
     _cache: dict = field(default_factory=dict, init=False)
 
@@ -368,6 +432,15 @@ class WorkflowResult:
         """Raw workflow data dict for fallback access."""
         return self.workflow_data
 
+    def clear_cache(self) -> None:
+        """
+        Clear all cached data to force re-fetching on next access.
+
+        Use this if you need to refresh lazily-loaded data (e.g., structures,
+        calculations) from the API.
+        """
+        self._cache.clear()
+
 
 RESULT_REGISTRY: dict[str, type[WorkflowResult]] = {}
 
@@ -382,18 +455,22 @@ def register_result(workflow_type: str):
     return decorator
 
 
-def create_result(workflow_data: dict, workflow_type: str) -> WorkflowResult:
+def create_result(
+    workflow_data: dict, workflow_type: str, workflow_uuid: str
+) -> WorkflowResult:
     """
     Factory function to create the appropriate result type for a workflow.
 
     :param workflow_data: The raw data dict from the workflow
     :param workflow_type: The workflow type string
+    :param workflow_uuid: The UUID of the parent workflow
     :return: A typed WorkflowResult subclass, or base WorkflowResult if unknown
     """
     result_class = RESULT_REGISTRY.get(workflow_type, WorkflowResult)
     return result_class(
         workflow_data=workflow_data,
         workflow_type=workflow_type,
+        workflow_uuid=workflow_uuid,
     )
 
 
@@ -541,9 +618,14 @@ def batch_submit_workflow(
 
 __all__ = [
     "RESULT_REGISTRY",
+    "Message",
+    "MessageType",
+    "Mode",
     "MoleculeInput",
     "RdkitMol",
     "RowanMolecule",
+    "Solvent",
+    "SolventInput",
     "StJamesMolecule",
     "Workflow",
     "WorkflowError",
@@ -551,6 +633,7 @@ __all__ = [
     "batch_submit_workflow",
     "create_result",
     "molecule_to_dict",
+    "parse_messages",
     "register_result",
     "retrieve_workflow",
     "submit_workflow",
