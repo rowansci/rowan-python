@@ -16,6 +16,7 @@ from .base import (
     parse_messages,
     register_result,
 )
+from .constants import HARTREE_TO_KCAL
 
 
 @register_result("scan")
@@ -33,30 +34,18 @@ class ScanResult(WorkflowResult):
         """UUIDs of scan point calculations."""
         return [uuid for uuid in self._workflow.scan_points if uuid]
 
-    def get_scan_point(self, index: int) -> Calculation:
+    @property
+    def scan_points(self) -> list[Calculation]:
+        """All scan point calculations.
+
+        Note: Makes one API call per scan point on first access.
+        Results are cached. Call clear_cache() to refresh.
         """
-        Fetch a scan point calculation by index.
-
-        :param index: Index of the scan point (0-based).
-        :return: Calculation object for the scan point.
-        :raises IndexError: If index is out of range.
-        """
-        uuids = self.scan_point_uuids
-        if index < 0 or index >= len(uuids):
-            raise IndexError(f"Scan point index {index} out of range (0-{len(uuids) - 1})")
-
-        cache_key = f"scan_point_{index}"
-        if cache_key not in self._cache:
-            self._cache[cache_key] = retrieve_calculation(uuids[index])
-        return self._cache[cache_key]
-
-    def get_scan_points(self) -> list[Calculation]:
-        """Fetch all scan point calculations."""
-        if "scan_points_all" not in self._cache:
-            self._cache["scan_points_all"] = [
-                self.get_scan_point(i) for i in range(len(self.scan_point_uuids))
+        if "scan_points" not in self._cache:
+            self._cache["scan_points"] = [
+                retrieve_calculation(uuid) for uuid in self.scan_point_uuids
             ]
-        return self._cache["scan_points_all"]
+        return self._cache["scan_points"]
 
     def get_energies(self, relative: bool = False) -> list[tuple[float, float | None]]:
         """
@@ -69,7 +58,7 @@ class ScanResult(WorkflowResult):
             value (e.g., bond distance in Angstrom, angle in degrees).
         """
         scan_settings = getattr(self._workflow, "scan_settings", None)
-        calculations = self.get_scan_points()
+        calculations = self.scan_points
 
         # Compute coordinate values
         if not scan_settings or len(scan_settings) == 0:
@@ -88,10 +77,8 @@ class ScanResult(WorkflowResult):
             valid_energies = [e for e in energies if e is not None]
             if valid_energies:
                 min_energy = min(valid_energies)
-                hartree_to_kcal = 627.509
                 energies = [
-                    (e - min_energy) * hartree_to_kcal if e is not None else None
-                    for e in energies
+                    (e - min_energy) * HARTREE_TO_KCAL if e is not None else None for e in energies
                 ]
 
         return list(zip(coords, energies, strict=True))

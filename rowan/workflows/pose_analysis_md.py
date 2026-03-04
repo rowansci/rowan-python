@@ -76,6 +76,9 @@ class PoseAnalysisMDResult(WorkflowResult):
         """
         Fetch the energy-minimized protein structure.
 
+        Note: Makes one API call on first access.
+        Results are cached. Call clear_cache() to refresh.
+
         :return: Protein object or None if not available.
         """
         uuid = self.minimized_protein_uuid
@@ -89,7 +92,6 @@ class PoseAnalysisMDResult(WorkflowResult):
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow."""
         return parse_messages(getattr(self._workflow, "messages", None))
-
 
     def download_trajectories(
         self,

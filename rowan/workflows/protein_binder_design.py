@@ -5,7 +5,6 @@ from typing import Any
 
 import stjames
 
-from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
@@ -148,28 +147,6 @@ class ProteinBinderDesignResult(WorkflowResult):
             )
         return binders
 
-    def get_bound_structure(self, index: int) -> Protein:
-        """
-        Fetch the bound structure (binder + target complex) for a binder.
-
-        :param index: Index of the binder (0-based).
-        :return: Protein object with the bound complex structure.
-        :raises IndexError: If index is out of range.
-        :raises ValueError: If the binder has no bound structure.
-        """
-        binders = self.generated_binders
-        if index < 0 or index >= len(binders):
-            raise IndexError(f"Binder index {index} out of range (0-{len(binders) - 1})")
-
-        uuid = binders[index].bound_structure_uuid
-        if not uuid:
-            raise ValueError(f"Binder {index} has no bound structure")
-
-        cache_key = f"bound_structure_{index}"
-        if cache_key not in self._cache:
-            self._cache[cache_key] = retrieve_protein(uuid)
-        return self._cache[cache_key]
-
     @property
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow."""
@@ -208,9 +185,7 @@ def submit_protein_binder_design_workflow(
     elif isinstance(protocol, str):
         valid = [p.value for p in BinderProtocol]
         if protocol not in valid:
-            raise ValueError(
-                f"Invalid protocol '{protocol}'. Must be one of: {', '.join(valid)}"
-            )
+            raise ValueError(f"Invalid protocol '{protocol}'. Must be one of: {', '.join(valid)}")
 
     workflow = stjames.ProteinBinderDesignWorkflow(
         binder_design_input=binder_design_input,

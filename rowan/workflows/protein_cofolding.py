@@ -147,7 +147,11 @@ class ProteinCofoldingResult(WorkflowResult):
         return getattr(self._workflow, "predicted_refined_structure_uuid", None)
 
     def get_predicted_structure(self) -> Protein | None:
-        """Fetch the predicted structure as a Protein object."""
+        """Fetch the predicted structure as a Protein object.
+
+        Note: Makes one API call on first access.
+        Results are cached. Call clear_cache() to refresh.
+        """
         uuid = self.predicted_structure_uuid
         if not uuid:
             return None
@@ -156,7 +160,11 @@ class ProteinCofoldingResult(WorkflowResult):
         return self._cache["predicted_structure"]
 
     def get_refined_structure(self) -> Protein | None:
-        """Fetch the refined structure as a Protein object (if available)."""
+        """Fetch the refined structure as a Protein object (if available).
+
+        Note: Makes one API call on first access.
+        Results are cached. Call clear_cache() to refresh.
+        """
         uuid = self.predicted_refined_structure_uuid
         if not uuid:
             return None
@@ -293,9 +301,7 @@ def submit_protein_cofolding_workflow(
     has_rna = initial_rna_sequences and len(initial_rna_sequences) > 0
 
     if not (has_protein or has_dna or has_rna):
-        raise ValueError(
-            "At least one protein, DNA, or RNA sequence is required for cofolding"
-        )
+        raise ValueError("At least one protein, DNA, or RNA sequence is required for cofolding")
 
     # Validate and convert model
     if isinstance(model, CofoldingModel):
@@ -303,9 +309,7 @@ def submit_protein_cofolding_workflow(
     else:
         valid_models = [m.value for m in CofoldingModel]
         if model not in valid_models:
-            raise ValueError(
-                f"Invalid model '{model}'. Must be one of: {', '.join(valid_models)}"
-            )
+            raise ValueError(f"Invalid model '{model}'. Must be one of: {', '.join(valid_models)}")
         model_str = model
 
     workflow = stjames.ProteinCofoldingWorkflow(

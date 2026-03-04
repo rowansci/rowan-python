@@ -187,5 +187,42 @@ class Molecule(BaseModel):
         """Get the underlying stjames.Molecule (internal use)."""
         return self._stjames
 
+    # Geometric utilities
+
+    def distance(self, i: int, j: int) -> float:
+        """
+        Calculate distance between two atoms.
+
+        :param i: First atom index (1-based).
+        :param j: Second atom index (1-based).
+        :return: Distance in Ångströms.
+        """
+        return self._stjames.distance(i, j)
+
+    def angle(self, i: int, j: int, k: int, degrees: bool = True) -> float:
+        """
+        Calculate angle between three atoms (i-j-k).
+
+        :param i: First atom index (1-based).
+        :param j: Central atom index (1-based).
+        :param k: Third atom index (1-based).
+        :param degrees: Return angle in degrees (default) or radians.
+        :return: Angle in degrees or radians.
+        """
+        return self._stjames.angle(i, j, k, degrees=degrees)
+
+    def dihedral(self, i: int, j: int, k: int, l: int, degrees: bool = True) -> float:
+        """
+        Calculate dihedral angle between four atoms (i-j-k-l).
+
+        :param i: First atom index (1-based).
+        :param j: Second atom index (1-based).
+        :param k: Third atom index (1-based).
+        :param l: Fourth atom index (1-based).
+        :param degrees: Return angle in degrees (default) or radians.
+        :return: Dihedral angle in degrees (0-360) or radians.
+        """
+        return self._stjames.dihedral(i, j, k, l, degrees=degrees)
+
 
 __all__ = ["Molecule"]

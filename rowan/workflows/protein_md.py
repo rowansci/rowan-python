@@ -34,6 +34,9 @@ class ProteinMDResult(WorkflowResult):
         """
         Fetch the energy-minimized protein structure.
 
+        Note: Makes one API call on first access.
+        Results are cached. Call clear_cache() to refresh.
+
         :return: Protein object or None if not available.
         """
         uuid = self.minimized_protein_uuid

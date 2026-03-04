@@ -1,4 +1,11 @@
-"""Workflow submission and result types."""
+"""Workflow submission and result types.
+
+Submit workflows and retrieve typed results. See examples/ directory
+for 45+ detailed examples of all workflow types.
+
+Basic pattern:
+    result = workflows.submit_<workflow_type>(molecule).result()
+"""
 
 # Import workflow-specific modules (each registers its result type)
 from .admet import ADMETResult, submit_admet_workflow

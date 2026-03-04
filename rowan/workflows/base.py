@@ -327,9 +327,7 @@ class Workflow(BaseModel):
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
-    def download_msa_files(
-        self, msa_format: stjames.MSAFormat, path: Path | None = None
-    ) -> None:
+    def download_msa_files(self, msa_format: stjames.MSAFormat, path: Path | None = None) -> None:
         """
         Download MSA files for an MSA workflow.
 
@@ -387,9 +385,7 @@ class Workflow(BaseModel):
         path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates
-            )
+            response = client.post(f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates)
             response.raise_for_status()
 
         file_path = path / f"{name or self.name}.tar.gz"
@@ -455,9 +451,7 @@ def register_result(workflow_type: str):
     return decorator
 
 
-def create_result(
-    workflow_data: dict, workflow_type: str, workflow_uuid: str
-) -> WorkflowResult:
+def create_result(workflow_data: dict, workflow_type: str, workflow_uuid: str) -> WorkflowResult:
     """
     Factory function to create the appropriate result type for a workflow.
 

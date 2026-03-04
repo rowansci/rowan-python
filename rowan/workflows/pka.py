@@ -99,6 +99,9 @@ class pKaResult(WorkflowResult):
 
         Only available for aimnet2_wagen2024 method (3D structure-based).
 
+        Note: Makes one API call per structure on first access.
+        Results are cached. Call clear_cache() to refresh.
+
         :raises ValueError: If method is chemprop_nevolianis2025 (no structures).
         """
         method = getattr(self._workflow, "microscopic_pka_method", None)
@@ -111,6 +114,7 @@ class pKaResult(WorkflowResult):
             uuids = self._get_structure_uuids()
             self._cache["structures"] = [retrieve_calculation(uuid) for uuid in uuids]
         return self._cache["structures"]
+
 
 def submit_pka_workflow(
     initial_molecule: MoleculeInput | str,
@@ -153,8 +157,7 @@ def submit_pka_workflow(
     # Validate method/input compatibility
     if method == "aimnet2_wagen2024" and not mol_dict:
         raise ValueError(
-            "aimnet2_wagen2024 requires a 3D structure. "
-            "Provide a Molecule, not a SMILES string."
+            "aimnet2_wagen2024 requires a 3D structure. Provide a Molecule, not a SMILES string."
         )
     if method == "chemprop_nevolianis2025" and not initial_smiles:
         raise ValueError(

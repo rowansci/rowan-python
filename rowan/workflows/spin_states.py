@@ -1,19 +1,40 @@
 """Spin states workflow - calculate energies of different spin multiplicities."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import stjames
 
+from ..calculation import Calculation, retrieve_calculation
 from ..utils import api_client
 from .base import (
+    Message,
     Mode,
     MoleculeInput,
     SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
+    parse_messages,
     register_result,
 )
+from .constants import HARTREE_TO_KCAL
+
+
+def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
+    """
+    Validate that a spin multiplicity is compatible with the molecule.
+
+    Uses stjames.Molecule.check_electron_sanity() for validation.
+
+    :param mol_dict: Molecule dict with atomic_numbers and charge.
+    :param multiplicity: Spin multiplicity to validate.
+    :raises ValueError: If multiplicity is invalid for this molecule.
+    """
+    # Create a copy with the test multiplicity and validate using stjames
+    test_dict = {**mol_dict, "multiplicity": multiplicity}
+    mol = stjames.Molecule(**test_dict)
+    mol.check_electron_sanity()  # type: ignore[operator]
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,7 +42,13 @@ class SpinState:
     """A spin state result."""
 
     multiplicity: int
+    """Spin multiplicity (1=singlet, 2=doublet, 3=triplet, etc.)."""
+
     energy: float
+    """Energy in Hartree."""
+
+    calculation_uuids: tuple[str | None, ...]
+    """UUIDs for each optimization stage (for multistage optimization)."""
 
 
 @register_result("spin_states")
@@ -40,14 +67,49 @@ class SpinStatesResult(WorkflowResult):
 
     @property
     def spin_states(self) -> list[SpinState]:
-        """List of spin states with energies."""
+        """List of spin states with energies, ordered by energy (lowest first)."""
         return [
             SpinState(
                 multiplicity=ss.multiplicity,
                 energy=ss.energy,
+                calculation_uuids=tuple(ss.calculation) if ss.calculation else (),
             )
             for ss in self._workflow.spin_states
         ]
+
+    @property
+    def messages(self) -> list[Message]:
+        """Any messages or warnings from the workflow."""
+        return parse_messages(getattr(self._workflow, "messages", None))
+
+    def get_calculation(self, multiplicity: int, stage: int = -1) -> Calculation:
+        """
+        Fetch the calculation for a specific spin state.
+
+        Note: Makes one API call per spin state on first access.
+        Results are cached. Call clear_cache() to refresh.
+
+        :param multiplicity: The spin multiplicity to fetch.
+        :param stage: The optimization stage (-1 for final stage).
+        :return: A Calculation object with molecule and energy data.
+        :raises ValueError: If the multiplicity is not found or has no calculation.
+        """
+        for state in self.spin_states:
+            if state.multiplicity == multiplicity:
+                if not state.calculation_uuids:
+                    raise ValueError(f"Spin state {multiplicity} has no calculations")
+                uuid = state.calculation_uuids[stage]
+                if uuid is None:
+                    raise ValueError(
+                        f"Spin state {multiplicity} has no calculation at stage {stage}"
+                    )
+
+                cache_key = f"spin_state_{multiplicity}_{stage}"
+                if cache_key not in self._cache:
+                    self._cache[cache_key] = retrieve_calculation(uuid)
+                return self._cache[cache_key]
+
+        raise ValueError(f"Spin state with multiplicity {multiplicity} not found")
 
     def get_energies(self, relative: bool = False) -> list[float | None]:
         """
@@ -64,10 +126,8 @@ class SpinStatesResult(WorkflowResult):
             valid = [e for e in energies if e is not None]
             if valid:
                 min_e = min(valid)
-                hartree_to_kcal = 627.509
                 energies = [
-                    (e - min_e) * hartree_to_kcal if e is not None else None
-                    for e in energies
+                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
                 ]
 
         return energies
@@ -98,9 +158,14 @@ def submit_spin_states_workflow(
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    :raises ValueError: If any multiplicity is incompatible with the molecule.
+    :raises requests.HTTPError: If the request to the API fails.
     """
     mol_dict = molecule_to_dict(initial_molecule)
+
+    # Validate that all multiplicities are compatible with the molecule
+    for mult in states:
+        _validate_multiplicity(mol_dict, mult)
 
     workflow = stjames.SpinStatesWorkflow(
         initial_molecule=mol_dict,

@@ -13,6 +13,7 @@ from .base import (
     molecule_to_dict,
     register_result,
 )
+from .constants import HARTREE_TO_KCAL
 
 
 @register_result("conformer_search")
@@ -50,10 +51,8 @@ class ConformerSearchResult(WorkflowResult):
             valid = [e for e in energies if e is not None]
             if valid:
                 min_e = min(valid)
-                hartree_to_kcal = 627.509
                 energies = [
-                    (e - min_e) * hartree_to_kcal if e is not None else None
-                    for e in energies
+                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
                 ]
 
         return energies
@@ -97,6 +96,9 @@ class ConformerSearchResult(WorkflowResult):
     def get_conformer(self, index: int, stage: int = -1) -> Calculation:
         """
         Fetch a conformer's calculation data by index.
+
+        Note: Makes one API call per conformer on first access.
+        Results are cached. Call clear_cache() to refresh.
 
         :param index: The conformer index (0-based).
         :param stage: The optimization stage (-1 for final stage).

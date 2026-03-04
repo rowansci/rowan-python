@@ -36,11 +36,14 @@ class ElectronicPropertiesResult(WorkflowResult):
     @property
     def quadrupole(
         self,
-    ) -> tuple[
-        tuple[float, float, float],
-        tuple[float, float, float],
-        tuple[float, float, float],
-    ] | None:
+    ) -> (
+        tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            tuple[float, float, float],
+        ]
+        | None
+    ):
         """Quadrupole moment tensor (Debye·Å)."""
         return self._workflow.quadrupole
 

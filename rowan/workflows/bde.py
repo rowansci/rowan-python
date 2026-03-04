@@ -5,9 +5,16 @@ from typing import Any
 
 import stjames
 from rdkit import Chem
+from stjames.workflows.bde import find_AB_bonds as _find_AB_bonds
+from stjames.workflows.bde import find_CH_bonds as _find_CH_bonds
+from stjames.workflows.bde import find_CX_bonds as _find_CX_bonds
 
+from ..molecule import Molecule as RowanMolecule
 from ..utils import api_client
 from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+
+# Type alias for molecule inputs to bond-finding functions
+BondMoleculeInput = RowanMolecule | StJamesMolecule | dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,4 +106,83 @@ def submit_bde_workflow(
         return Workflow(**response.json())
 
 
-__all__ = ["BDEEntry", "BDEResult", "submit_bde_workflow"]
+def _to_stjames_mol(mol: BondMoleculeInput) -> stjames.Molecule:
+    """Convert various molecule types to stjames.Molecule."""
+    if isinstance(mol, RowanMolecule):
+        return mol._to_stjames()
+    elif isinstance(mol, stjames.Molecule):
+        return mol
+    elif isinstance(mol, dict):
+        return stjames.Molecule(**mol)
+    else:
+        raise TypeError(f"Cannot convert {type(mol)} to stjames.Molecule")
+
+
+def find_ch_bonds(molecule: BondMoleculeInput, distance_max: float = 1.2) -> list[tuple[int, int]]:
+    """
+    Find all C-H bonds in a molecule.
+
+    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
+    :param distance_max: Maximum C-H distance to consider a bond (Å).
+    :return: List of (carbon_index, hydrogen_index) tuples (1-based indices).
+
+    Example::
+
+        mol = Molecule.from_smiles("CCO")  # ethanol
+        bonds = find_ch_bonds(mol)
+        # [(1, 4), (1, 5), (1, 6), (2, 7), (2, 8)]
+    """
+    stj = _to_stjames_mol(molecule)
+    return list(_find_CH_bonds(stj, distance_max))
+
+
+def find_cx_bonds(molecule: BondMoleculeInput) -> list[tuple[int, int]]:
+    """
+    Find all C-X bonds in a molecule (X = F, Cl, Br, I, At, Ts).
+
+    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
+    :return: List of (carbon_index, halogen_index) tuples (1-based indices).
+
+    Example::
+
+        mol = Molecule.from_smiles("CCCl")  # chloroethane
+        bonds = find_cx_bonds(mol)
+        # [(2, 3)]
+    """
+    stj = _to_stjames_mol(molecule)
+    return list(_find_CX_bonds(stj))
+
+
+def find_bonds(
+    molecule: BondMoleculeInput,
+    element_a: int,
+    element_b: int,
+    distance_max: float,
+) -> list[tuple[int, int]]:
+    """
+    Find all bonds between two element types in a molecule.
+
+    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
+    :param element_a: Atomic number of first element.
+    :param element_b: Atomic number of second element.
+    :param distance_max: Maximum distance to consider a bond (Å).
+    :return: List of (atom_a_index, atom_b_index) tuples (1-based indices).
+
+    Example::
+
+        mol = Molecule.from_smiles("O")  # water
+        bonds = find_bonds(mol, 8, 1, 1.1)  # O-H bonds
+        # [(1, 2), (1, 3)]
+    """
+    stj = _to_stjames_mol(molecule)
+    return list(_find_AB_bonds(stj, element_a, element_b, distance_max))
+
+
+__all__ = [
+    "BDEEntry",
+    "BDEResult",
+    "find_bonds",
+    "find_ch_bonds",
+    "find_cx_bonds",
+    "submit_bde_workflow",
+]

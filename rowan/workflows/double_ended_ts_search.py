@@ -9,6 +9,7 @@ from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
+from .constants import HARTREE_TO_KCAL
 
 
 @register_result("double_ended_ts_search")
@@ -73,10 +74,8 @@ class DoubleEndedTSSearchResult(WorkflowResult):
             valid = [e for e in energies if e is not None]
             if valid:
                 min_e = min(valid)
-                hartree_to_kcal = 627.509
                 energies = [
-                    (e - min_e) * hartree_to_kcal if e is not None else None
-                    for e in energies
+                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
                 ]
 
         return energies

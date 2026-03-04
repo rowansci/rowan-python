@@ -42,8 +42,7 @@ class MSAResult(WorkflowResult):
         """
         if format is not None and format not in self._output_formats:
             raise ValueError(
-                f"Format '{format}' was not requested. "
-                f"Available formats: {self._output_formats}"
+                f"Format '{format}' was not requested. Available formats: {self._output_formats}"
             )
 
         if path is None:
