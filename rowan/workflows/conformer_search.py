@@ -141,7 +141,6 @@ def submit_conformer_search_workflow(
         - ``ETKDGSettings`` — RDKit ETKDG, fast, good for most small molecules
         - ``LyrebirdSettings`` — Rowan ML model
         - ``iMTDGCSettings`` — CREST iMTD-GC metadynamics, more thorough
-        - ``iMTDsMTDSettings`` — CREST iMTD-sMTD metadynamics
         - ``MonteCarloMultipleMinimumSettings`` — MCMM conformer search
     :param final_method: The method to use for the final optimization.
     :param solvent: The solvent to use for the final optimization.

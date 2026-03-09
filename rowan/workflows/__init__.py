@@ -14,7 +14,6 @@ from stjames import (
     MonteCarloMultipleMinimumSettings,
     SolventModel,
     iMTDGCSettings,
-    iMTDsMTDSettings,
 )
 
 from .admet import ADMETResult, submit_admet_workflow
@@ -154,7 +153,6 @@ __all__ = [
     "batch_submit_workflow",
     "create_result",
     "iMTDGCSettings",
-    "iMTDsMTDSettings",
     "pKaMicrostate",
     "pKaResult",
     "register_result",
