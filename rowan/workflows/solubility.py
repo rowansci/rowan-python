@@ -6,7 +6,7 @@ from typing import Literal
 import stjames
 
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
 
 # Common solvents with human-readable names (from tinbergen)
 # Users can use these names or provide arbitrary SMILES for fastsolv
@@ -135,7 +135,7 @@ class SolubilityResult(WorkflowResult):
 
 
 def submit_solubility_workflow(
-    initial_smiles: str,
+    initial_smiles: str | MoleculeInput,
     method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,
@@ -146,7 +146,10 @@ def submit_solubility_workflow(
     """
     Submits a solubility workflow to the API.
 
-    :param initial_smiles: The SMILES of the molecule to calculate the solubility of.
+    :param initial_smiles: The molecule to calculate solubility for. Accepts a SMILES
+        string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol, or dict).
+        The molecule must have a SMILES string associated with it, as solubility models
+        are 2D/SMILES-based and do not use 3D coordinates.
     :param method: The solubility prediction method:
         - "fastsolv": ML-based solid solubility. Supports arbitrary solvents and temperatures.
         - "kingfisher": ML-based aqueous solubility. Water only, 298.15K only.
@@ -160,9 +163,11 @@ def submit_solubility_workflow(
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
-    :raises ValueError: If solvents/temperatures are incompatible with the method.
+    :raises ValueError: If the molecule has no SMILES, or solvents/temperatures are
+        incompatible with the method.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    initial_smiles = extract_smiles(initial_smiles)
     # Resolve solvent names to SMILES
     if solvents is not None:
         solvents = [_resolve_solvent(s) for s in solvents]

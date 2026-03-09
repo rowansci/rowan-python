@@ -1,12 +1,9 @@
 """Fukui workflow - calculate Fukui indices for reactivity prediction."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @register_result("fukui")
@@ -41,7 +38,7 @@ class FukuiResult(WorkflowResult):
 
 
 def submit_fukui_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     optimization_method: str = "gfn2_xtb",
     fukui_method: str = "gfn1_xtb",
     solvent_settings: dict[str, str] | None = None,
@@ -55,17 +52,39 @@ def submit_fukui_workflow(
     :param initial_molecule: The molecule to calculate the fukui indices of.
     :param optimization_method: The method to use for the optimization.
     :param fukui_method: The method to use for the fukui calculation.
-    :param solvent_settings: The solvent settings to use for the fukui calculation.
+    :param solvent_settings: Optional implicit solvent for the Fukui calculation. A dict
+        with two keys:
+
+        - ``"solvent"``: solvent name string (e.g. ``"water"``, ``"dichloromethane"``,
+          ``"dmso"``). See ``rowan.Solvent`` for all valid values.
+        - ``"model"``: solvation model. Use ``"alpb"`` or ``"gbsa"`` for xTB methods
+          (the defaults ``gfn1_xtb`` / ``gfn2_xtb``); use ``"cpcm"`` or ``"smd"`` for
+          DFT methods.
+
+        Example: ``solvent_settings={"solvent": "water", "model": "alpb"}``
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to place the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
+    :raises ValueError: If the solvent model is incompatible with the chosen method.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    if solvent_settings is not None:
+        model = solvent_settings.get("model")
+        is_xtb = stjames.Method(fukui_method) in stjames.XTB_METHODS
+        xtb_models = {"alpb", "gbsa"}
+        dft_models = {"pcm", "cpcm", "cosmo", "cpcmx", "SMD"}
+        if is_xtb and model not in xtb_models:
+            raise ValueError(
+                f"xTB Fukui methods require 'alpb' or 'gbsa' solvation model, got '{model}'"
+            )
+        if not is_xtb and model not in dft_models:
+            raise ValueError(
+                f"DFT Fukui methods require 'cpcm', 'smd', 'pcm', 'cosmo', or 'cpcmx' "
+                f"solvation model, got '{model}'"
+            )
+
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)

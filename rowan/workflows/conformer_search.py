@@ -123,7 +123,7 @@ class ConformerSearchResult(WorkflowResult):
 
 def submit_conformer_search_workflow(
     initial_molecule: MoleculeInput,
-    conf_gen_settings: stjames.ConformerGenSettings,
+    conf_gen_settings: stjames.ConformerGenSettings | None = None,
     final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: SolventInput = None,
     transition_state: bool = False,
@@ -135,7 +135,14 @@ def submit_conformer_search_workflow(
     Submits a conformer search workflow to the API.
 
     :param initial_molecule: The molecule to perform the conformer search on.
-    :param conf_gen_settings: Settings for conformer generation.
+    :param conf_gen_settings: Conformer generation method and settings. Defaults to
+        ``ETKDGSettings()``. Available options (importable directly from ``rowan``):
+
+        - ``ETKDGSettings`` — RDKit ETKDG, fast, good for most small molecules
+        - ``LyrebirdSettings`` — Rowan ML model
+        - ``iMTDGCSettings`` — CREST iMTD-GC metadynamics, more thorough
+        - ``iMTDsMTDSettings`` — CREST iMTD-sMTD metadynamics
+        - ``MonteCarloMultipleMinimumSettings`` — MCMM conformer search
     :param final_method: The method to use for the final optimization.
     :param solvent: The solvent to use for the final optimization.
     :param transition_state: Whether to optimize the transition state.
@@ -145,6 +152,9 @@ def submit_conformer_search_workflow(
     :return: A Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if conf_gen_settings is None:
+        conf_gen_settings = stjames.ETKDGSettings()
+
     mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(final_method, str):

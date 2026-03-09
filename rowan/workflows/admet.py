@@ -3,7 +3,7 @@
 import stjames
 
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @register_result("admet")
@@ -24,7 +24,7 @@ class ADMETResult(WorkflowResult):
 
 
 def submit_admet_workflow(
-    initial_smiles: str,
+    initial_smiles: str | MoleculeInput,
     name: str = "ADMET Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -32,13 +32,18 @@ def submit_admet_workflow(
     """
     Submits an ADMET workflow to predict drug-likeness properties.
 
-    :param initial_smiles: The molecule SMILES to calculate ADMET properties for.
+    :param initial_smiles: The molecule to calculate ADMET properties for. Accepts a
+        SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
+        or dict). The molecule must have a SMILES string associated with it, as ADMET
+        models are 2D/SMILES-based and do not use 3D coordinates.
     :param name: The name of the workflow.
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
+    :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    initial_smiles = extract_smiles(initial_smiles)
     workflow = stjames.ADMETWorkflow(initial_smiles=initial_smiles)
 
     data = {

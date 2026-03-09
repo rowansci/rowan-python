@@ -8,6 +8,15 @@ Basic pattern:
 """
 
 # Import workflow-specific modules (each registers its result type)
+from stjames import (
+    ETKDGSettings,
+    LyrebirdSettings,
+    MonteCarloMultipleMinimumSettings,
+    SolventModel,
+    iMTDGCSettings,
+    iMTDsMTDSettings,
+)
+
 from .admet import ADMETResult, submit_admet_workflow
 from .analogue_docking import (
     AnalogueDockingResult,
@@ -15,6 +24,7 @@ from .analogue_docking import (
 )
 from .base import (
     RESULT_REGISTRY,
+    Solvent,
     Workflow,
     WorkflowError,
     WorkflowResult,
@@ -103,6 +113,7 @@ __all__ = [
     "DockingResult",
     "DockingScore",
     "DoubleEndedTSSearchResult",
+    "ETKDGSettings",
     "ElectronicPropertiesResult",
     "FukuiResult",
     "HydrogenBondAcceptorSite",
@@ -111,11 +122,13 @@ __all__ = [
     "HydrogenBondDonorSite",
     "IRCResult",
     "IonMobilityResult",
+    "LyrebirdSettings",
     "MSAResult",
     "MacropKaMicrostate",
     "MacropKaResult",
     "MacropKaValue",
     "MembranePermeabilityResult",
+    "MonteCarloMultipleMinimumSettings",
     "MultiStageOptResult",
     "NMRPeak",
     "NMRResult",
@@ -128,6 +141,8 @@ __all__ = [
     "ScanResult",
     "SolubilityEntry",
     "SolubilityResult",
+    "Solvent",
+    "SolventModel",
     "SpinState",
     "SpinStatesResult",
     "StrainResult",
@@ -138,6 +153,8 @@ __all__ = [
     "WorkflowResult",
     "batch_submit_workflow",
     "create_result",
+    "iMTDGCSettings",
+    "iMTDsMTDSettings",
     "pKaMicrostate",
     "pKaResult",
     "register_result",

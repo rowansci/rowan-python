@@ -468,6 +468,35 @@ def create_result(workflow_data: dict, workflow_type: str, workflow_uuid: str) -
     )
 
 
+def extract_smiles(mol: "str | MoleculeInput") -> str:
+    """
+    Extract a SMILES string from a molecule input or return the string directly.
+
+    :param mol: A SMILES string, or any molecule type (RowanMolecule, stjames.Molecule,
+        RDKit Mol, or dict).
+    :return: A SMILES string.
+    :raises TypeError: If the input type is not supported.
+    :raises ValueError: If the molecule has no SMILES associated with it.
+    """
+    if isinstance(mol, str):
+        return mol
+    elif isinstance(mol, RowanMolecule):
+        smiles = mol.smiles
+    elif isinstance(mol, stjames.Molecule):
+        smiles = mol.smiles
+    elif isinstance(mol, dict):
+        smiles = mol.get("smiles")
+    elif isinstance(mol, Chem.Mol):
+        smiles = Chem.MolToSmiles(mol)
+    else:
+        raise TypeError(f"Cannot extract SMILES from {type(mol)}")
+    if smiles is None:
+        raise ValueError(
+            "Molecule has no SMILES associated with it. Provide a SMILES string directly."
+        )
+    return smiles
+
+
 def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
     """
     Convert any molecule input type to a dict for API submission.
@@ -626,6 +655,7 @@ __all__ = [
     "WorkflowResult",
     "batch_submit_workflow",
     "create_result",
+    "extract_smiles",
     "molecule_to_dict",
     "parse_messages",
     "register_result",

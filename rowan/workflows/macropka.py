@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import stjames
 
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,7 +97,7 @@ class MacropKaResult(WorkflowResult):
 
 
 def submit_macropka_workflow(
-    initial_smiles: str,
+    initial_smiles: str | MoleculeInput,
     min_pH: int = 0,
     max_pH: int = 14,
     min_charge: int = -2,
@@ -111,7 +111,10 @@ def submit_macropka_workflow(
     """
     Submits a macropka workflow to the API.
 
-    :param initial_smiles: The molecule used in the macropka workflow.
+    :param initial_smiles: The molecule to calculate macroscopic pKa values for. Accepts
+        a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
+        or dict). The molecule must have a SMILES string associated with it, as macropKa
+        models are 2D/SMILES-based and do not use 3D coordinates.
     :param min_pH: The minimum pH to use in the macropka workflow.
     :param max_pH: The maximum pH to use in the macropka workflow.
     :param min_charge: The minimum charge to use in the macropka workflow.
@@ -122,8 +125,10 @@ def submit_macropka_workflow(
     :param folder_uuid: The UUID of the folder to store the workflow in.
     :param max_credits: The maximum number of credits to use for the workflow.
     :return: A Workflow object representing the submitted workflow.
+    :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    initial_smiles = extract_smiles(initial_smiles)
     workflow = stjames.MacropKaWorkflow(
         initial_smiles=initial_smiles,
         min_pH=min_pH,
