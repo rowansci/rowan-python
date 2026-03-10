@@ -26,7 +26,6 @@ print(
 )
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)
-print(workflow.data)
 
 workflow2 = rowan.submit_pka_workflow(
     initial_molecule="c1ccccc1O",
@@ -39,4 +38,3 @@ print(
 )
 workflow2.wait_for_result().fetch_latest(in_place=True)
 print(workflow2)
-print(workflow2.data)

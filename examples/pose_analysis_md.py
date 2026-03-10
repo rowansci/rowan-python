@@ -35,4 +35,3 @@ md_workflow.wait_for_result().fetch_latest(in_place=True)
 
 # print ligand RMSD by frame
 print(md_workflow.data["trajectories"][0]["rmsd"])
-print(md_workflow.data)

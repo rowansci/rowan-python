@@ -19,4 +19,3 @@ workflow = rowan.submit_protein_cofolding_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
 workflow.wait_for_result().fetch_latest(in_place=True)
 print(workflow)
-print(workflow.data)
