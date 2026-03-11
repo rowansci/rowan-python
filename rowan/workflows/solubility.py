@@ -60,7 +60,7 @@ def _resolve_solvent(solvent: str) -> str:
     Convert a solvent name or SMILES to SMILES.
 
     :param solvent: Solvent name (e.g., "ethanol") or SMILES (e.g., "CCO").
-    :return: SMILES string.
+    :returns: SMILES string.
     :raises ValueError: If solvent name is not recognized and doesn't look like SMILES.
     """
     # Check if it's a known solvent name (case-insensitive)
@@ -146,11 +146,11 @@ def submit_solubility_workflow(
     """
     Submits a solubility workflow to the API.
 
-    :param initial_smiles: The molecule to calculate solubility for. Accepts a SMILES
+    :param initial_smiles: Molecule to calculate solubility for. Accepts a SMILES
         string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol, or dict).
         The molecule must have a SMILES string associated with it, as solubility models
         are 2D/SMILES-based and do not use 3D coordinates.
-    :param method: The solubility prediction method:
+    :param method: Solubility prediction method:
         - "fastsolv": ML-based solid solubility. Supports arbitrary solvents and temperatures.
         - "kingfisher": ML-based aqueous solubility. Water only, 298.15K only.
         - "esol": ESOL regression for aqueous solubility. Water only, 298.15K only.
@@ -159,10 +159,10 @@ def submit_solubility_workflow(
         SMILES is accepted. For kingfisher/esol, must be ["water"] or ["O"].
     :param temperatures: List of temperatures in Kelvin. For fastsolv, any temperatures.
         For kingfisher/esol, must be [298.15] (room temperature).
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the molecule has no SMILES, or solvents/temperatures are
         incompatible with the method.
     :raises requests.HTTPError: If the request to the API fails.
@@ -216,12 +216,3 @@ def submit_solubility_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = [
-    "COMMON_SOLVENTS",
-    "SolubilityEntry",
-    "SolubilityResult",
-    "SolubilityValue",
-    "submit_solubility_workflow",
-]

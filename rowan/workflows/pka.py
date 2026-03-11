@@ -104,7 +104,7 @@ class pKaResult(WorkflowResult):
 
         :raises ValueError: If method is chemprop_nevolianis2025 (no structures).
         """
-        method = getattr(self._workflow, "microscopic_pka_method", None)
+        method = self._workflow.microscopic_pka_method
         if method == "chemprop_nevolianis2025":
             raise ValueError(
                 "chemprop_nevolianis2025 is SMILES-based and does not produce structures. "
@@ -131,18 +131,18 @@ def submit_pka_workflow(
     """
     Submits a pKa workflow to the API.
 
-    :param initial_molecule: The molecule to calculate the pKa of.
+    :param initial_molecule: Molecule to calculate pKa for.
         Accepts Molecule, stjames.Molecule, RDKit Mol, dict, or SMILES string.
-    :param pka_range: The range of pKa values to calculate.
-    :param method: The algorithm used to compute pKa values.
-    :param solvent: The solvent in which pKa values will be computed.
+    :param pka_range: Range of pKa values to calculate.
+    :param method: Algorithm used to compute pKa values.
+    :param solvent: Solvent in which pKa values will be computed.
     :param deprotonate_elements: Elements to deprotonate (atomic numbers).
     :param protonate_elements: Elements to protonate (atomic numbers).
-    :param mode: The mode to run the calculation in.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param mode: Mode to run the calculation in.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If method and input type don't match.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -193,6 +193,3 @@ def submit_pka_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["pKaMicrostate", "pKaResult", "submit_pka_workflow"]

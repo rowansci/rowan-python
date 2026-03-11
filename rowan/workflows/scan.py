@@ -3,16 +3,15 @@
 from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..utils import api_client
 from .base import (
     Message,
-    RdkitMol,
-    StJamesMolecule,
+    MoleculeInput,
     Workflow,
     WorkflowResult,
+    molecule_to_dict,
     parse_messages,
     register_result,
 )
@@ -54,10 +53,10 @@ class ScanResult(WorkflowResult):
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy point). If False (default), return absolute energies
             in Hartree.
-        :return: List of (coordinate, energy) tuples. Coordinate is the scanned
+        :returns: List of (coordinate, energy) tuples. Coordinate is the scanned
             value (e.g., bond distance in Angstrom, angle in degrees).
         """
-        scan_settings = getattr(self._workflow, "scan_settings", None)
+        scan_settings = self._workflow.scan_settings
         calculations = self.scan_points
 
         # Compute coordinate values
@@ -90,7 +89,7 @@ class ScanResult(WorkflowResult):
 
 
 def submit_scan_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
     calculation_engine: str | None = None,
     calculation_method: stjames.Method | str = "uma_m_omol",
@@ -102,21 +101,18 @@ def submit_scan_workflow(
     """
     Submits a scan workflow to the API.
 
-    :param initial_molecule: The molecule used in the scan.
-    :param scan_settings: The scan settings.
-    :param calculation_engine: The engine to use for the calculation.
-    :param calculation_method: The method to use for the calculation.
+    :param initial_molecule: Molecule to scan.
+    :param scan_settings: Scan settings.
+    :param calculation_engine: Engine to use for the calculation.
+    :param calculation_method: Method to use for the calculation.
     :param wavefront_propagation: Whether to use wavefront propagation in the scan.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)
@@ -150,6 +146,3 @@ def submit_scan_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["ScanResult", "submit_scan_workflow"]

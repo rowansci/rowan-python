@@ -108,14 +108,14 @@ def submit_nmr_workflow(
     """
     Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
 
-    :param initial_molecule: The molecule to predict NMR spectra for.
-    :param solvent: The solvent for NMR calculation (default: chloroform).
+    :param initial_molecule: Molecule to predict NMR spectra for.
+    :param solvent: Solvent for NMR calculation (default: chloroform).
     :param do_csearch: Whether to perform a conformational search.
     :param do_optimization: Whether to optimize conformer geometries.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     mol_dict = molecule_to_dict(initial_molecule)
@@ -143,6 +143,3 @@ def submit_nmr_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["NMRPeak", "NMRResult", "submit_nmr_workflow"]

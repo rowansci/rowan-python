@@ -16,14 +16,14 @@ def _parse_molecules(data: list[dict]) -> list[Molecule]:
 
 class Calculation(BaseModel):
     """
-    A Rowan calculation result.
+    Rowan calculation result.
 
-    :ivar uuid: The UUID of the calculation
-    :ivar name: The name of the calculation
-    :ivar status: The status code of the calculation
-    :ivar elapsed: Execution time in seconds
-    :ivar engine: The compute engine used
-    :ivar molecules: List of molecules (geometries) from this calculation
+    :param uuid: UUID of the calculation.
+    :param name: Name of the calculation.
+    :param status: Status code of the calculation.
+    :param elapsed: Execution time in seconds.
+    :param engine: Compute engine used.
+    :param molecules: Molecules (geometries) from this calculation.
     """
 
     uuid: str
@@ -68,8 +68,8 @@ class Calculation(BaseModel):
         """
         Fetch the latest calculation data from the API.
 
-        :param in_place: If True, update this instance. If False, return new instance.
-        :return: The updated Calculation object.
+        :param in_place: If True, update this instance in-place. If False, return new instance.
+        :returns: Updated Calculation object.
         """
         with api_client() as client:
             response = client.get(f"/calculation/{self.uuid}/stjames")
@@ -100,8 +100,8 @@ def retrieve_calculation(uuid: str) -> Calculation:
     """
     Retrieve a calculation from the API by UUID.
 
-    :param uuid: The UUID of the calculation.
-    :return: A Calculation object with the fetched data.
+    :param uuid: UUID of the calculation to retrieve.
+    :returns: Calculation object with the fetched data.
     :raises requests.HTTPError: If the API request fails.
     """
     with api_client() as client:

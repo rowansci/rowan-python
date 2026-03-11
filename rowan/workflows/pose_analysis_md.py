@@ -12,22 +12,21 @@ from .base import Message, Workflow, WorkflowResult, parse_messages, register_re
 
 @dataclass(frozen=True, slots=True)
 class TrajectoryResult:
-    """Results from a single MD trajectory replicate."""
+    """
+    Results from a single MD trajectory replicate.
+
+    :param uuid: UUID of the trajectory calculation.
+    :param ligand_rmsd: Ligand RMSD values over time (Angstrom).
+    :param contacts: Contact analysis data between ligand and protein.
+    :param cluster_indices_by_frame: Cluster assignment for each frame (0-indexed).
+    :param cluster_centroid_indices: Frame indices of cluster centroids.
+    """
 
     uuid: str
-    """UUID of the trajectory calculation."""
-
     ligand_rmsd: list[float]
-    """Ligand RMSD values over time (Angstrom)."""
-
     contacts: dict
-    """Contact analysis data between ligand and protein."""
-
     cluster_indices_by_frame: list[int]
-    """Cluster assignment for each frame (0-indexed)."""
-
     cluster_centroid_indices: list[int]
-    """Frame indices of cluster centroids."""
 
 
 @register_result("pose_analysis_md")
@@ -68,6 +67,14 @@ class PoseAnalysisMDResult(WorkflowResult):
         return results
 
     @property
+    def average_rmsds(self) -> list[float | None]:
+        """Average ligand RMSD per trajectory (Angstrom)."""
+        return [
+            sum(t.ligand_rmsd) / len(t.ligand_rmsd) if t.ligand_rmsd else None
+            for t in self.trajectories
+        ]
+
+    @property
     def minimized_protein_uuid(self) -> str | None:
         """UUID of the energy-minimized protein structure."""
         return getattr(self._workflow, "minimized_protein_uuid", None)
@@ -79,7 +86,7 @@ class PoseAnalysisMDResult(WorkflowResult):
         Note: Makes one API call on first access.
         Results are cached. Call clear_cache() to refresh.
 
-        :return: Protein object or None if not available.
+        :returns: Protein object or None if not available.
         """
         uuid = self.minimized_protein_uuid
         if not uuid:
@@ -97,7 +104,7 @@ class PoseAnalysisMDResult(WorkflowResult):
         self,
         replicates: list[int],
         name: str | None = None,
-        path: Path | None = None,
+        path: Path | str | None = None,
     ) -> Path:
         """
         Download DCD trajectory files for specified replicates.
@@ -105,12 +112,10 @@ class PoseAnalysisMDResult(WorkflowResult):
         :param replicates: List of replicate indices to download.
         :param name: Custom name for the tar.gz file (without extension).
         :param path: Directory to save the file to. Defaults to current directory.
-        :return: Path to the downloaded tar.gz file.
+        :returns: Path to the downloaded tar.gz file.
         :raises HTTPError: If the API request fails.
         """
-        if path is None:
-            path = Path.cwd()
-
+        path = Path(path) if path is not None else Path.cwd()
         path.mkdir(parents=True, exist_ok=True)
 
         with api_client() as client:
@@ -153,28 +158,28 @@ def submit_pose_analysis_md_workflow(
     """
     Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
 
-    :param protein: The *holo* protein on which MD will be run.
+    :param protein: *Holo* protein on which MD will be run.
         Can be input as a UUID or a Protein object.
-    :param initial_smiles: The SMILES for the ligand.
-    :param num_trajectories: The number of trajectories to run.
-    :param equilibration_time_ns: how long to equilibrate trajectories for, in ns
-    :param simulation_time_ns: how long to run trajectories for, in ns
-    :param temperature: temperature, in K
-    :param pressure_atm: pressure, in atm
-    :param langevin_timescale_ps: timescale for the Langevin integrator, in ps⁻¹
-    :param timestep_fs: timestep, in femtoseconds
-    :param ligand_residue_name: The name of the residue corresponding to the ligand.
-    :param constrain_hydrogens: whether or not to use SHAKE to freeze bonds to hydrogen
-    :param nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in Å
-    :param ionic_strength_M: ionic strength of the solution, in M (molar)
-    :param water_buffer: amount of water to add around the protein, in Å
-    :param protein_restraint_cutoff: cutoff past which alpha-carbons will be constrained, in Å
-    :param protein_restraint_constant: force constant for backbone restraints, in kcal/mol/Å²
-    :param save_solvent: whether to save solvent molecules
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param initial_smiles: SMILES for the ligand.
+    :param num_trajectories: Number of trajectories to run.
+    :param equilibration_time_ns: Equilibration time per trajectory, in ns.
+    :param simulation_time_ns: Simulation time per trajectory, in ns.
+    :param temperature: Temperature, in K.
+    :param pressure_atm: Pressure, in atm.
+    :param langevin_timescale_ps: Timescale for the Langevin integrator, in ps⁻¹.
+    :param timestep_fs: Timestep, in femtoseconds.
+    :param ligand_residue_name: Name of the residue corresponding to the ligand.
+    :param constrain_hydrogens: Whether to use SHAKE to freeze bonds to hydrogen.
+    :param nonbonded_cutoff: Nonbonded cutoff for particle-mesh Ewald, in Å.
+    :param ionic_strength_M: Ionic strength of the solution, in M (molar).
+    :param water_buffer: Amount of water to add around the protein, in Å.
+    :param protein_restraint_cutoff: Cutoff past which alpha-carbons will be constrained, in Å.
+    :param protein_restraint_constant: Force constant for backbone restraints, in kcal/mol/Å².
+    :param save_solvent: Whether to save solvent molecules.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(protein, Protein):
@@ -213,6 +218,3 @@ def submit_pose_analysis_md_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["PoseAnalysisMDResult", "TrajectoryResult", "submit_pose_analysis_md_workflow"]

@@ -37,7 +37,7 @@ class ProteinMDResult(WorkflowResult):
         Note: Makes one API call on first access.
         Results are cached. Call clear_cache() to refresh.
 
-        :return: Protein object or None if not available.
+        :returns: Protein object or None if not available.
         """
         uuid = self.minimized_protein_uuid
         if not uuid:
@@ -69,7 +69,7 @@ class ProteinMDResult(WorkflowResult):
         :param replicates: List of replicate indices to download.
         :param name: Custom name for the tar.gz file (without extension).
         :param path: Directory to save the file to. Defaults to current directory.
-        :return: Path to the downloaded tar.gz file.
+        :returns: Path to the downloaded tar.gz file.
         :raises HTTPError: If the API request fails.
         """
         if path is None:
@@ -113,24 +113,24 @@ def submit_protein_md_workflow(
     """
     Submits a Protein Molecular Dynamics (MD) workflow to the API.
 
-    :param protein: The *holo* protein on which MD will be run.
+    :param protein: *holo* protein on which MD will be run.
         Can be input as a UUID or a Protein object.
-    :param num_trajectories: The number of trajectories to run.
+    :param num_trajectories: Number of trajectories to run.
     :param equilibration_time_ns: how long to equilibrate trajectories for, in ns
     :param simulation_time_ns: how long to run trajectories for, in ns
     :param temperature: temperature, in K
     :param pressure_atm: pressure, in atm
-    :param langevin_timescale_ps: timescale for the Langevin integrator, in ps⁻¹
+    :param langevin_timescale_ps: timescale for the Langevin integrator, in ps^-1
     :param timestep_fs: timestep, in femtoseconds
     :param constrain_hydrogens: whether or not to use SHAKE to freeze bonds to hydrogen
-    :param nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in Å
+    :param nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in A
     :param ionic_strength_M: ionic strength of the solution, in M (molar)
-    :param water_buffer: amount of water to add around the protein, in Å
+    :param water_buffer: amount of water to add around the protein, in A
     :param save_solvent: whether solvent should be saved
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if isinstance(protein, Protein):
@@ -164,6 +164,3 @@ def submit_protein_md_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["ProteinMDResult", "submit_protein_md_workflow"]

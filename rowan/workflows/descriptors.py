@@ -3,10 +3,9 @@
 from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @register_result("descriptors")
@@ -21,13 +20,13 @@ class DescriptorsResult(WorkflowResult):
         return f"<DescriptorsResult count={len(d)} preview={preview}>"
 
     @property
-    def descriptors(self) -> dict | None:
+    def descriptors(self) -> dict[str, Any] | None:
         """Computed molecular descriptors."""
         return self._workflow.descriptors
 
 
 def submit_descriptors_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     name: str = "Descriptors Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -35,17 +34,14 @@ def submit_descriptors_workflow(
     """
     Submits a descriptors workflow to the API.
 
-    :param initial_molecule: The molecule to calculate the descriptors of.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param initial_molecule: Molecule to calculate the descriptors of.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     data = {
         "name": name,
@@ -60,6 +56,3 @@ def submit_descriptors_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["DescriptorsResult", "submit_descriptors_workflow"]

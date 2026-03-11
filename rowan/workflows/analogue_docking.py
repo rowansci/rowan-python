@@ -1,13 +1,10 @@
 """Analogue docking workflow - dock analogues using a template ligand."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..protein import Protein, retrieve_protein
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 from .docking import DockingScore
 
 
@@ -21,15 +18,15 @@ class AnalogueDockingResult(WorkflowResult):
         scores = self._workflow.analogue_scores
         n = len(scores)
         # Find best (lowest) score across all analogues
-        best_score = None
+        best_score = float("inf")
         best_smiles = None
         for smiles, score_list in scores.items():
             if score_list:
                 min_score = min(s.score for s in score_list)
-                if best_score is None or min_score < best_score:
+                if min_score < best_score:
                     best_score = min_score
                     best_smiles = smiles
-        return f"<AnalogueDockingResult analogues={n} best=({best_score}, {best_smiles!r})>"
+        return f"<AnalogueDockingResult analogues={n} best=({best_score:.2f}, {best_smiles!r})>"
 
     @property
     def analogue_scores(self) -> dict[str, list[DockingScore]]:
@@ -55,7 +52,7 @@ class AnalogueDockingResult(WorkflowResult):
 
         :param smiles: SMILES string of the analogue.
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :return: Protein object with the docked ligand pose.
+        :returns: Protein object with the docked ligand pose.
         :raises KeyError: If the SMILES is not found.
         :raises IndexError: If index is out of range.
         :raises ValueError: If the pose has no structure UUID.
@@ -80,7 +77,7 @@ class AnalogueDockingResult(WorkflowResult):
         Fetch all docked pose structures for a specific analogue.
 
         :param smiles: SMILES string of the analogue.
-        :return: List of Protein objects for each pose (ordered by score).
+        :returns: List of Protein objects for each pose (ordered by score).
         :raises KeyError: If the SMILES is not found.
         """
         scores = self.analogue_scores.get(smiles)
@@ -99,7 +96,7 @@ class AnalogueDockingResult(WorkflowResult):
 
         :param smiles: SMILES string of the analogue.
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :return: Protein object with the full protein-ligand complex.
+        :returns: Protein object with the full protein-ligand complex.
         :raises KeyError: If the SMILES is not found.
         :raises IndexError: If index is out of range.
         :raises ValueError: If the complex has no structure UUID.
@@ -124,7 +121,7 @@ class AnalogueDockingResult(WorkflowResult):
         Fetch all protein-ligand complex structures for a specific analogue.
 
         :param smiles: SMILES string of the analogue.
-        :return: List of Protein objects for each complex (ordered by score).
+        :returns: List of Protein objects for each complex (ordered by score).
         :raises KeyError: If the SMILES is not found.
         """
         scores = self.analogue_scores.get(smiles)
@@ -140,7 +137,7 @@ class AnalogueDockingResult(WorkflowResult):
 
 def submit_analogue_docking_workflow(
     analogues: list[str],
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     protein: str | Protein,
     executable: str = "vina",
     scoring_function: str = "vinardo",
@@ -152,16 +149,16 @@ def submit_analogue_docking_workflow(
     """
     Submits an analogue docking workflow to the API.
 
-    :param analogues: The SMILES strings to dock.
-    :param initial_molecule: The template to which to align molecules to.
-    :param protein: The protein to dock. Can be input as a uuid or a Protein object.
+    :param analogues: SMILES strings to dock.
+    :param initial_molecule: Template to which to align molecules to.
+    :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Which exhaustiveness to employ.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted batch docking workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted batch docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     docking_settings = {
@@ -170,12 +167,7 @@ def submit_analogue_docking_workflow(
         "scoring_function": scoring_function,
     }
 
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
-            mode="json"
-        )
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(protein, Protein):
         protein = protein.uuid
@@ -200,6 +192,3 @@ def submit_analogue_docking_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["AnalogueDockingResult", "DockingScore", "submit_analogue_docking_workflow"]

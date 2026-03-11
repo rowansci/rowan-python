@@ -1,28 +1,21 @@
 """Physical constants and unit conversions for workflows."""
 
-from stjames.data.elements import BRAGG_RADII, ELEMENT_SYMBOL, ISOTOPES, SYMBOL_ELEMENT
-
 # Energy conversions
 HARTREE_TO_KCAL = 627.509474
-"""Conversion factor from Hartree to kcal/mol."""
-
 HARTREE_TO_EV = 27.211386245988
-"""Conversion factor from Hartree to electron volts."""
-
 HARTREE_TO_KJ = 2625.4996394799
-"""Conversion factor from Hartree to kJ/mol."""
 
 # Physical constants
 BOLTZMANN_HARTREE_PER_K = 3.1668105e-6
-"""Boltzmann constant in Hartree/K."""
 
-__all__ = [
-    "BOLTZMANN_HARTREE_PER_K",
-    "BRAGG_RADII",
-    "ELEMENT_SYMBOL",
-    "HARTREE_TO_EV",
-    "HARTREE_TO_KCAL",
-    "HARTREE_TO_KJ",
-    "ISOTOPES",
-    "SYMBOL_ELEMENT",
-]
+
+def to_relative_kcal(energies: list[float]) -> list[float]:
+    """Convert absolute Hartree energies to relative kcal/mol.
+
+    :param energies: Absolute energies in Hartree.
+    :returns: Energies relative to the minimum, in kcal/mol. Empty list if input is empty.
+    """
+    if not energies:
+        return []
+    min_e = min(energies)
+    return [(e - min_e) * HARTREE_TO_KCAL for e in energies]

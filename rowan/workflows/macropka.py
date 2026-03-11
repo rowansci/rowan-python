@@ -111,20 +111,20 @@ def submit_macropka_workflow(
     """
     Submits a macropka workflow to the API.
 
-    :param initial_smiles: The molecule to calculate macroscopic pKa values for. Accepts
+    :param initial_smiles: Molecule to calculate macroscopic pKa values for. Accepts
         a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
         or dict). The molecule must have a SMILES string associated with it, as macropKa
         models are 2D/SMILES-based and do not use 3D coordinates.
-    :param min_pH: The minimum pH to use in the macropka workflow.
-    :param max_pH: The maximum pH to use in the macropka workflow.
-    :param min_charge: The minimum charge to use in the macropka workflow.
-    :param max_charge: The maximum charge to use in the macropka workflow.
+    :param min_pH: Minimum pH to use in the macropka workflow.
+    :param max_pH: Maximum pH to use in the macropka workflow.
+    :param min_charge: Minimum charge to use in the macropka workflow.
+    :param max_charge: Maximum charge to use in the macropka workflow.
     :param compute_solvation_energy: Whether to compute the solvation energy.
     :param compute_aqueous_solubility: Whether to compute aqueous solubility for each pH.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -152,11 +152,3 @@ def submit_macropka_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = [
-    "MacropKaMicrostate",
-    "MacropKaResult",
-    "MacropKaValue",
-    "submit_macropka_workflow",
-]

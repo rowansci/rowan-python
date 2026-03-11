@@ -57,7 +57,7 @@ class DockingResult(WorkflowResult):
         Fetch a docked pose structure.
 
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :return: Protein object with the docked ligand pose.
+        :returns: Protein object with the docked ligand pose.
         :raises IndexError: If index is out of range.
         :raises ValueError: If the pose has no structure UUID.
         """
@@ -78,7 +78,7 @@ class DockingResult(WorkflowResult):
         """
         Fetch all docked pose structures.
 
-        :return: List of Protein objects for each pose (ordered by score).
+        :returns: List of Protein objects for each pose (ordered by score).
         """
         poses: list[Protein] = []
         for i, score in enumerate(self.scores):
@@ -91,7 +91,7 @@ class DockingResult(WorkflowResult):
         Fetch a protein-ligand complex structure.
 
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :return: Protein object with the full protein-ligand complex.
+        :returns: Protein object with the full protein-ligand complex.
         :raises IndexError: If index is out of range.
         :raises ValueError: If the complex has no structure UUID.
         """
@@ -112,7 +112,7 @@ class DockingResult(WorkflowResult):
         """
         Fetch all protein-ligand complex structures.
 
-        :return: List of Protein objects for each complex (ordered by score).
+        :returns: List of Protein objects for each complex (ordered by score).
         """
         complexes: list[Protein] = []
         for i, score in enumerate(self.scores):
@@ -138,19 +138,19 @@ def submit_docking_workflow(
     """
     Submits a Docking workflow to the API.
 
-    :param protein: The protein to dock. Can be input as a uuid or a Protein object.
+    :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param pocket: Binding pocket coordinates [[x,y,z], [x,y,z]].
-    :param initial_molecule: The initial molecule to be docked.
+    :param initial_molecule: Initial molecule to be docked.
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Which exhaustiveness to employ.
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param do_pose_refinement: Whether or not to optimize output poses.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted docking workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     initial_molecule = molecule_to_dict(initial_molecule)
@@ -187,6 +187,3 @@ def submit_docking_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["DockingResult", "DockingScore", "submit_docking_workflow"]

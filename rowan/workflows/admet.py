@@ -32,14 +32,14 @@ def submit_admet_workflow(
     """
     Submits an ADMET workflow to predict drug-likeness properties.
 
-    :param initial_smiles: The molecule to calculate ADMET properties for. Accepts a
+    :param initial_smiles: Molecule to calculate ADMET properties for. Accepts a
         SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
         or dict). The molecule must have a SMILES string associated with it, as ADMET
         models are 2D/SMILES-based and do not use 3D coordinates.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -59,6 +59,3 @@ def submit_admet_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["ADMETResult", "submit_admet_workflow"]

@@ -40,7 +40,7 @@ class Molecule(BaseModel):
         Create a molecule from a SMILES string.
 
         :param smiles: SMILES string
-        :return: Molecule instance
+        :returns: Molecule instance
         """
         stj = stjames.Molecule.from_smiles(smiles)
         return cls(_stjames=stj)
@@ -53,7 +53,7 @@ class Molecule(BaseModel):
         :param xyz_string: XYZ format string
         :param charge: Molecular charge (default 0)
         :param multiplicity: Spin multiplicity (default 1)
-        :return: Molecule instance
+        :returns: Molecule instance
         """
         stj = stjames.Molecule.from_xyz(xyz_string)
         # Set charge and multiplicity after creation
@@ -72,7 +72,7 @@ class Molecule(BaseModel):
         :param path: Path to XYZ file
         :param charge: Molecular charge (default 0)
         :param multiplicity: Spin multiplicity (default 1)
-        :return: Molecule instance
+        :returns: Molecule instance
         """
         xyz_string = Path(path).read_text()
         return cls.from_xyz(xyz_string, charge=charge, multiplicity=multiplicity)
@@ -195,7 +195,7 @@ class Molecule(BaseModel):
 
         :param i: First atom index (1-based).
         :param j: Second atom index (1-based).
-        :return: Distance in Ångströms.
+        :returns: Distance in Ångströms.
         """
         return self._stjames.distance(i, j)
 
@@ -207,7 +207,7 @@ class Molecule(BaseModel):
         :param j: Central atom index (1-based).
         :param k: Third atom index (1-based).
         :param degrees: Return angle in degrees (default) or radians.
-        :return: Angle in degrees or radians.
+        :returns: Angle in degrees or radians.
         """
         return self._stjames.angle(i, j, k, degrees=degrees)
 
@@ -220,7 +220,7 @@ class Molecule(BaseModel):
         :param k: Third atom index (1-based).
         :param l: Fourth atom index (1-based).
         :param degrees: Return angle in degrees (default) or radians.
-        :return: Dihedral angle in degrees (0-360) or radians.
+        :returns: Dihedral angle in degrees (0-360) or radians.
         """
         return self._stjames.dihedral(i, j, k, l, degrees=degrees)
 

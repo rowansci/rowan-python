@@ -13,7 +13,7 @@ from .base import (
     molecule_to_dict,
     register_result,
 )
-from .constants import HARTREE_TO_KCAL
+from .constants import to_relative_kcal
 
 
 @register_result("conformer_search")
@@ -36,40 +36,31 @@ class ConformerSearchResult(WorkflowResult):
         """List of conformer UUIDs (nested for multistage optimization)."""
         return self._workflow.conformer_uuids
 
-    def get_energies(self, relative: bool = False) -> list[float | None]:
+    def get_energies(self, relative: bool = False) -> list[float]:
         """
         Get conformer energies.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy conformer). If False (default), return absolute
             energies in Hartree.
-        :return: List of conformer energies ordered by energy (lowest first).
+        :returns: List of conformer energies ordered by energy (lowest first).
         """
-        energies: list[float | None] = list(self._workflow.energies)
-
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
+        energies: list[float] = list(self._workflow.energies)
+        return to_relative_kcal(energies) if relative else energies
 
     @property
     def radii_of_gyration(self) -> list[float]:
-        """Radius of gyration for each conformer (Å)."""
+        """Radius of gyration for each conformer (A)."""
         return [p.radius_of_gyration for p in self._workflow.conformer_properties]
 
     @property
     def sasa(self) -> list[float]:
-        """Solvent accessible surface area for each conformer (Ų)."""
+        """Solvent accessible surface area for each conformer (A^2)."""
         return [p.solvent_accessible_surface_area for p in self._workflow.conformer_properties]
 
     @property
     def polar_sasa(self) -> list[float]:
-        """Polar solvent accessible surface area for each conformer (Ų)."""
+        """Polar solvent accessible surface area for each conformer (A^2)."""
         return [
             p.polar_solvent_accessible_surface_area for p in self._workflow.conformer_properties
         ]
@@ -80,7 +71,7 @@ class ConformerSearchResult(WorkflowResult):
 
         :param n: Number of conformers to fetch (default: all). Conformers are
             ordered by energy, so n=5 returns the 5 lowest-energy conformers.
-        :return: List of Molecule objects.
+        :returns: List of Molecule objects.
 
         Note: Makes one API call per conformer.
         """
@@ -100,9 +91,9 @@ class ConformerSearchResult(WorkflowResult):
         Note: Makes one API call per conformer on first access.
         Results are cached. Call clear_cache() to refresh.
 
-        :param index: The conformer index (0-based).
-        :param stage: The optimization stage (-1 for final stage).
-        :return: A Calculation object with molecule and energy data.
+        :param index: Conformer index (0-based).
+        :param stage: Optimization stage (-1 for final stage).
+        :returns: Calculation object with molecule and energy data.
         :raises IndexError: If the index is out of range.
         :raises ValueError: If the conformer UUID is None.
         """
@@ -134,21 +125,21 @@ def submit_conformer_search_workflow(
     """
     Submits a conformer search workflow to the API.
 
-    :param initial_molecule: The molecule to perform the conformer search on.
+    :param initial_molecule: Molecule to perform the conformer search on.
     :param conf_gen_settings: Conformer generation method and settings. Defaults to
         ``ETKDGSettings()``. Available options (importable directly from ``rowan``):
 
-        - ``ETKDGSettings`` — RDKit ETKDG, fast, good for most small molecules
-        - ``LyrebirdSettings`` — Rowan ML model
-        - ``iMTDGCSettings`` — CREST iMTD-GC metadynamics, more thorough
-        - ``MonteCarloMultipleMinimumSettings`` — MCMM conformer search
-    :param final_method: The method to use for the final optimization.
-    :param solvent: The solvent to use for the final optimization.
+        - ``ETKDGSettings``  -- RDKit ETKDG, fast, good for most small molecules
+        - ``LyrebirdSettings``  -- Rowan ML model
+        - ``iMTDGCSettings``  -- CREST iMTD-GC metadynamics, more thorough
+        - ``MonteCarloMultipleMinimumSettings``  -- MCMM conformer search
+    :param final_method: Method to use for the final optimization.
+    :param solvent: Solvent to use for the final optimization.
     :param transition_state: Whether to optimize the transition state.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if conf_gen_settings is None:
@@ -198,6 +189,3 @@ def submit_conformer_search_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["ConformerSearchResult", "submit_conformer_search_workflow"]

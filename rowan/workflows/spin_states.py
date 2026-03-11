@@ -18,7 +18,7 @@ from .base import (
     parse_messages,
     register_result,
 )
-from .constants import HARTREE_TO_KCAL
+from .constants import to_relative_kcal
 
 
 def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
@@ -89,9 +89,9 @@ class SpinStatesResult(WorkflowResult):
         Note: Makes one API call per spin state on first access.
         Results are cached. Call clear_cache() to refresh.
 
-        :param multiplicity: The spin multiplicity to fetch.
-        :param stage: The optimization stage (-1 for final stage).
-        :return: A Calculation object with molecule and energy data.
+        :param multiplicity: Spin multiplicity to fetch.
+        :param stage: Optimization stage (-1 for final stage).
+        :returns: Calculation object with molecule and energy data.
         :raises ValueError: If the multiplicity is not found or has no calculation.
         """
         for state in self.spin_states:
@@ -111,26 +111,17 @@ class SpinStatesResult(WorkflowResult):
 
         raise ValueError(f"Spin state with multiplicity {multiplicity} not found")
 
-    def get_energies(self, relative: bool = False) -> list[float | None]:
+    def get_energies(self, relative: bool = False) -> list[float]:
         """
         Get energies for each spin state.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the ground state / lowest energy spin state). If False (default),
             return absolute energies in Hartree.
-        :return: List of energies for each spin state.
+        :returns: List of energies for each spin state.
         """
-        energies: list[float | None] = list(self._workflow.energies)
-
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
+        energies: list[float] = list(self._workflow.energies)
+        return to_relative_kcal(energies) if relative else energies
 
 
 def submit_spin_states_workflow(
@@ -147,17 +138,17 @@ def submit_spin_states_workflow(
     """
     Submits a spin states workflow to the API.
 
-    :param initial_molecule: The molecule to calculate spin states for.
+    :param initial_molecule: Molecule to calculate spin states for.
     :param states: List of multiplicities to calculate
         (e.g., [1, 3, 5] for singlet, triplet, quintet).
-    :param mode: The mode to run the calculation in.
-    :param solvent: The solvent to use for the calculation.
+    :param mode: Mode to run the calculation in.
+    :param solvent: Solvent to use for the calculation.
     :param xtb_preopt: Whether to pre-optimize with xTB.
     :param frequencies: Whether to calculate frequencies.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If any multiplicity is incompatible with the molecule.
     :raises requests.HTTPError: If the request to the API fails.
     """
@@ -189,6 +180,3 @@ def submit_spin_states_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["SpinState", "SpinStatesResult", "submit_spin_states_workflow"]

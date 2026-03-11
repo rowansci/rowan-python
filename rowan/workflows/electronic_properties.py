@@ -1,13 +1,11 @@
 """Electronic properties workflow - calculate electronic properties."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +42,7 @@ class ElectronicPropertiesResult(WorkflowResult):
         ]
         | None
     ):
-        """Quadrupole moment tensor (Debye·Å)."""
+        """Quadrupole moment tensor (Debye*A)."""
         return self._workflow.quadrupole
 
     @property
@@ -54,7 +52,7 @@ class ElectronicPropertiesResult(WorkflowResult):
 
     @property
     def lowdin_charges(self) -> list[float] | None:
-        """Löwdin partial charges on each atom."""
+        """Lowdin partial charges on each atom."""
         return self._workflow.lowdin_charges
 
     @property
@@ -97,7 +95,7 @@ class ElectronicPropertiesResult(WorkflowResult):
 
 
 def submit_electronic_properties_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     method: stjames.Method | str = "b97_3c",
     basis_set: str | None = None,
     compute_density_cube: bool = True,
@@ -111,26 +109,21 @@ def submit_electronic_properties_workflow(
     """
     Submits an electronic properties workflow to the API.
 
-    :param initial_molecule: The molecule to calculate electronic properties for.
-    :param method: The method to use for the calculation.
-    :param basis_set: The basis set to use (if any).
+    :param initial_molecule: Molecule to calculate electronic properties for.
+    :param method: Method to use for the calculation.
+    :param basis_set: Basis set to use (if any).
     :param compute_density_cube: Whether to compute the density cube.
     :param compute_electrostatic_potential_cube: Whether to compute the electrostatic
         potential cube.
     :param compute_num_occupied_orbitals: Number of occupied orbitals to save.
     :param compute_num_virtual_orbitals: Number of virtual orbitals to save.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0).model_dump(
-            mode="json"
-        )
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
         method = stjames.Method(method)
@@ -159,10 +152,3 @@ def submit_electronic_properties_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = [
-    "ElectronicPropertiesResult",
-    "MolecularOrbital",
-    "submit_electronic_properties_workflow",
-]

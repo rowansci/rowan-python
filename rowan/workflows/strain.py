@@ -1,20 +1,18 @@
 """Strain workflow - calculate molecular strain energy."""
 
 import math
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
     Message,
-    RdkitMol,
-    StJamesMolecule,
+    MoleculeInput,
     Workflow,
     WorkflowResult,
+    molecule_to_dict,
     parse_messages,
     register_result,
 )
@@ -91,7 +89,7 @@ class StrainResult(WorkflowResult):
         Compute Boltzmann weights for conformers.
 
         :param temperature: Temperature in Kelvin (default: 300K).
-        :return: List of weights (sum to 1.0), excluding failed conformers.
+        :returns: List of weights (sum to 1.0), excluding failed conformers.
         """
         energies = self.conformer_energies
         valid_energies = [e for e in energies if e is not None]
@@ -110,7 +108,7 @@ class StrainResult(WorkflowResult):
 
 
 def submit_strain_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     harmonic_constraint_spring_constant: float = 5.0,
     constrain_hydrogens: bool = False,
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
@@ -121,22 +119,19 @@ def submit_strain_workflow(
     """
     Submits a strain workflow to the API.
 
-    :param initial_molecule: The molecule to calculate strain for.
+    :param initial_molecule: Molecule to calculate strain for.
     :param harmonic_constraint_spring_constant: Spring constant for harmonic
-        constraints (kcal/mol/Å). Default 5.0.
+        constraints (kcal/mol/A). Default 5.0.
     :param constrain_hydrogens: Whether to constrain hydrogen positions. Default False.
     :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
         max 50 conformers.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.StrainWorkflow(
         initial_molecule=initial_molecule,
@@ -158,6 +153,3 @@ def submit_strain_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["StrainResult", "submit_strain_workflow"]

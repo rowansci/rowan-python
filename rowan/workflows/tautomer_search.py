@@ -1,10 +1,8 @@
 """Tautomer search workflow - find tautomeric forms of molecules."""
 
 from dataclasses import dataclass
-from typing import Any
 
 import stjames
-from rdkit import Chem
 
 from ..calculation import retrieve_calculation
 from ..molecule import Molecule
@@ -12,10 +10,10 @@ from ..utils import api_client
 from .base import (
     Message,
     Mode,
-    RdkitMol,
-    StJamesMolecule,
+    MoleculeInput,
     Workflow,
     WorkflowResult,
+    molecule_to_dict,
     parse_messages,
     register_result,
 )
@@ -44,6 +42,15 @@ class TautomerResult(WorkflowResult):
 
     _stjames_class = stjames.TautomerWorkflow
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        tautomers = self.tautomers
+        if tautomers:
+            best = max(tautomers, key=lambda t: t.weight)
+            if best.structure_uuids:
+                calc = retrieve_calculation(best.structure_uuids[0])
+                self._cache["best_tautomer"] = calc.molecule
+
     def __repr__(self) -> str:
         tautomers = self.tautomers
         n = len(tautomers)
@@ -71,6 +78,11 @@ class TautomerResult(WorkflowResult):
         return parse_messages(getattr(self._workflow, "messages", None))
 
     @property
+    def best_tautomer(self) -> Molecule | None:
+        """Molecule of the highest Boltzmann-weight tautomer."""
+        return self._cache.get("best_tautomer")
+
+    @property
     def molecules(self) -> list[Molecule]:
         """Molecules for all tautomers.
 
@@ -89,7 +101,7 @@ class TautomerResult(WorkflowResult):
 
 
 def submit_tautomer_search_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     mode: Mode = Mode.CAREFUL,
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
@@ -98,18 +110,15 @@ def submit_tautomer_search_workflow(
     """
     Submits a tautomer search workflow to the API.
 
-    :param initial_molecule: The molecule to find tautomers for.
-    :param mode: The mode to run the calculation in (reckless, rapid, careful).
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param initial_molecule: Molecule to find tautomers for.
+    :param mode: Mode to run the calculation in (reckless, rapid, careful).
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.TautomerWorkflow(
         initial_molecule=initial_molecule,
@@ -129,6 +138,3 @@ def submit_tautomer_search_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["Tautomer", "TautomerResult", "submit_tautomer_search_workflow"]

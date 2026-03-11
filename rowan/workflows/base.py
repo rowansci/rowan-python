@@ -1,14 +1,12 @@
 """Base classes for Rowan workflows."""
 
-from __future__ import annotations
-
 import logging
 import time
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Self, TypeAlias
+from typing import Any, Callable, ClassVar, Self, TypeAlias
 
 import stjames
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,39 +32,107 @@ SolventInput: TypeAlias = Solvent | str | None
 
 @dataclass(frozen=True, slots=True)
 class Message:
-    """A workflow message (error, warning, or info)."""
+    """
+    A workflow message (error, warning, or info).
+
+    :param title: Short message title.
+    :param body: Full message content.
+    :param type: Message type: 'error', 'warning', or 'info'.
+    """
 
     title: str
-    """Short message title."""
-
     body: str
-    """Full message content."""
-
     type: str
-    """Message type: 'error', 'warning', or 'info'."""
 
 
-def parse_messages(raw_messages: list | None) -> list[Message]:
-    """Parse raw message dicts into Message objects."""
+def parse_messages(raw_messages: list[stjames.Message] | None) -> list[Message]:
+    """Parse stjames Message objects into rowan Message objects."""
     if not raw_messages:
         return []
-    messages: list[Message] = []
-    for m in raw_messages:
-        if isinstance(m, dict):
-            messages.append(
-                Message(
-                    title=m.get("title", ""),
-                    body=m.get("body", ""),
-                    type=m.get("type", ""),
-                )
-            )
-    return messages
+    return [Message(title=m.title, body=m.body, type=m.type) for m in raw_messages]
 
 
 class WorkflowError(Exception):
     """Raised when a workflow fails or is stopped."""
 
     pass
+
+
+@dataclass(slots=True, repr=False)
+class WorkflowResult:
+    """
+    Base class for workflow results.
+
+    Wraps the raw workflow data dict and parses it into a stjames object
+    for typed access to nested data.
+
+    :param workflow_data: Raw data dict from the workflow
+    :param workflow_type: Workflow type string
+    :param workflow_uuid: UUID of the parent workflow (for API calls)
+    """
+
+    workflow_data: dict[str, Any]
+    workflow_type: str
+    workflow_uuid: str
+    _workflow: Any = field(default=None, init=False)
+    _cache: dict[str, Any] = field(default_factory=dict, init=False)
+
+    _stjames_class: ClassVar[type | None] = None
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}>"
+
+    def __post_init__(self) -> None:
+        """Parse workflow data into stjames object for typed access."""
+        if self._stjames_class is not None:
+            obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
+            object.__setattr__(self, "_workflow", obj)
+
+    @property
+    def data(self) -> dict[str, Any]:
+        """Raw workflow data dict for fallback access."""
+        return self.workflow_data
+
+    def clear_cache(self) -> None:
+        """
+        Clear all cached data to force re-fetching on next access.
+
+        Use this if you need to refresh lazily-loaded data (e.g., structures,
+        calculations) from the API.
+        """
+        self._cache.clear()
+
+
+RESULT_REGISTRY: dict[str, type[WorkflowResult]] = {}
+
+
+def register_result(workflow_type: str) -> Callable[[type[WorkflowResult]], type[WorkflowResult]]:
+    """Decorator to register a result class for a workflow type."""
+
+    def decorator(cls: type[WorkflowResult]) -> type[WorkflowResult]:
+        RESULT_REGISTRY[workflow_type] = cls
+        return cls
+
+    return decorator
+
+
+def create_result(
+    workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str
+) -> WorkflowResult:
+    """
+    Factory function to create the appropriate result type for a workflow.
+
+    :param workflow_data: Raw data dict from the workflow.
+    :param workflow_type: Workflow type string.
+    :param workflow_uuid: UUID of the parent workflow.
+    :returns: Typed WorkflowResult subclass, or base WorkflowResult if unknown.
+    """
+    result_class = RESULT_REGISTRY.get(workflow_type, WorkflowResult)
+    return result_class(
+        workflow_data=workflow_data,
+        workflow_type=workflow_type,
+        workflow_uuid=workflow_uuid,
+    )
 
 
 class Workflow(BaseModel):
@@ -76,24 +142,24 @@ class Workflow(BaseModel):
     Workflow data is not loaded by default to avoid unnecessary downloads that could impact
     performance. Call `fetch_latest()` to fetch and attach the workflow data.
 
-    :ivar name: The name of the workflow.
-    :var uuid: The UUID of the workflow.
-    :var created_at: The date and time the workflow was created.
-    :var updated_at: The date and time the workflow was last updated.
-    :var started_at: The date and time the workflow computation was started.
-    :var completed_at: The date and time the workflow was completed.
-    :var status: The status of the workflow.
-    :var parent_uuid: The UUID of the parent folder.
-    :var notes: Workflow notes.
-    :var starred: Whether the workflow is starred.
-    :var public: Whether the workflow is public.
-    :var workflow_type: The type of the workflow.
-    :var data: The data of the workflow.
-    :var email_when_complete: Whether the workflow should send an email when it is complete.
-    :var max_credits: The maximum number of credits to use for the workflow.
-    :var elapsed: The elapsed time of the workflow.
-    :var credits_charged: The number of credits charged for the workflow.
-    :var logfile: The workflow's logfile.
+    :param name: Name of the workflow.
+    :param uuid: UUID of the workflow.
+    :param created_at: Date and time the workflow was created.
+    :param updated_at: Date and time the workflow was last updated.
+    :param started_at: Date and time the workflow computation was started.
+    :param completed_at: Date and time the workflow was completed.
+    :param status: Status of the workflow.
+    :param parent_uuid: UUID of the parent folder.
+    :param notes: Workflow notes.
+    :param starred: Whether the workflow is starred.
+    :param public: Whether the workflow is public.
+    :param workflow_type: Type of the workflow.
+    :param data: Data of the workflow.
+    :param email_when_complete: Whether to send an email when the workflow completes.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :param elapsed: Elapsed time of the workflow.
+    :param credits_charged: Number of credits charged for the workflow.
+    :param logfile: Workflow logfile.
     """
 
     name: str
@@ -125,21 +191,20 @@ class Workflow(BaseModel):
     def __str__(self) -> str:
         status = self.status.name.lower() if self.status else "unknown"
         elapsed = f"{self.elapsed:.2f}s" if self.elapsed is not None else "n/a"
-        return (
-            f"Workflow: {self.name}\n"
-            f"  UUID:    {self.uuid}\n"
-            f"  Type:    {self.workflow_type}\n"
-            f"  Status:  {status}\n"
-            f"  Elapsed: {elapsed}\n"
-            f"  Credits: {self.credits_charged}"
-        )
+        return f"""\
+Workflow:  {self.name}
+  UUID:    {self.uuid}
+  Type:    {self.workflow_type}
+  Status:  {status}
+  Elapsed: {elapsed}
+  Credits: {self.credits_charged}"""
 
     def fetch_latest(self, in_place: bool = False) -> Self:
         """
         Loads workflow data from the database and updates the current instance.
 
         :param in_place: Whether to update the current instance in-place.
-        :return: The updated instance (self).
+        :returns: Updated instance (self).
         :raises HTTPError: If the API request fails.
         """
         with api_client() as client:
@@ -148,11 +213,11 @@ class Workflow(BaseModel):
             data = response.json()
 
         if not in_place:
-            return self.__class__.model_validate(data)
+            return type(self).model_validate(data)
 
         updated_workflow = self.model_validate(data)
 
-        for field_name in self.__class__.model_fields:
+        for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
 
         self.model_rebuild()
@@ -172,38 +237,46 @@ class Workflow(BaseModel):
         """
         Updates a workflow in the API with new data.
 
-        :param name: The new name of the workflow.
-        :param parent_uuid: The UUID of the parent folder.
-        :param notes: A description of the workflow.
+        :param name: New name for the workflow.
+        :param parent_uuid: UUID of the parent folder.
+        :param notes: Description of the workflow.
         :param starred: Whether the workflow is starred.
         :param email_when_complete: Whether to send an email when complete.
         :param public: Whether the workflow is public.
         :raises HTTPError: If the API request fails.
         """
-        old_data = self.fetch_latest()
-
-        new_data = {
-            "name": name if name is not None else old_data.name,
-            "parent_uuid": parent_uuid if parent_uuid is not None else old_data.parent_uuid,
-            "notes": notes if notes is not None else old_data.notes,
-            "starred": starred if starred is not None else old_data.starred,
-            "email_when_complete": email_when_complete
-            if email_when_complete is not None
-            else old_data.email_when_complete,
-            "public": public if public is not None else old_data.public,
+        old = self.fetch_latest()
+        old_data = {
+            "name": old.name,
+            "parent_uuid": old.parent_uuid,
+            "notes": old.notes,
+            "starred": old.starred,
+            "email_when_complete": old.email_when_complete,
+            "public": old.public,
         }
 
+        new_data = {
+            "name": name,
+            "parent_uuid": parent_uuid,
+            "notes": notes,
+            "starred": starred,
+            "email_when_complete": email_when_complete,
+            "public": public,
+        }
+        updates = {k: v for k, v in new_data.items() if v is not None}
+        merged: dict[str, Any] = old_data | updates
+
         with api_client() as client:
-            response = client.post(f"/workflow/{self.uuid}", json=new_data)
+            response = client.post(f"/workflow/{self.uuid}", json=merged)
             response.raise_for_status()
             data = response.json()
 
         if not in_place:
-            return self.__class__.model_validate(data)
+            return type(self).model_validate(data)
 
         updated_workflow = self.model_validate(data)
 
-        for field_name in self.__class__.model_fields:
+        for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
 
             self.model_rebuild()
@@ -216,7 +289,7 @@ class Workflow(BaseModel):
 
         Non-blocking check following the concurrent.futures.Future pattern.
 
-        :return: True if workflow is no longer running.
+        :returns: True if workflow is no longer running.
         """
         status = self.get_status()
         return status in {
@@ -233,7 +306,7 @@ class Workflow(BaseModel):
         the workflow completes, then returns a typed result object.
 
         :param poll_interval: Seconds between status checks while waiting.
-        :return: A WorkflowResult subclass with typed access to results.
+        :returns: WorkflowResult subclass with typed access to results.
         :raises WorkflowError: If the workflow failed or was stopped.
         """
         # Wait for completion
@@ -250,7 +323,7 @@ class Workflow(BaseModel):
 
         return create_result(self.data or {}, self.workflow_type, self.uuid)
 
-    def peek(self) -> "WorkflowResult":
+    def peek(self) -> WorkflowResult:
         """
         Get current results without waiting.
 
@@ -260,7 +333,7 @@ class Workflow(BaseModel):
 
         Never raises WorkflowError - just returns what's available.
 
-        :return: A WorkflowResult with current data (may be partial).
+        :returns: WorkflowResult with current data (may be partial).
         """
         self.fetch_latest(in_place=True)
         return create_result(self.data or {}, self.workflow_type, self.uuid)
@@ -272,7 +345,7 @@ class Workflow(BaseModel):
         .. deprecated::
             Use :meth:`result` instead, which waits and returns the typed result.
 
-        :return: The current instance (self).
+        :returns: Current instance (self).
         """
         while not self.done():
             time.sleep(poll_interval)
@@ -282,7 +355,7 @@ class Workflow(BaseModel):
         """
         Gets the status of the workflow.
 
-        :return: The status of the workflow, as an instance of stjames.Status.
+        :returns: Status of the workflow, as an instance of stjames.Status.
         """
         return self.fetch_latest().status or stjames.Status.QUEUED
 
@@ -293,7 +366,7 @@ class Workflow(BaseModel):
         .. deprecated::
             Use :meth:`done` instead.
 
-        :return: True if the workflow status is COMPLETED_OK, FAILED, or STOPPED.
+        :returns: True if the workflow status is COMPLETED_OK, FAILED, or STOPPED.
         """
         return self.done()
 
@@ -327,7 +400,9 @@ class Workflow(BaseModel):
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
 
-    def download_msa_files(self, msa_format: stjames.MSAFormat, path: Path | None = None) -> None:
+    def download_msa_files(
+        self, msa_format: stjames.MSAFormat, path: Path | str | None = None
+    ) -> None:
         """
         Download MSA files for an MSA workflow.
 
@@ -342,8 +417,7 @@ class Workflow(BaseModel):
         if self.workflow_type != "msa":
             raise ValueError("This workflow is not an MSA workflow.")
 
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 
@@ -358,7 +432,7 @@ class Workflow(BaseModel):
             f.write(response.content)
 
     def download_dcd_files(
-        self, replicates: list[int], name: str | None = None, path: Path | None = None
+        self, replicates: list[int], name: str | None = None, path: Path | str | None = None
     ) -> None:
         """
         Downloads DCD trajectory files for specified replicates.
@@ -379,8 +453,7 @@ class Workflow(BaseModel):
         if self.workflow_type != "pose_analysis_md":
             raise ValueError("This workflow is not a pose analysis molecular dynamics workflow.")
 
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 
@@ -393,88 +466,13 @@ class Workflow(BaseModel):
             f.write(response.content)
 
 
-@dataclass(slots=True, repr=False)
-class WorkflowResult:
-    """
-    Base class for workflow results.
-
-    Wraps the raw workflow data dict and parses it into a stjames object
-    for typed access to nested data.
-
-    :param workflow_data: The raw data dict from the workflow
-    :param workflow_type: The workflow type string
-    :param workflow_uuid: The UUID of the parent workflow (for API calls)
-    """
-
-    workflow_data: dict
-    workflow_type: str
-    workflow_uuid: str
-    _workflow: Any = field(default=None, init=False)
-    _cache: dict = field(default_factory=dict, init=False)
-
-    _stjames_class: ClassVar[type | None] = None
-
-    def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}>"
-
-    def __post_init__(self) -> None:
-        """Parse workflow data into stjames object for typed access."""
-        if self._stjames_class is not None:
-            obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
-            object.__setattr__(self, "_workflow", obj)
-
-    @property
-    def data(self) -> dict:
-        """Raw workflow data dict for fallback access."""
-        return self.workflow_data
-
-    def clear_cache(self) -> None:
-        """
-        Clear all cached data to force re-fetching on next access.
-
-        Use this if you need to refresh lazily-loaded data (e.g., structures,
-        calculations) from the API.
-        """
-        self._cache.clear()
-
-
-RESULT_REGISTRY: dict[str, type[WorkflowResult]] = {}
-
-
-def register_result(workflow_type: str):
-    """Decorator to register a result class for a workflow type."""
-
-    def decorator(cls: type[WorkflowResult]) -> type[WorkflowResult]:
-        RESULT_REGISTRY[workflow_type] = cls
-        return cls
-
-    return decorator
-
-
-def create_result(workflow_data: dict, workflow_type: str, workflow_uuid: str) -> WorkflowResult:
-    """
-    Factory function to create the appropriate result type for a workflow.
-
-    :param workflow_data: The raw data dict from the workflow
-    :param workflow_type: The workflow type string
-    :param workflow_uuid: The UUID of the parent workflow
-    :return: A typed WorkflowResult subclass, or base WorkflowResult if unknown
-    """
-    result_class = RESULT_REGISTRY.get(workflow_type, WorkflowResult)
-    return result_class(
-        workflow_data=workflow_data,
-        workflow_type=workflow_type,
-        workflow_uuid=workflow_uuid,
-    )
-
-
 def extract_smiles(mol: "str | MoleculeInput") -> str:
     """
     Extract a SMILES string from a molecule input or return the string directly.
 
-    :param mol: A SMILES string, or any molecule type (RowanMolecule, stjames.Molecule,
+    :param mol: SMILES string, or any molecule type (RowanMolecule, stjames.Molecule,
         RDKit Mol, or dict).
-    :return: A SMILES string.
+    :returns: SMILES string.
     :raises TypeError: If the input type is not supported.
     :raises ValueError: If the molecule has no SMILES associated with it.
     """
@@ -497,23 +495,39 @@ def extract_smiles(mol: "str | MoleculeInput") -> str:
     return smiles
 
 
+def molecule_to_stjames(mol: MoleculeInput) -> stjames.Molecule:
+    """Convert any molecule input type to a stjames.Molecule."""
+    match mol:
+        case RowanMolecule():
+            return mol._to_stjames()
+        case stjames.Molecule():
+            return mol
+        case Chem.Mol():
+            return stjames.Molecule.from_rdkit(mol, cid=0)
+        case dict():
+            return stjames.Molecule(**mol)
+        case _:
+            raise TypeError(f"Cannot convert {type(mol)} to stjames.Molecule")
+
+
 def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
     """
     Convert any molecule input type to a dict for API submission.
 
-    :param mol: A molecule as Molecule, stjames.Molecule, RDKit Mol, or dict.
-    :return: Dict representation suitable for API submission.
+    :param mol: Molecule as Molecule, stjames.Molecule, RDKit Mol, or dict.
+    :returns: Dict representation suitable for API submission.
     """
-    if isinstance(mol, RowanMolecule):
-        return mol._to_stjames().model_dump(mode="json")
-    elif isinstance(mol, stjames.Molecule):
-        return mol.model_dump(mode="json")
-    elif isinstance(mol, Chem.Mol):
-        return stjames.Molecule.from_rdkit(mol, cid=0).model_dump(mode="json")
-    elif isinstance(mol, dict):
-        return mol
-    else:
-        raise TypeError(f"Cannot convert {type(mol)} to molecule dict")
+    match mol:
+        case RowanMolecule():
+            return mol._to_stjames().model_dump(mode="json")
+        case stjames.Molecule():
+            return mol.model_dump(mode="json")
+        case Chem.Mol():
+            return stjames.Molecule.from_rdkit(mol, cid=0).model_dump(mode="json")
+        case dict():
+            return mol
+        case _:
+            raise TypeError(f"Cannot convert {type(mol)} to molecule dict")
 
 
 def submit_workflow(
@@ -528,14 +542,14 @@ def submit_workflow(
     """
     Submits a workflow to the API.
 
-    :param workflow_type: The type of workflow to submit.
-    :param workflow_data: A dictionary containing the data required to run the workflow.
-    :param initial_molecule: A molecule object to use as the initial molecule.
-    :param initial_smiles: A SMILES string to use as the initial molecule.
-    :param name: A name to give to the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param workflow_type: Type of workflow to submit.
+    :param workflow_data: Dictionary containing the data required to run the workflow.
+    :param initial_molecule: Molecule object to use as the initial molecule.
+    :param initial_smiles: SMILES string to use as the initial molecule.
+    :param name: Name for the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
     """
@@ -569,8 +583,8 @@ def retrieve_workflow(uuid: str) -> Workflow:
     """
     Retrieve a workflow from the API by UUID.
 
-    :param uuid: The UUID of the workflow.
-    :return: A Workflow object with the fetched data.
+    :param uuid: UUID of the workflow to retrieve.
+    :returns: Workflow object with the fetched data.
     :raises requests.HTTPError: If the API request fails.
     """
     with api_client() as client:
@@ -596,15 +610,22 @@ def batch_submit_workflow(
     Each workflow will be submitted with the same workflow type, workflow data,
     and folder UUID, but with different initial molecules and/or SMILES strings.
 
-    :param workflow_type: The type of workflow to submit.
-    :param workflow_data: A dictionary containing the data required to run the workflow.
-    :param initial_molecules: A list of molecule objects to use as initial molecules.
-    :param initial_smileses: A list of SMILES strings to use as initial molecules.
-    :param names: A list of names to give to the workflows.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use per workflow.
-    :return: A list of Workflow objects representing the submitted workflows.
+    :param workflow_type: Type of workflow to submit.
+    :param workflow_data: Dictionary containing the data required to run the workflow.
+    :param initial_molecules: Molecule objects to use as initial molecules.
+    :param initial_smileses: SMILES strings to use as initial molecules.
+    :param names: Names for the submitted workflows.
+    :param folder_uuid: UUID of the folder to store the workflows in.
+    :param max_credits: Maximum number of credits to use per workflow.
+    :returns: List of Workflow objects representing the submitted workflows.
     """
+    if names is not None:
+        expected = len(initial_smileses or initial_molecules or [])
+        if len(names) != expected:
+            raise ValueError(
+                f"Length of names ({len(names)}) must match number of molecules ({expected})."
+            )
+
     workflows = []
 
     if initial_smileses is not None:
@@ -637,28 +658,3 @@ def batch_submit_workflow(
         raise ValueError("You must provide either `initial_smileses` or `initial_molecules`.")
 
     return workflows
-
-
-__all__ = [
-    "RESULT_REGISTRY",
-    "Message",
-    "MessageType",
-    "Mode",
-    "MoleculeInput",
-    "RdkitMol",
-    "RowanMolecule",
-    "Solvent",
-    "SolventInput",
-    "StJamesMolecule",
-    "Workflow",
-    "WorkflowError",
-    "WorkflowResult",
-    "batch_submit_workflow",
-    "create_result",
-    "extract_smiles",
-    "molecule_to_dict",
-    "parse_messages",
-    "register_result",
-    "retrieve_workflow",
-    "submit_workflow",
-]

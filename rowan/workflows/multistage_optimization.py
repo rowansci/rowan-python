@@ -104,16 +104,16 @@ def submit_multistage_optimization_workflow(
     """
     Submits a multistage optimization workflow to the API.
 
-    :param initial_molecule: The molecule to optimize.
-    :param mode: The mode to run the calculation in.
-    :param solvent: The solvent for the final single-point calculation.
+    :param initial_molecule: Molecule to optimize.
+    :param mode: Mode to run the calculation in.
+    :param solvent: Solvent for the final single-point calculation.
     :param xtb_preopt: Whether to pre-optimize with xTB.
     :param transition_state: Whether this is a transition state optimization.
     :param frequencies: Whether to calculate frequencies.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     mol_dict = molecule_to_dict(initial_molecule)
@@ -140,6 +140,3 @@ def submit_multistage_optimization_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["MultiStageOptResult", "submit_multistage_optimization_workflow"]

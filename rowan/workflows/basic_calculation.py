@@ -1,20 +1,18 @@
 """Basic calculation workflow - perform quantum chemical calculations."""
 
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
     MoleculeInput,
-    RowanMolecule,
-    StJamesMolecule,
     Workflow,
     WorkflowResult,
+    molecule_to_dict,
     register_result,
 )
-from .constants import HARTREE_TO_KCAL
+from .constants import to_relative_kcal
 
 
 @register_result("basic_calculation")
@@ -63,26 +61,17 @@ class BasicCalculationResult(WorkflowResult):
         mol = self.molecule
         return mol.energy if mol else None
 
-    def get_optimization_energies(self, relative: bool = False) -> list[float | None]:
+    def optimization_energies(self, relative: bool = False) -> list[float]:
         """
-        Get energies for each optimization step.
+        Energies for each optimization step.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy step). If False (default), return absolute energies
             in Hartree.
-        :return: List of energies for each optimization step.
+        :returns: List of energies for each optimization step.
         """
-        energies: list[float | None] = [m.energy for m in self.molecules]
-
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
+        energies: list[float] = [m.energy for m in self.molecules if m.energy is not None]
+        return to_relative_kcal(energies) if relative else energies
 
     @property
     def charges(self) -> list[float] | None:
@@ -123,27 +112,22 @@ def submit_basic_calculation_workflow(
     """
     Submit a basic calculation workflow to the API.
 
-    :param initial_molecule: The molecule to perform the calculation on.
-    :param method: The method to use for the calculation.
-    :param basis_set: The basis_set to use (if any).
-    :param tasks: A list of tasks to perform for the calculation.
-    :param mode: The mode to run the calculation in.
-    :param engine: The engine to use for the calculation.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param initial_molecule: Molecule to perform the calculation on.
+    :param method: Method to use for the calculation.
+    :param basis_set: Basis set to use (if any).
+    :param tasks: Tasks to perform for the calculation.
+    :param mode: Mode to run the calculation in.
+    :param engine: Engine to use for the calculation.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if not tasks:
         tasks = ["optimize"]
 
-    if isinstance(initial_molecule, RowanMolecule):
-        initial_molecule = initial_molecule._to_stjames().model_dump(mode="json")
-    elif isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
         method = stjames.Method(method)
@@ -172,6 +156,3 @@ def submit_basic_calculation_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["BasicCalculationResult", "submit_basic_calculation_workflow"]

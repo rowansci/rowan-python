@@ -49,9 +49,9 @@ def submit_fukui_workflow(
     """
     Submits a fukui workflow to the API.
 
-    :param initial_molecule: The molecule to calculate the fukui indices of.
-    :param optimization_method: The method to use for the optimization.
-    :param fukui_method: The method to use for the fukui calculation.
+    :param initial_molecule: Molecule to calculate the fukui indices of.
+    :param optimization_method: Method to use for the optimization.
+    :param fukui_method: Method to use for the fukui calculation.
     :param solvent_settings: Optional implicit solvent for the Fukui calculation. A dict
         with two keys:
 
@@ -62,10 +62,10 @@ def submit_fukui_workflow(
           DFT methods.
 
         Example: ``solvent_settings={"solvent": "water", "model": "alpb"}``
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the solvent model is incompatible with the chosen method.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -115,6 +115,3 @@ def submit_fukui_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["FukuiResult", "submit_fukui_workflow"]

@@ -9,7 +9,7 @@ from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
-from .constants import HARTREE_TO_KCAL
+from .constants import to_relative_kcal
 
 
 @register_result("double_ended_ts_search")
@@ -59,26 +59,17 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         calc = self.ts_guess_calculation
         return calc.molecules if calc else []
 
-    def get_path_energies(self, relative: bool = False) -> list[float | None]:
+    def get_path_energies(self, relative: bool = False) -> list[float]:
         """
         Get energies along the reaction path.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy point). If False (default), return absolute energies
             in Hartree.
-        :return: List of energies along the reaction path.
+        :returns: List of energies along the reaction path.
         """
-        energies: list[float | None] = [m.energy for m in self.molecules]
-
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
+        energies: list[float] = [m.energy for m in self.molecules]  # type: ignore[misc]
+        return to_relative_kcal(energies) if relative else energies
 
     @property
     def distances(self) -> list[float] | None:
@@ -107,9 +98,9 @@ def submit_double_ended_ts_search_workflow(
     :param optimize_inputs: Whether to optimize the reactant and product before the search.
     :param optimize_ts: Whether to optimize the found transition state.
     :param name: name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: Workflow object representing the submitted workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     """
     workflow = stjames.DoubleEndedTSSearchWorkflow(
         reactant=reactant,
@@ -134,6 +125,3 @@ def submit_double_ended_ts_search_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["DoubleEndedTSSearchResult", "submit_double_ended_ts_search_workflow"]

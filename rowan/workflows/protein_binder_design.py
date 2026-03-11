@@ -53,7 +53,7 @@ class BinderScores:
     """Minimum predicted aligned error at the interface."""
 
     delta_sasa_refolded: float | None = None
-    """Change in solvent-accessible surface area upon binding (Ų)."""
+    """Change in solvent-accessible surface area upon binding (A^2)."""
 
     plip_hbonds_refolded: int | None = None
     """Number of hydrogen bonds at the interface."""
@@ -166,17 +166,17 @@ def submit_protein_binder_design_workflow(
     Submits a protein binder design workflow to the API.
 
     :param binder_design_input: Input specification for the binder design (BoltzGenInput format).
-    :param protocol: The design protocol to use. Options:
+    :param protocol: Design protocol to use. Options:
         - PROTEIN_ANYTHING: Design a protein binder
         - PEPTIDE_ANYTHING: Design a peptide binder
         - PROTEIN_SMALL_MOLECULE: Design a protein that binds a small molecule
         - NANOBODY_ANYTHING: Design a nanobody binder
     :param num_designs: Number of designs to generate.
     :param budget: Number of designs to return in the final diversity-optimized set.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If protocol is not a valid BinderProtocol.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -208,12 +208,3 @@ def submit_protein_binder_design_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = [
-    "BinderProtocol",
-    "BinderScores",
-    "ProteinBinder",
-    "ProteinBinderDesignResult",
-    "submit_protein_binder_design_workflow",
-]

@@ -1,12 +1,9 @@
 """Ion mobility workflow - predict collision cross sections."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..utils import api_client
-from .base import RdkitMol, StJamesMolecule, Workflow, WorkflowResult, register_result
+from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @register_result("ion_mobility")
@@ -42,7 +39,7 @@ class IonMobilityResult(WorkflowResult):
 
 
 def submit_ion_mobility_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     temperature: float = 300,
     protonate: bool = False,
     do_csearch: bool = True,
@@ -54,22 +51,19 @@ def submit_ion_mobility_workflow(
     """
     Submits an ion-mobility workflow to the API.
 
-    :param initial_molecule: The molecule used in the scan.
-    :param temperature: The temperature at which to predict CCS values (K).
+    :param initial_molecule: Molecule used in the scan.
+    :param temperature: Temperature at which to predict CCS values (K).
     :param protonate: Whether or not to automatically detect protonation site.
         If `True`, every basic site will be protonated and values returned for the most stable.
     :param do_csearch: Whether to perform a conformational search on the molecule.
     :param do_optimization: Whether to perform an optimization on the molecule.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.IonMobilityWorkflow(
         initial_molecule=initial_molecule,
@@ -92,6 +86,3 @@ def submit_ion_mobility_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["IonMobilityResult", "submit_ion_mobility_workflow"]

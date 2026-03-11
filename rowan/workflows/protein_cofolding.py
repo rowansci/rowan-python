@@ -265,7 +265,7 @@ def submit_protein_cofolding_workflow(
     use_potentials: bool = False,
     compute_strain: bool = False,
     do_pose_refinement: bool = False,
-    name: str = "Protein–Ligand Co-Folding",
+    name: str = "Protein-Ligand Co-Folding",
     model: CofoldingModel | str = CofoldingModel.BOLTZ_2,
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -279,19 +279,19 @@ def submit_protein_cofolding_workflow(
     :param initial_protein_sequences: Protein sequences to be cofolded.
     :param initial_dna_sequences: DNA sequences to be cofolded.
     :param initial_rna_sequences: RNA sequences to be cofolded.
-    :param initial_smiles_list: A list of SMILES strings for the ligands to be cofolded with.
-    :param ligand_binding_affinity_index: The index of the ligand for which to compute
+    :param initial_smiles_list: List of SMILES strings for the ligands to be cofolded with.
+    :param ligand_binding_affinity_index: Index of the ligand for which to compute
         the binding affinity.
     :param use_msa_server: Whether to use the MSA server for the computation.
     :param use_potentials: Whether to use potentials for the computation.
     :param compute_strain: Whether to compute the strain of the pose
         (if `pose_refinement` is enabled).
     :param do_pose_refinement: Whether to optimize non-rotatable bonds in output poses.
-    :param name: The name of the workflow.
-    :param model: The model to use for the computation.
-    :param folder_uuid: The UUID of the folder to store the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param model: Model to use for the computation.
+    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If no protein, DNA, or RNA sequences are provided.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -337,13 +337,3 @@ def submit_protein_cofolding_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = [
-    "AffinityScore",
-    "CofoldingModel",
-    "CofoldingResult",
-    "CofoldingScores",
-    "ProteinCofoldingResult",
-    "submit_protein_cofolding_workflow",
-]

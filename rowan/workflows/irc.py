@@ -13,7 +13,7 @@ from .base import (
     molecule_to_dict,
     register_result,
 )
-from .constants import HARTREE_TO_KCAL
+from .constants import to_relative_kcal
 
 
 @register_result("irc")
@@ -71,7 +71,7 @@ class IRCResult(WorkflowResult):
         """
         Fetch all forward IRC path calculations.
 
-        :return: List of Calculation objects along the forward path.
+        :returns: List of Calculation objects along the forward path.
 
         Note: Makes one API call per step. Results are cached.
         """
@@ -84,7 +84,7 @@ class IRCResult(WorkflowResult):
         """
         Fetch all backward IRC path calculations.
 
-        :return: List of Calculation objects along the backward path.
+        :returns: List of Calculation objects along the backward path.
 
         Note: Makes one API call per step. Results are cached.
         """
@@ -105,47 +105,29 @@ class IRCResult(WorkflowResult):
         calcs = self.get_backward_calculations()
         return [c.molecule for c in calcs if c.molecule]
 
-    def get_forward_energies(self, relative: bool = False) -> list[float | None]:
+    def get_forward_energies(self, relative: bool = False) -> list[float]:
         """
         Get energies along the forward IRC path.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy point). If False (default), return absolute energies
             in Hartree.
-        :return: List of energies along the forward path.
+        :returns: List of energies along the forward path.
         """
-        energies: list[float | None] = [m.energy for m in self.forward_molecules]
+        energies: list[float] = [m.energy for m in self.forward_molecules]  # type: ignore[misc]
+        return to_relative_kcal(energies) if relative else energies
 
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
-
-    def get_backward_energies(self, relative: bool = False) -> list[float | None]:
+    def get_backward_energies(self, relative: bool = False) -> list[float]:
         """
         Get energies along the backward IRC path.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy point). If False (default), return absolute energies
             in Hartree.
-        :return: List of energies along the backward path.
+        :returns: List of energies along the backward path.
         """
-        energies: list[float | None] = [m.energy for m in self.backward_molecules]
-
-        if relative:
-            valid = [e for e in energies if e is not None]
-            if valid:
-                min_e = min(valid)
-                energies = [
-                    (e - min_e) * HARTREE_TO_KCAL if e is not None else None for e in energies
-                ]
-
-        return energies
+        energies: list[float] = [m.energy for m in self.backward_molecules]  # type: ignore[misc]
+        return to_relative_kcal(energies) if relative else energies
 
 
 def submit_irc_workflow(
@@ -162,16 +144,16 @@ def submit_irc_workflow(
     """
     Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
-    :param initial_molecule: The transition state molecule to start IRC from.
-    :param method: The computational method to use for the IRC calculation.
-    :param solvent: The solvent to use for the calculation.
+    :param initial_molecule: Transition state molecule to start IRC from.
+    :param method: Computational method to use for the IRC calculation.
+    :param solvent: Solvent to use for the calculation.
     :param preopt: Whether to perform a pre-optimization of the TS.
-    :param step_size: The step size to use for the IRC calculation.
-    :param max_irc_steps: The maximum number of IRC steps to perform.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted IRC workflow.
+    :param step_size: Step size to use for the IRC calculation.
+    :param max_irc_steps: Maximum number of IRC steps to perform.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     mol_dict = molecule_to_dict(initial_molecule)
@@ -207,6 +189,3 @@ def submit_irc_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["IRCResult", "submit_irc_workflow"]

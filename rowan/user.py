@@ -112,7 +112,7 @@ class User(BaseModel):
         """
         Returns a string showing available credits, including organization credits if applicable
 
-        :return: A string showing available credits
+        :returns: String showing available credits
         """
         individual_credits = f"Weekly Credits: {self.weekly_credits}\nCredits: {self.credits}"
         if self.organization is not None:

@@ -36,7 +36,7 @@ class MSAResult(WorkflowResult):
 
         :param format: Output format to download. If None, downloads all requested formats.
         :param path: Directory to save files to. Defaults to current directory.
-        :return: List of paths to downloaded tar.gz files.
+        :returns: List of paths to downloaded tar.gz files.
         :raises ValueError: If the requested format wasn't in the original output_formats.
         :raises HTTPError: If the API request fails.
         """
@@ -81,10 +81,10 @@ def submit_msa_workflow(
 
     :param initial_protein_sequences: List of protein sequences to align (amino acid strings).
     :param output_formats: Output formats for the MSA files. Options: "colabfold", "chai", "boltz".
-    :param name: The name to assign to the workflow.
+    :param name: Name to assign to the workflow.
     :param folder_uuid: UUID of the folder where the workflow will be stored.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted MSA workflow.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted MSA workflow.
     :raises HTTPError: If the API request fails.
     """
     if output_formats is None:
@@ -122,6 +122,3 @@ def submit_msa_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["MSAOutputFormat", "MSAResult", "submit_msa_workflow"]

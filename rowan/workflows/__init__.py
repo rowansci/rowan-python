@@ -7,7 +7,6 @@ Basic pattern:
     result = workflows.submit_<workflow_type>(molecule).result()
 """
 
-# Import workflow-specific modules (each registers its result type)
 from stjames import (
     ETKDGSettings,
     LyrebirdSettings,

@@ -45,16 +45,16 @@ def submit_batch_docking_workflow(
     """
     Submits a batch docking workflow to the API.
 
-    :param smiles_list: The SMILES strings to dock.
-    :param protein: The protein to dock (UUID or Protein object).
+    :param smiles_list: SMILES strings to dock.
+    :param protein: Protein to dock (UUID or Protein object).
     :param pocket: Binding pocket coordinates [[x,y,z], [x,y,z]].
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Docking exhaustiveness parameter.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use.
-    :return: A Workflow object representing the submitted workflow.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     docking_settings = {
@@ -83,6 +83,3 @@ def submit_batch_docking_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["BatchDockingResult", "submit_batch_docking_workflow"]

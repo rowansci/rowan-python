@@ -1,19 +1,16 @@
 """Redox potential workflow - calculate oxidation/reduction potentials."""
 
-from typing import Any
-
 import stjames
-from rdkit import Chem
 
 from ..calculation import Calculation, retrieve_calculation
 from ..utils import api_client
 from .base import (
     Message,
     Mode,
-    RdkitMol,
-    StJamesMolecule,
+    MoleculeInput,
     Workflow,
     WorkflowResult,
+    molecule_to_dict,
     parse_messages,
     register_result,
 )
@@ -94,7 +91,7 @@ class RedoxPotentialResult(WorkflowResult):
 
 
 def submit_redox_potential_workflow(
-    initial_molecule: dict[str, Any] | stjames.Molecule | RdkitMol,
+    initial_molecule: MoleculeInput,
     reduction: bool = False,
     oxidation: bool = True,
     mode: Mode = Mode.RAPID,
@@ -105,20 +102,17 @@ def submit_redox_potential_workflow(
     """
     Submits a redox potential workflow to the API.
 
-    :param initial_molecule: The molecule to calculate the redox potential of.
+    :param initial_molecule: Molecule to calculate the redox potential of.
     :param reduction: Whether to calculate the reduction potential.
     :param oxidation: Whether to calculate the oxidation potential.
-    :param mode: The mode to run the calculation in.
-    :param name: The name of the workflow.
-    :param folder_uuid: The UUID of the folder to place the workflow in.
-    :param max_credits: The maximum number of credits to use for the workflow.
-    :return: A Workflow object representing the submitted workflow.
+    :param mode: Mode to run the calculation in.
+    :param name: Name of the workflow.
+    :param folder_uuid: UUID of the folder to place the workflow in.
+    :param max_credits: Maximum number of credits to use for the workflow.
+    :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if isinstance(initial_molecule, StJamesMolecule):
-        initial_molecule = initial_molecule.model_dump(mode="json")
-    elif isinstance(initial_molecule, Chem.rdchem.Mol | Chem.rdchem.RWMol):
-        initial_molecule = stjames.Molecule.from_rdkit(initial_molecule, cid=0)
+    initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.RedoxPotentialWorkflow(
         initial_molecule=initial_molecule,
@@ -140,6 +134,3 @@ def submit_redox_potential_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
-
-
-__all__ = ["RedoxPotentialResult", "submit_redox_potential_workflow"]

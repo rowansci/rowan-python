@@ -17,7 +17,7 @@ def get_api_key() -> str:
 
     If neither of these are set, raise a ValueError with a helpful message.
 
-    :return: The API key.
+    :returns: API key.
     """
     if hasattr(rowan, "api_key") and rowan.api_key:
         return rowan.api_key
@@ -34,8 +34,8 @@ def smiles_to_stjames(smiles: str) -> stjames.Molecule:
     """
     Convert a SMILES string to a `stjames.Molecule` object.
 
-    :param smiles: A string representing the SMILES notation of the molecule.
-    :return: A `stjames.Molecule` object created from the given SMILES string.
+    :param smiles: String representing the SMILES notation of the molecule.
+    :returns: `stjames.Molecule` object created from the given SMILES string.
     """
 
     return stjames.Molecule.from_smiles(smiles)
