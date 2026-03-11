@@ -10,9 +10,14 @@ from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, reg
 
 @dataclass(frozen=True, slots=True)
 class MolecularOrbital:
-    """A molecular orbital with cube data."""
+    """Molecular orbital with cube data.
 
-    points: tuple[tuple[float, float, float, float], ...]  # (x, y, z, value)
+    :param points: Cube data as (x, y, z, value) points (Bohr).
+    :param occupation: Occupation number (0, 1, or 2).
+    :param energy: Orbital energy (Hartree).
+    """
+
+    points: tuple[tuple[float, float, float, float], ...]
     occupation: int
     energy: float
 
@@ -92,6 +97,29 @@ class ElectronicPropertiesResult(WorkflowResult):
             )
             for k, v in self._workflow.molecular_orbitals.items()
         }
+
+    @property
+    def homo(self) -> MolecularOrbital | None:
+        """Highest occupied molecular orbital (HOMO). Energy in Hartree."""
+        orbs = self.molecular_orbitals
+        occupied = [idx for idx, mo in orbs.items() if mo.occupation > 0]
+        return orbs[max(occupied)] if occupied else None
+
+    @property
+    def lumo(self) -> MolecularOrbital | None:
+        """Lowest unoccupied molecular orbital (LUMO). Energy in Hartree."""
+        orbs = self.molecular_orbitals
+        virtual = [idx for idx, mo in orbs.items() if mo.occupation == 0]
+        return orbs[min(virtual)] if virtual else None
+
+    @property
+    def homo_lumo_gap(self) -> float | None:
+        """HOMO-LUMO gap (Hartree)."""
+        homo = self.homo
+        lumo = self.lumo
+        if homo is None or lumo is None:
+            return None
+        return lumo.energy - homo.energy
 
 
 def submit_electronic_properties_workflow(
