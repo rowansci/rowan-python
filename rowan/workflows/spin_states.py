@@ -67,7 +67,7 @@ class SpinStatesResult(WorkflowResult):
 
     @property
     def spin_states(self) -> list[SpinState]:
-        """List of spin states with energies, ordered by energy (lowest first)."""
+        """List of spin states with energies, in submission order."""
         return [
             SpinState(
                 multiplicity=ss.multiplicity,
