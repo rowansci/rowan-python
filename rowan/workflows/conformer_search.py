@@ -1,13 +1,12 @@
-"""Conformer search workflow - find low-energy molecular conformations."""
+"""Conformer-search workflow - find low-energy molecular conformations."""
 
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -18,7 +17,7 @@ from .constants import to_relative_kcal
 
 @register_result("conformer_search")
 class ConformerSearchResult(WorkflowResult):
-    """Result from a conformer search workflow."""
+    """Result from a conformer-search workflow."""
 
     _stjames_class = stjames.ConformerSearchWorkflow
 
@@ -73,7 +72,8 @@ class ConformerSearchResult(WorkflowResult):
             ordered by energy, so n=5 returns the 5 lowest-energy conformers.
         :returns: List of Molecule objects.
 
-        Note: Makes one API call per conformer.
+        .. note::
+            Makes one API call per conformer.
         """
         uuids = self._workflow.conformer_uuids
         count = len(uuids) if n is None else min(n, len(uuids))
@@ -88,8 +88,9 @@ class ConformerSearchResult(WorkflowResult):
         """
         Fetch a conformer's calculation data by index.
 
-        Note: Makes one API call per conformer on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per conformer on first access.
+            Results are cached. Call clear_cache() to refresh.
 
         :param index: Conformer index (0-based).
         :param stage: Optimization stage (-1 for final stage).
@@ -123,7 +124,7 @@ def submit_conformer_search_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a conformer search workflow to the API.
+    Submits a conformer-search workflow to the API.
 
     :param initial_molecule: Molecule to perform the conformer search on.
     :param conf_gen_settings: Conformer generation method and settings. Defaults to

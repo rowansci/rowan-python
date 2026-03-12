@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
+from .base import Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,7 +110,7 @@ def submit_macropka_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a macropka workflow to the API.
+    Submits a macropKa workflow to the API.
 
     :param initial_smiles: Molecule to calculate macroscopic pKa values for. Accepts
         a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,

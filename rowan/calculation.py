@@ -3,7 +3,7 @@
 from typing import Self
 
 import stjames
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .molecule import Molecule
 from .utils import api_client
@@ -11,7 +11,7 @@ from .utils import api_client
 
 def _parse_molecules(data: list[dict]) -> list[Molecule]:
     """Parse molecule dicts into Molecule objects."""
-    return [Molecule._from_stjames(stjames.Molecule.model_validate(m)) for m in data]
+    return [Molecule.from_stjames(stjames.Molecule.model_validate(m)) for m in data]
 
 
 class Calculation(BaseModel):
@@ -31,37 +31,28 @@ class Calculation(BaseModel):
     status: int | None = None
     elapsed: float | None = None
     engine: str | None = None
-    _molecules: list[Molecule] = []
+    molecules: list[Molecule] = Field(default_factory=list)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, molecules: list[Molecule] | None = None, **kwargs):
-        super().__init__(**kwargs)
-        object.__setattr__(self, "_molecules", molecules or [])
-
     def __repr__(self) -> str:
-        n_mols = len(self._molecules)
+        n_mols = len(self.molecules)
         energy = self.energy
         e_str = f"{energy:.6f}" if energy is not None else "None"
         return f"<Calculation energy={e_str} molecules={n_mols} uuid='{self.uuid}'>"
 
     @property
-    def molecules(self) -> list[Molecule]:
-        """List of molecules (geometries) from this calculation."""
-        return self._molecules
-
-    @property
     def energy(self) -> float | None:
         """Energy of the final molecule (Hartree)."""
-        if self._molecules:
-            return self._molecules[-1].energy
+        if self.molecules:
+            return self.molecules[-1].energy
         return None
 
     @property
     def molecule(self) -> Molecule | None:
-        """The final molecule geometry."""
-        if self._molecules:
-            return self._molecules[-1]
+        """Final molecule geometry."""
+        if self.molecules:
+            return self.molecules[-1]
         return None
 
     def refresh(self, in_place: bool = True) -> Self:
@@ -92,7 +83,7 @@ class Calculation(BaseModel):
         self.status = data.get("status")
         self.elapsed = data.get("elapsed")
         self.engine = data.get("engine")
-        object.__setattr__(self, "_molecules", molecules)
+        self.molecules = molecules
         return self
 
 
@@ -119,6 +110,3 @@ def retrieve_calculation(uuid: str) -> Calculation:
         engine=data.get("engine"),
         molecules=molecules,
     )
-
-
-__all__ = ["Calculation", "retrieve_calculation"]

@@ -2,8 +2,9 @@
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
+from .base import Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @register_result("admet")

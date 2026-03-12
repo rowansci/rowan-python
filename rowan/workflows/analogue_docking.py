@@ -3,14 +3,15 @@
 import stjames
 
 from ..protein import Protein, retrieve_protein
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .docking import DockingScore
 
 
 @register_result("analogue_docking")
 class AnalogueDockingResult(WorkflowResult):
-    """Result from an analogue docking workflow."""
+    """Result from an analogue-docking workflow."""
 
     _stjames_class = stjames.AnalogueDockingWorkflow
 
@@ -147,7 +148,7 @@ def submit_analogue_docking_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits an analogue docking workflow to the API.
+    Submits an analogue-docking workflow to the API.
 
     :param analogues: SMILES strings to dock.
     :param initial_molecule: Template to which to align molecules to.
@@ -158,7 +159,7 @@ def submit_analogue_docking_workflow(
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
-    :returns: Workflow object representing the submitted batch docking workflow.
+    :returns: Workflow object representing the submitted analogue-docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
     docking_settings = {

@@ -1,14 +1,15 @@
-"""Ion mobility workflow - predict collision cross sections."""
+"""Ion-mobility workflow - predict collision cross sections."""
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @register_result("ion_mobility")
 class IonMobilityResult(WorkflowResult):
-    """Result from an ion mobility workflow."""
+    """Result from an ion-mobility workflow."""
 
     _stjames_class = stjames.IonMobilityWorkflow
 

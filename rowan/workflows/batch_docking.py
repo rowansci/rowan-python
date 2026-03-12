@@ -9,7 +9,7 @@ from .base import Workflow, WorkflowResult, register_result
 
 @register_result("batch_docking")
 class BatchDockingResult(WorkflowResult):
-    """Result from a batch docking workflow."""
+    """Result from a batch-docking workflow."""
 
     _stjames_class = stjames.BatchDockingWorkflow
 
@@ -43,7 +43,7 @@ def submit_batch_docking_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a batch docking workflow to the API.
+    Submits a batch-docking workflow to the API.
 
     :param smiles_list: SMILES strings to dock.
     :param protein: Protein to dock (UUID or Protein object).

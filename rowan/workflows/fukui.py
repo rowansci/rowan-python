@@ -2,8 +2,9 @@
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @register_result("fukui")
@@ -47,11 +48,11 @@ def submit_fukui_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a fukui workflow to the API.
+    Submits a Fukui workflow to the API.
 
-    :param initial_molecule: Molecule to calculate the fukui indices of.
+    :param initial_molecule: Molecule to calculate the Fukui indices of.
     :param optimization_method: Method to use for the optimization.
-    :param fukui_method: Method to use for the fukui calculation.
+    :param fukui_method: Method to use for the Fukui calculation.
     :param solvent_settings: Optional implicit solvent for the Fukui calculation. A dict
         with two keys:
 
@@ -88,12 +89,6 @@ def submit_fukui_workflow(
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
-
-    stjames.FukuiIndexWorkflow(
-        initial_molecule=initial_molecule,
-        optimization_settings=optimization_settings,
-        fukui_settings=fukui_settings,
-    )
 
     workflow_data = {
         "opt_settings": optimization_settings.model_dump(mode="json"),

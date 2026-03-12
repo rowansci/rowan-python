@@ -5,8 +5,9 @@ from typing import Literal
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, extract_smiles, register_result
+from .base import Workflow, WorkflowResult, extract_smiles, register_result
 
 # Common solvents with human-readable names (from tinbergen)
 # Users can use these names or provide arbitrary SMILES for fastsolv
@@ -83,32 +84,35 @@ def _resolve_solvent(solvent: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class SolubilityValue:
-    """A solubility measurement at a specific temperature."""
+    """
+    Solubility measurement at a specific temperature.
+
+    :param temperature: Temperature in Kelvin.
+    :param solubility: Solubility in log(mol/L).
+    :param uncertainty: Uncertainty in the solubility prediction.
+    """
 
     temperature: float
-    """Temperature in Kelvin."""
-
     solubility: float
-    """Solubility in log(mol/L)."""
-
     uncertainty: float | None = None
-    """Uncertainty in the solubility prediction."""
 
 
 @dataclass(frozen=True, slots=True)
 class SolubilityEntry:
-    """Solubility results for a single solvent."""
+    """
+    Solubility results for a single solvent.
+
+    :param solvent: Solvent SMILES.
+    :param values: Solubility values at each temperature.
+    """
 
     solvent: str
-    """Solvent SMILES."""
-
     values: tuple[SolubilityValue, ...]
-    """Solubility values at each temperature."""
 
 
 @register_result("solubility")
 class SolubilityResult(WorkflowResult):
-    """Result from an aqueous solubility workflow."""
+    """Result from an aqueous-solubility workflow."""
 
     _stjames_class = stjames.SolubilityWorkflow
 

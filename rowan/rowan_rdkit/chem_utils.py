@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 import time
-from typing import Iterable, Literal, TypeAlias, TypedDict
+from typing import Iterable, Literal, TypedDict
 
 import numpy as np
 import stjames
@@ -10,9 +10,9 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 import rowan
+from rowan.types import RdkitMol
 from rowan.utils import ATOMIC_NUMBER_TO_ATOMIC_SYMBOL, get_api_key
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 pKaMode = Literal["reckless", "rapid", "careful"]
 TautomerMode = Literal["reckless", "rapid", "careful"]
 ConformerMode = Literal["reckless", "rapid"]

@@ -37,8 +37,9 @@ class ScanResult(WorkflowResult):
     def scan_points(self) -> list[Calculation]:
         """All scan point calculations.
 
-        Note: Makes one API call per scan point on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per scan point on first access.
+            Results are cached. Call clear_cache() to refresh.
         """
         if "scan_points" not in self._cache:
             self._cache["scan_points"] = [

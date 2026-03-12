@@ -14,76 +14,70 @@ CofoldingModel = stjames.CofoldingModel
 
 @dataclass(frozen=True, slots=True)
 class CofoldingScores:
-    """Confidence scores for a cofolding prediction."""
+    """
+    Confidence scores for a cofolding prediction.
+
+    :param ptm: Predicted TM-score (0-1, higher is better).
+    :param iptm: Interface predicted TM-score (0-1, higher is better).
+    :param avg_lddt: Average per-residue LDDT confidence (0-1).
+    :param confidence_score: Overall confidence score (0-1).
+    """
 
     ptm: float | None = None
-    """Predicted TM-score (0-1, higher is better)."""
-
     iptm: float | None = None
-    """Interface predicted TM-score (0-1, higher is better)."""
-
     avg_lddt: float | None = None
-    """Average per-residue LDDT confidence (0-1)."""
-
     confidence_score: float | None = None
-    """Overall confidence score (0-1)."""
 
 
 @dataclass(frozen=True, slots=True)
 class AffinityScore:
-    """Predicted binding affinity scores."""
+    """
+    Predicted binding affinity scores.
+
+    :param pred_value: Predicted binding affinity (ensemble average).
+    :param pred_value1: Predicted binding affinity (model 1).
+    :param pred_value2: Predicted binding affinity (model 2).
+    :param probability_binary: Probability of binding (ensemble average, 0-1).
+    :param probability_binary1: Probability of binding (model 1, 0-1).
+    :param probability_binary2: Probability of binding (model 2, 0-1).
+    """
 
     pred_value: float | None = None
-    """Predicted binding affinity (ensemble average)."""
-
     pred_value1: float | None = None
-    """Predicted binding affinity (model 1)."""
-
     pred_value2: float | None = None
-    """Predicted binding affinity (model 2)."""
-
     probability_binary: float | None = None
-    """Probability of binding (ensemble average, 0-1)."""
-
     probability_binary1: float | None = None
-    """Probability of binding (model 1, 0-1)."""
-
     probability_binary2: float | None = None
-    """Probability of binding (model 2, 0-1)."""
 
 
 @dataclass(frozen=True, slots=True)
 class CofoldingResult:
-    """A single cofolding prediction result."""
+    """
+    Single cofolding prediction result.
+
+    :param scores: Confidence scores for the prediction.
+    :param affinity_score: Predicted binding affinity (if computed).
+    :param strain: Ligand strain energy (if computed).
+    :param posebusters_valid: Whether the pose passes PoseBusters validation.
+    :param lddt: Per-residue LDDT confidence scores.
+    :param pose_uuid: UUID of the pose.
+    :param predicted_structure_uuid: UUID of the predicted structure.
+    :param predicted_refined_structure_uuid: UUID of the refined structure (if refinement was run).
+    """
 
     scores: CofoldingScores | None = None
-    """Confidence scores for the prediction."""
-
     affinity_score: AffinityScore | None = None
-    """Predicted binding affinity (if computed)."""
-
     strain: float | None = None
-    """Ligand strain energy (if computed)."""
-
     posebusters_valid: bool | None = None
-    """Whether the pose passes PoseBusters validation."""
-
     lddt: list[float] | None = None
-    """Per-residue LDDT confidence scores."""
-
     pose_uuid: str | None = None
-    """UUID of the pose."""
-
     predicted_structure_uuid: str | None = None
-    """UUID of the predicted structure."""
-
     predicted_refined_structure_uuid: str | None = None
-    """UUID of the refined structure (if pose refinement was enabled)."""
 
 
 @register_result("protein_cofolding")
 class ProteinCofoldingResult(WorkflowResult):
-    """Result from a protein cofolding workflow."""
+    """Result from a protein-cofolding workflow."""
 
     _stjames_class = stjames.ProteinCofoldingWorkflow
 
@@ -101,16 +95,7 @@ class ProteinCofoldingResult(WorkflowResult):
         s = getattr(self._workflow, "scores", None)
         if not s:
             return None
-        return CofoldingScores(
-            ptm=s.get("ptm") if isinstance(s, dict) else getattr(s, "ptm", None),
-            iptm=s.get("iptm") if isinstance(s, dict) else getattr(s, "iptm", None),
-            avg_lddt=s.get("avg_lddt") if isinstance(s, dict) else getattr(s, "avg_lddt", None),
-            confidence_score=(
-                s.get("confidence_score")
-                if isinstance(s, dict)
-                else getattr(s, "confidence_score", None)
-            ),
-        )
+        return self._make_cofolding_scores(s)
 
     @property
     def affinity_score(self) -> AffinityScore | None:
@@ -149,11 +134,11 @@ class ProteinCofoldingResult(WorkflowResult):
     def get_predicted_structure(self) -> Protein | None:
         """Fetch the predicted structure as a Protein object.
 
-        Note: Makes one API call on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call on first access.
+            Results are cached. Call clear_cache() to refresh.
         """
-        uuid = self.predicted_structure_uuid
-        if not uuid:
+        if not (uuid := self.predicted_structure_uuid):
             return None
         if "predicted_structure" not in self._cache:
             self._cache["predicted_structure"] = retrieve_protein(uuid)
@@ -162,11 +147,11 @@ class ProteinCofoldingResult(WorkflowResult):
     def get_refined_structure(self) -> Protein | None:
         """Fetch the refined structure as a Protein object (if available).
 
-        Note: Makes one API call on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call on first access.
+            Results are cached. Call clear_cache() to refresh.
         """
-        uuid = self.predicted_refined_structure_uuid
-        if not uuid:
+        if not (uuid := self.predicted_refined_structure_uuid):
             return None
         if "refined_structure" not in self._cache:
             self._cache["refined_structure"] = retrieve_protein(uuid)
@@ -178,30 +163,7 @@ class ProteinCofoldingResult(WorkflowResult):
         results: list[CofoldingResult] = []
         for r in self._workflow.cofolding_results or []:
             scores_data = getattr(r, "scores", None)
-            scores = None
-            if scores_data:
-                scores = CofoldingScores(
-                    ptm=(
-                        scores_data.get("ptm")
-                        if isinstance(scores_data, dict)
-                        else getattr(scores_data, "ptm", None)
-                    ),
-                    iptm=(
-                        scores_data.get("iptm")
-                        if isinstance(scores_data, dict)
-                        else getattr(scores_data, "iptm", None)
-                    ),
-                    avg_lddt=(
-                        scores_data.get("avg_lddt")
-                        if isinstance(scores_data, dict)
-                        else getattr(scores_data, "avg_lddt", None)
-                    ),
-                    confidence_score=(
-                        scores_data.get("confidence_score")
-                        if isinstance(scores_data, dict)
-                        else getattr(scores_data, "confidence_score", None)
-                    ),
-                )
+            scores = self._make_cofolding_scores(scores_data) if scores_data else None
 
             affinity = getattr(r, "affinity_score", None)
             affinity_score = self._make_affinity_score(affinity) if affinity else None
@@ -233,6 +195,22 @@ class ProteinCofoldingResult(WorkflowResult):
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow (e.g., stereochemistry issues)."""
         return parse_messages(getattr(self._workflow, "messages", None))
+
+    def _make_cofolding_scores(self, s: dict | object) -> CofoldingScores:
+        """Convert cofolding scores data to CofoldingScores dataclass."""
+        if isinstance(s, dict):
+            return CofoldingScores(
+                ptm=s.get("ptm"),
+                iptm=s.get("iptm"),
+                avg_lddt=s.get("avg_lddt"),
+                confidence_score=s.get("confidence_score"),
+            )
+        return CofoldingScores(
+            ptm=getattr(s, "ptm", None),
+            iptm=getattr(s, "iptm", None),
+            avg_lddt=getattr(s, "avg_lddt", None),
+            confidence_score=getattr(s, "confidence_score", None),
+        )
 
     def _make_affinity_score(self, a: dict | object) -> AffinityScore:
         """Convert affinity score data to AffinityScore dataclass."""
@@ -271,7 +249,7 @@ def submit_protein_cofolding_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a protein cofolding workflow to the API.
+    Submits a protein-cofolding workflow to the API.
 
     Predicts the 3D structure of protein-protein, protein-ligand, protein-DNA,
     protein-RNA, or other biomolecular complexes.

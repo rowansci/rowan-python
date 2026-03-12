@@ -1,7 +1,7 @@
 """Molecule class for representing molecular structures and computed properties."""
 
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 import stjames
 from pydantic import BaseModel, ConfigDict, PrivateAttr
@@ -9,16 +9,16 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 class Molecule(BaseModel):
     """
-    A molecular structure with optional computed properties.
+    Molecular structure with optional computed properties.
 
     Can be created from SMILES, XYZ, or directly from atoms. Wraps stjames.Molecule
     internally but provides a cleaner interface.
 
-    :ivar charge: Molecular charge
-    :ivar multiplicity: Spin multiplicity
-    :ivar atoms: List of atoms with positions
-    :ivar energy: Electronic energy (Hartree)
-    :ivar smiles: SMILES string representation
+    :param charge: Molecular charge.
+    :param multiplicity: Spin multiplicity.
+    :param atoms: List of atoms with positions.
+    :param energy: Electronic energy (Hartree).
+    :param smiles: SMILES string representation.
     """
 
     _stjames: stjames.Molecule = PrivateAttr()
@@ -31,61 +31,74 @@ class Molecule(BaseModel):
         if _stjames is not None:
             self._stjames = _stjames
         else:
-            # Build stjames.Molecule from kwargs
             self._stjames = stjames.Molecule(**kwargs)
-
-    @classmethod
-    def from_smiles(cls, smiles: str) -> Self:
-        """
-        Create a molecule from a SMILES string.
-
-        :param smiles: SMILES string
-        :returns: Molecule instance
-        """
-        stj = stjames.Molecule.from_smiles(smiles)
-        return cls(_stjames=stj)
-
-    @classmethod
-    def from_xyz(cls, xyz_string: str, charge: int = 0, multiplicity: int = 1) -> Self:
-        """
-        Create a molecule from an XYZ string.
-
-        :param xyz_string: XYZ format string
-        :param charge: Molecular charge (default 0)
-        :param multiplicity: Spin multiplicity (default 1)
-        :returns: Molecule instance
-        """
-        stj = stjames.Molecule.from_xyz(xyz_string)
-        # Set charge and multiplicity after creation
-        stj = stjames.Molecule(
-            atoms=stj.atoms,
-            charge=charge,
-            multiplicity=multiplicity,
-        )
-        return cls(_stjames=stj)
-
-    @classmethod
-    def from_xyz_file(cls, path: str | Path, charge: int = 0, multiplicity: int = 1) -> Self:
-        """
-        Create a molecule from an XYZ file.
-
-        :param path: Path to XYZ file
-        :param charge: Molecular charge (default 0)
-        :param multiplicity: Spin multiplicity (default 1)
-        :returns: Molecule instance
-        """
-        xyz_string = Path(path).read_text()
-        return cls.from_xyz(xyz_string, charge=charge, multiplicity=multiplicity)
-
-    @classmethod
-    def _from_stjames(cls, stj: stjames.Molecule) -> Self:
-        """Create from an existing stjames.Molecule (internal use)."""
-        return cls(_stjames=stj)
 
     def __repr__(self) -> str:
         n_atoms = len(self.atoms)
         e_str = f"{self.energy:.6f}" if self.energy is not None else "None"
         return f"<Molecule atoms={n_atoms} energy={e_str}>"
+
+    # -- Constructors (from_*) and converters (to_*) --
+
+    @classmethod
+    def from_smiles(cls, smiles: str) -> Self:
+        """
+        Create molecule from SMILES string.
+
+        :param smiles: SMILES string.
+        :returns: Molecule instance.
+        """
+        return cls(_stjames=stjames.Molecule.from_smiles(smiles))
+
+    @classmethod
+    def from_xyz(cls, xyz_string: str, charge: int = 0, multiplicity: int = 1) -> Self:
+        """
+        Create molecule from XYZ string.
+
+        :param xyz_string: XYZ format string.
+        :param charge: Molecular charge (default 0).
+        :param multiplicity: Spin multiplicity (default 1).
+        :returns: Molecule instance.
+        """
+        stj = stjames.Molecule.from_xyz(xyz_string)
+        stj = stjames.Molecule(atoms=stj.atoms, charge=charge, multiplicity=multiplicity)
+        return cls(_stjames=stj)
+
+    @classmethod
+    def from_xyz_file(cls, path: str | Path, charge: int = 0, multiplicity: int = 1) -> Self:
+        """
+        Create molecule from XYZ file.
+
+        :param path: Path to XYZ file.
+        :param charge: Molecular charge (default 0).
+        :param multiplicity: Spin multiplicity (default 1).
+        :returns: Molecule instance.
+        """
+        return cls.from_xyz(Path(path).read_text(), charge=charge, multiplicity=multiplicity)
+
+    @classmethod
+    def from_stjames(cls, stj: stjames.Molecule) -> Self:
+        """
+        Create from stjames.Molecule.
+
+        :param stj: stjames.Molecule instance.
+        :returns: Molecule instance.
+        """
+        return cls(_stjames=stj)
+
+    def to_xyz(self) -> str:
+        """Convert to XYZ format string."""
+        return self._stjames.to_xyz()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary representation."""
+        return self._stjames.model_dump(mode="json")
+
+    def to_stjames(self) -> stjames.Molecule:
+        """Convert to stjames.Molecule."""
+        return self._stjames
+
+    # -- Properties --
 
     @property
     def charge(self) -> int:
@@ -175,19 +188,7 @@ class Molecule(BaseModel):
         """Nuclear gradient (Hartree/Bohr)."""
         return self._stjames.gradient
 
-    def to_xyz(self) -> str:
-        """Convert to XYZ format string."""
-        return self._stjames.to_xyz()
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary representation."""
-        return self._stjames.model_dump(mode="json")
-
-    def _to_stjames(self) -> stjames.Molecule:
-        """Get the underlying stjames.Molecule (internal use)."""
-        return self._stjames
-
-    # Geometric utilities
+    # -- Geometric utilities --
 
     def distance(self, i: int, j: int) -> float:
         """
@@ -223,6 +224,3 @@ class Molecule(BaseModel):
         :returns: Dihedral angle in degrees (0-360) or radians.
         """
         return self._stjames.dihedral(i, j, k, l, degrees=degrees)
-
-
-__all__ = ["Molecule"]

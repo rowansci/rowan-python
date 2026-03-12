@@ -200,4 +200,4 @@ local/
 cyp/
 
 # AI agent instructions (not part of the project source)
-AGENTS_README.md
+AGENTS.md

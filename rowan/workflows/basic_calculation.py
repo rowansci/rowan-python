@@ -17,7 +17,7 @@ from .constants import to_relative_kcal
 
 @register_result("basic_calculation")
 class BasicCalculationResult(WorkflowResult):
-    """Result from a basic calculation workflow."""
+    """Result from a basic-calculation workflow."""
 
     _stjames_class = stjames.BasicCalculationWorkflow
 
@@ -50,7 +50,7 @@ class BasicCalculationResult(WorkflowResult):
         return calc.molecule if calc else None
 
     @property
-    def molecules(self) -> list:
+    def molecules(self) -> list[Molecule]:
         """All molecules from the calculation (e.g., optimization trajectory)."""
         calc = self.calculation
         return calc.molecules if calc else []
@@ -110,7 +110,7 @@ def submit_basic_calculation_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submit a basic calculation workflow to the API.
+    Submit a basic-calculation workflow to the API.
 
     :param initial_molecule: Molecule to perform the calculation on.
     :param method: Method to use for the calculation.

@@ -5,8 +5,9 @@ from dataclasses import dataclass
 import stjames
 
 from ..protein import Protein, retrieve_protein
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +51,7 @@ class DockingResult(WorkflowResult):
     @property
     def conformers(self) -> list[str]:
         """UUIDs of optimized conformers."""
-        return list(self._workflow.conformers)
+        return self._workflow.conformers
 
     def get_pose(self, index: int = 0) -> Protein:
         """
@@ -136,7 +137,7 @@ def submit_docking_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a Docking workflow to the API.
+    Submits a docking workflow to the API.
 
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param pocket: Binding pocket coordinates [[x,y,z], [x,y,z]].

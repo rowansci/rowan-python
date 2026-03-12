@@ -1,5 +1,6 @@
 """Double-ended TS search workflow - find transition states between reactant and product."""
 
+from dataclasses import dataclass
 from typing import Any
 
 import stjames
@@ -10,6 +11,21 @@ from ..molecule import Molecule
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
 from .constants import to_relative_kcal
+
+
+@dataclass(frozen=True, slots=True)
+class ReactionPathPoint:
+    """
+    Point along the reaction path.
+
+    :param distance: Distance along the reaction path.
+    :param calculation_uuid: UUID of the calculation at this point.
+    :param calculation: Populated by get_path_calculations(), None otherwise.
+    """
+
+    distance: float
+    calculation_uuid: str | None
+    calculation: Calculation | None = None
 
 
 @register_result("double_ended_ts_search")
@@ -28,8 +44,9 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
     def __repr__(self) -> str:
         ts_uuid = self.ts_guess_calculation_uuid
-        n_pts = len(self.distances) if self.distances else 0
-        return f"<DoubleEndedTSSearchResult ts_uuid={ts_uuid!r} path_points={n_pts}>"
+        n_fwd = len(self.forward_path)
+        n_bwd = len(self.backward_path)
+        return f"<DoubleEndedTSSearchResult ts_uuid={ts_uuid!r} fwd={n_fwd} bwd={n_bwd}>"
 
     @property
     def ts_guess_calculation_uuid(self) -> str | None:
@@ -53,28 +70,72 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         mol = self.ts_molecule
         return mol.energy if mol else None
 
-    @property
-    def molecules(self) -> list[Molecule]:
-        """Molecules along the reaction path (trajectory)."""
-        calc = self.ts_guess_calculation
-        return calc.molecules if calc else []
+    def get_path_calculations(self) -> list[ReactionPathPoint]:
+        """
+        Fetch all path point calculations, sorted by distance.
+
+        Combines forward (reactant → TS) and backward (product → TS) points,
+        sorted by distance, each with its Calculation populated.
+        Results are cached after the first call.
+
+        .. note::
+            Makes one API call per path point on first access.
+
+        :returns: List of ReactionPathPoints with calculations populated, sorted by distance.
+        """
+        if "path_calculations" not in self._cache:
+            all_points = sorted(self.forward_path + self.backward_path, key=lambda p: p.distance)
+            self._cache["path_calculations"] = [
+                ReactionPathPoint(
+                    distance=p.distance,
+                    calculation_uuid=p.calculation_uuid,
+                    calculation=retrieve_calculation(p.calculation_uuid)
+                    if p.calculation_uuid
+                    else None,
+                )
+                for p in all_points
+            ]
+        return self._cache["path_calculations"]
 
     def get_path_energies(self, relative: bool = False) -> list[float]:
         """
-        Get energies along the reaction path.
+        Get energies along the reaction path, sorted by distance.
 
         :param relative: If True, return relative energies in kcal/mol (relative to
             the lowest energy point). If False (default), return absolute energies
             in Hartree.
         :returns: List of energies along the reaction path.
         """
-        energies: list[float] = [m.energy for m in self.molecules]  # type: ignore[misc]
+        energies: list[float] = [
+            p.calculation.energy
+            for p in self.get_path_calculations()
+            if p.calculation and p.calculation.energy is not None
+        ]
         return to_relative_kcal(energies) if relative else energies
 
     @property
-    def distances(self) -> list[float] | None:
-        """Path distances from reactant to product."""
-        return list(self._workflow.distances) if self._workflow.distances else None
+    def forward_path(self) -> list[ReactionPathPoint]:
+        """Reaction path points from reactant to TS."""
+        return [
+            ReactionPathPoint(distance=d, calculation_uuid=uuid)
+            for d, uuid in zip(
+                self._workflow.forward_string_distances,
+                self._workflow.forward_calculation_uuids,
+                strict=False,
+            )
+        ]
+
+    @property
+    def backward_path(self) -> list[ReactionPathPoint]:
+        """Reaction path points from product to TS."""
+        return [
+            ReactionPathPoint(distance=d, calculation_uuid=uuid)
+            for d, uuid in zip(
+                self._workflow.backward_string_distances,
+                self._workflow.backward_calculation_uuids,
+                strict=False,
+            )
+        ]
 
 
 def submit_double_ended_ts_search_workflow(

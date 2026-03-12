@@ -4,10 +4,9 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -63,7 +62,7 @@ class NMRResult(WorkflowResult):
     @property
     def conformer_uuids(self) -> list[str]:
         """UUIDs of the conformer calculations."""
-        return list(self._workflow.conformers or [])
+        return self._workflow.conformers
 
     @property
     def predicted_peaks(self) -> dict[int, list[NMRPeak]]:

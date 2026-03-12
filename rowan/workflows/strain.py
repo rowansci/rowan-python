@@ -36,7 +36,7 @@ class StrainResult(WorkflowResult):
     @property
     def conformer_uuids(self) -> list[str | None]:
         """UUIDs of conformer calculations."""
-        return list(self._workflow.conformers)
+        return self._workflow.conformers
 
     @property
     def constrained_optimization_uuid(self) -> str | None:
@@ -51,8 +51,7 @@ class StrainResult(WorkflowResult):
     @property
     def constrained_optimization(self) -> Calculation | None:
         """The constrained optimization calculation."""
-        uuid = self.constrained_optimization_uuid
-        if not uuid:
+        if not (uuid := self.constrained_optimization_uuid):
             return None
 
         if "constrained_opt" not in self._cache:
@@ -63,8 +62,9 @@ class StrainResult(WorkflowResult):
     def conformers(self) -> list[Calculation]:
         """All conformer calculations.
 
-        Note: Makes one API call per conformer on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per conformer on first access.
+            Results are cached. Call clear_cache() to refresh.
         """
         if "all_conformers" not in self._cache:
             calcs = []

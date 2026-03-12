@@ -678,35 +678,3 @@ def get_cofolding_model_settings(model: str) -> CofoldingModelSettings | None:
     :returns: Settings for the model, or None if not found.
     """
     return COFOLDING_MODEL_SETTINGS.get(model)
-
-
-__all__ = [
-    "BASIS_SET_ATOMS",
-    "BINDER_DESIGN_SETTINGS",
-    "COFOLDING_MODEL_SETTINGS",
-    "CONFORMER_GENERATOR_SETTINGS",
-    "DOCKING_CSEARCH_REQUIRES_OPTIMIZATION",
-    "ENGINE_SETTINGS",
-    "MACROPKA_SETTINGS",
-    "MD_SETTINGS",
-    "METHOD_SETTINGS",
-    "SOLUBILITY_METHOD_SETTINGS",
-    "TAUTOMER_ATOMS_SUPPORTED",
-    "VINARDO_SUPPORTED_EXECUTABLES",
-    "BinderDesignSettings",
-    "CofoldingModelSettings",
-    "ConformerGeneratorSettings",
-    "EngineSettings",
-    "MDSettings",
-    "MacroPKaSettings",
-    "MethodSettings",
-    "SolubilityMethodSettings",
-    "Task",
-    "get_cofolding_model_settings",
-    "get_combined_settings",
-    "get_conformer_generator_settings",
-    "get_engine_settings",
-    "get_engines_for_method",
-    "get_method_settings",
-    "get_solubility_method_settings",
-]

@@ -17,16 +17,12 @@ class TrajectoryResult:
 
     :param uuid: UUID of the trajectory calculation.
     :param ligand_rmsd: Ligand RMSD values over time (Angstrom).
-    :param contacts: Contact analysis data between ligand and protein.
-    :param cluster_indices_by_frame: Cluster assignment for each frame (0-indexed).
-    :param cluster_centroid_indices: Frame indices of cluster centroids.
+    :param contacts: Ligand-protein contacts with occupancy over the trajectory.
     """
 
     uuid: str
     ligand_rmsd: list[float]
-    contacts: dict
-    cluster_indices_by_frame: list[int]
-    cluster_centroid_indices: list[int]
+    contacts: list[stjames.BindingPoseContact]
 
 
 @register_result("pose_analysis_md")
@@ -37,13 +33,7 @@ class PoseAnalysisMDResult(WorkflowResult):
 
     def __repr__(self) -> str:
         n_traj = len(self.trajectories)
-        n_clust = self.num_clusters
-        return f"<PoseAnalysisMDResult trajectories={n_traj} clusters={n_clust}>"
-
-    @property
-    def num_clusters(self) -> int | None:
-        """Number of conformational clusters identified across all trajectories."""
-        return getattr(self._workflow, "num_clusters", None)
+        return f"<PoseAnalysisMDResult trajectories={n_traj}>"
 
     @property
     def trajectories(self) -> list[TrajectoryResult]:
@@ -53,18 +43,10 @@ class PoseAnalysisMDResult(WorkflowResult):
         Each trajectory contains RMSD values, contact analysis, and cluster assignments.
         """
         raw = getattr(self._workflow, "trajectories", []) or []
-        results: list[TrajectoryResult] = []
-        for t in raw:
-            results.append(
-                TrajectoryResult(
-                    uuid=t.uuid,
-                    ligand_rmsd=list(t.ligand_rmsd or []),
-                    contacts=dict(t.contacts) if t.contacts else {},
-                    cluster_indices_by_frame=list(t.cluster_indices_by_frame or []),
-                    cluster_centroid_indices=list(t.cluster_centroid_indices or []),
-                )
-            )
-        return results
+        return [
+            TrajectoryResult(uuid=t.uuid, ligand_rmsd=t.ligand_rmsd, contacts=t.contacts)
+            for t in raw
+        ]
 
     @property
     def average_rmsds(self) -> list[float | None]:
@@ -83,13 +65,13 @@ class PoseAnalysisMDResult(WorkflowResult):
         """
         Fetch the energy-minimized protein structure.
 
-        Note: Makes one API call on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call on first access.
+            Results are cached. Call clear_cache() to refresh.
 
         :returns: Protein object or None if not available.
         """
-        uuid = self.minimized_protein_uuid
-        if not uuid:
+        if not (uuid := self.minimized_protein_uuid):
             return None
         if "minimized_protein" not in self._cache:
             self._cache["minimized_protein"] = retrieve_protein(uuid)
@@ -99,6 +81,31 @@ class PoseAnalysisMDResult(WorkflowResult):
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow."""
         return parse_messages(getattr(self._workflow, "messages", None))
+
+    def get_atom_distances(
+        self,
+        atom_pairs: list[tuple[int, int]],
+        replicate: int = 0,
+    ) -> list[list[float]]:
+        """
+        Fetch interatomic distances over the trajectory for specified atom pairs.
+
+        Atom indices can be found in the ``contacts`` field of each trajectory,
+        which provides ``ligand_atom_index`` and ``protein_atom_index`` for each contact.
+
+        :param atom_pairs: List of (atom_i, atom_j) index pairs (0-indexed).
+        :param replicate: Trajectory replicate index (default 0).
+        :returns: List of distance arrays, one per pair, over all frames (Angstrom).
+        :raises HTTPError: If the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(
+                f"/trajectory/{self.workflow_uuid}/atom_trajectories",
+                params={"replicate": replicate},
+                json=atom_pairs,
+            )
+            response.raise_for_status()
+        return response.json()
 
     def download_trajectories(
         self,

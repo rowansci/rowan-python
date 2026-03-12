@@ -22,14 +22,14 @@ class MSAResult(WorkflowResult):
 
     @property
     def _output_formats(self) -> list[str]:
-        """Output formats requested for the MSA (internal use)."""
+        """Output formats requested for the MSA."""
         fmts = getattr(self._workflow, "output_formats", []) or []
         return [f.value if hasattr(f, "value") else str(f) for f in fmts]
 
     def download_files(
         self,
         format: MSAOutputFormat | None = None,
-        path: Path | None = None,
+        path: Path | str | None = None,
     ) -> list[Path]:
         """
         Download MSA files for this workflow.
@@ -45,8 +45,7 @@ class MSAResult(WorkflowResult):
                 f"Format '{format}' was not requested. Available formats: {self._output_formats}"
             )
 
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +70,7 @@ class MSAResult(WorkflowResult):
 
 def submit_msa_workflow(
     initial_protein_sequences: list[str | stjames.ProteinSequence],
-    output_formats: list[MSAOutputFormat | stjames.MSAFormat] | None = None,
+    output_formats: set[MSAOutputFormat | stjames.MSAFormat] | None = None,
     name: str = "MSA Workflow",
     folder_uuid: str | None = None,
     max_credits: int | None = None,
@@ -80,7 +79,8 @@ def submit_msa_workflow(
     Submits a Multiple Sequence Alignment (MSA) workflow to the API.
 
     :param initial_protein_sequences: List of protein sequences to align (amino acid strings).
-    :param output_formats: Output formats for the MSA files. Options: "colabfold", "chai", "boltz".
+    :param output_formats: Output formats for the MSA files ("colabfold", "chai", "boltz").
+        Defaults to {"colabfold"}.
     :param name: Name to assign to the workflow.
     :param folder_uuid: UUID of the folder where the workflow will be stored.
     :param max_credits: Maximum number of credits to use for the workflow.
@@ -88,7 +88,7 @@ def submit_msa_workflow(
     :raises HTTPError: If the API request fails.
     """
     if output_formats is None:
-        output_formats = ["colabfold"]
+        output_formats = {"colabfold"}
 
     # Convert to stjames types
     protein_sequences = []

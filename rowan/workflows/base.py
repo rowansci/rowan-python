@@ -6,28 +6,23 @@ import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Self, TypeAlias
+from typing import Any, Callable, ClassVar, Self
 
 import stjames
 from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
 
 from ..molecule import Molecule as RowanMolecule
+from ..types import SMILES, MoleculeInput
 from ..utils import api_client
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
-StJamesMolecule: TypeAlias = stjames.Molecule
-MoleculeInput: TypeAlias = dict[str, Any] | RowanMolecule | StJamesMolecule | RdkitMol
-
 # Re-export stjames types for convenience
 Mode = stjames.Mode
 Solvent = stjames.Solvent
 MessageType = stjames.MessageType
-
-SolventInput: TypeAlias = Solvent | str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,9 +131,8 @@ def create_result(
 
 
 class Workflow(BaseModel):
-    """A Rowan workflow.
+    """Rowan workflow base model, returned by submit workflow functions.
 
-    Don't instantiate this class directly. Instead use one of the submit workflow functions.
     Workflow data is not loaded by default to avoid unnecessary downloads that could impact
     performance. Call `fetch_latest()` to fetch and attach the workflow data.
 
@@ -279,7 +273,7 @@ Workflow:  {self.name}
         for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
 
-            self.model_rebuild()
+        self.model_rebuild()
 
         return self
 
@@ -298,44 +292,28 @@ Workflow:  {self.name}
             stjames.Status.STOPPED,
         }
 
-    def result(self, poll_interval: int = 5) -> "WorkflowResult":
+    def result(self, wait: bool = True, poll_interval: int = 5) -> "WorkflowResult":
         """
-        Wait for completion and return the typed result.
+        Return the typed result, optionally waiting for completion.
 
-        Follows the concurrent.futures.Future.result() pattern: blocks until
-        the workflow completes, then returns a typed result object.
+        Follows the concurrent.futures.Future.result() pattern.
 
+        :param wait: If True (default), block until the workflow completes.
+            If False, return immediately with whatever data is available.
         :param poll_interval: Seconds between status checks while waiting.
         :returns: WorkflowResult subclass with typed access to results.
         :raises WorkflowError: If the workflow failed or was stopped.
         """
-        # Wait for completion
-        while not self.done():
-            time.sleep(poll_interval)
+        if wait:
+            while not self.done():
+                time.sleep(poll_interval)
 
-        # Fetch the latest data
         self.fetch_latest(in_place=True)
 
-        # Check for failure
         if self.status in {stjames.Status.FAILED, stjames.Status.STOPPED}:
             status = self.status.name.lower()
             raise WorkflowError(f"Workflow '{self.name}' {status} (uuid={self.uuid})")
 
-        return create_result(self.data or {}, self.workflow_type, self.uuid)
-
-    def peek(self) -> WorkflowResult:
-        """
-        Get current results without waiting.
-
-        Returns a typed result from whatever data the server has right now.
-        Useful for checking progress on long-running jobs or salvaging
-        partial results from failed jobs.
-
-        Never raises WorkflowError - just returns what's available.
-
-        :returns: WorkflowResult with current data (may be partial).
-        """
-        self.fetch_latest(in_place=True)
         return create_result(self.data or {}, self.workflow_type, self.uuid)
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
@@ -466,7 +444,7 @@ Workflow:  {self.name}
             f.write(response.content)
 
 
-def extract_smiles(mol: "str | MoleculeInput") -> str:
+def extract_smiles(mol: SMILES | MoleculeInput) -> SMILES:
     """
     Extract a SMILES string from a molecule input or return the string directly.
 
@@ -499,7 +477,7 @@ def molecule_to_stjames(mol: MoleculeInput) -> stjames.Molecule:
     """Convert any molecule input type to a stjames.Molecule."""
     match mol:
         case RowanMolecule():
-            return mol._to_stjames()
+            return mol.to_stjames()
         case stjames.Molecule():
             return mol
         case Chem.Mol():
@@ -519,7 +497,7 @@ def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
     """
     match mol:
         case RowanMolecule():
-            return mol._to_stjames().model_dump(mode="json")
+            return mol.to_stjames().model_dump(mode="json")
         case stjames.Molecule():
             return mol.model_dump(mode="json")
         case Chem.Mol():

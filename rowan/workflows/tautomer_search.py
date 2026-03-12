@@ -1,4 +1,4 @@
-"""Tautomer search workflow - find tautomeric forms of molecules."""
+"""Tautomer-search workflow - find tautomeric forms of molecules."""
 
 from dataclasses import dataclass
 
@@ -21,24 +21,24 @@ from .base import (
 
 @dataclass(frozen=True, slots=True)
 class Tautomer:
-    """A tautomer result."""
+    """
+    Tautomer result.
+
+    :param energy: Energy in Hartree.
+    :param weight: Boltzmann weight (sum to 1.0 across all tautomers).
+    :param predicted_relative_energy: Relative energy in kcal/mol (relative to lowest energy).
+    :param structure_uuids: UUIDs of the structure calculations.
+    """
 
     energy: float
-    """Energy in Hartree."""
-
     weight: float
-    """Boltzmann weight (sum to 1.0 across all tautomers)."""
-
     predicted_relative_energy: float
-    """Relative energy in kcal/mol (relative to lowest energy tautomer)."""
-
     structure_uuids: tuple[str, ...]
-    """UUIDs of the structure calculations."""
 
 
 @register_result("tautomers")
 class TautomerResult(WorkflowResult):
-    """Result from a tautomer search workflow."""
+    """Result from a tautomer-search workflow."""
 
     _stjames_class = stjames.TautomerWorkflow
 
@@ -86,8 +86,9 @@ class TautomerResult(WorkflowResult):
     def molecules(self) -> list[Molecule]:
         """Molecules for all tautomers.
 
-        Note: Makes one API call per tautomer on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per tautomer on first access.
+            Results are cached. Call clear_cache() to refresh.
         """
         if "all_molecules" not in self._cache:
             mols = []
@@ -108,7 +109,7 @@ def submit_tautomer_search_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a tautomer search workflow to the API.
+    Submits a tautomer-search workflow to the API.
 
     :param initial_molecule: Molecule to find tautomers for.
     :param mode: Mode to run the calculation in (reckless, rapid, careful).

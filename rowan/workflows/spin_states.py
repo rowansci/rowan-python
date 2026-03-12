@@ -1,4 +1,4 @@
-"""Spin states workflow - calculate energies of different spin multiplicities."""
+"""Spin-states workflow - calculate energies of different spin multiplicities."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -6,12 +6,11 @@ from typing import Any
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
     Message,
     Mode,
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -39,21 +38,22 @@ def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
 
 @dataclass(frozen=True, slots=True)
 class SpinState:
-    """A spin state result."""
+    """
+    Spin state result.
+
+    :param multiplicity: Spin multiplicity (1=singlet, 2=doublet, 3=triplet, etc.).
+    :param energy: Energy in Hartree.
+    :param calculation_uuids: UUIDs for each optimization stage (for multistage optimization).
+    """
 
     multiplicity: int
-    """Spin multiplicity (1=singlet, 2=doublet, 3=triplet, etc.)."""
-
     energy: float
-    """Energy in Hartree."""
-
     calculation_uuids: tuple[str | None, ...]
-    """UUIDs for each optimization stage (for multistage optimization)."""
 
 
 @register_result("spin_states")
 class SpinStatesResult(WorkflowResult):
-    """Result from a spin states workflow."""
+    """Result from a spin-states workflow."""
 
     _stjames_class = stjames.SpinStatesWorkflow
 
@@ -86,8 +86,9 @@ class SpinStatesResult(WorkflowResult):
         """
         Fetch the calculation for a specific spin state.
 
-        Note: Makes one API call per spin state on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per spin state on first access.
+            Results are cached. Call clear_cache() to refresh.
 
         :param multiplicity: Spin multiplicity to fetch.
         :param stage: Optimization stage (-1 for final stage).
@@ -120,7 +121,7 @@ class SpinStatesResult(WorkflowResult):
             return absolute energies in Hartree.
         :returns: List of energies for each spin state.
         """
-        energies: list[float] = list(self._workflow.energies)
+        energies: list[float] = [s.energy for s in self.spin_states]
         return to_relative_kcal(energies) if relative else energies
 
 
@@ -136,7 +137,7 @@ def submit_spin_states_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a spin states workflow to the API.
+    Submits a spin-states workflow to the API.
 
     :param initial_molecule: Molecule to calculate spin states for.
     :param states: List of multiplicities to calculate

@@ -4,8 +4,9 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,7 +25,7 @@ class MolecularOrbital:
 
 @register_result("electronic_properties")
 class ElectronicPropertiesResult(WorkflowResult):
-    """Result from an electronic properties workflow."""
+    """Result from an electronic-properties workflow."""
 
     _stjames_class = stjames.ElectronicPropertiesWorkflow
 
@@ -135,7 +136,7 @@ def submit_electronic_properties_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits an electronic properties workflow to the API.
+    Submits an electronic-properties workflow to the API.
 
     :param initial_molecule: Molecule to calculate electronic properties for.
     :param method: Method to use for the calculation.

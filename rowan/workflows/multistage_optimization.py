@@ -4,11 +4,10 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
     Mode,
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -18,7 +17,7 @@ from .base import (
 
 @register_result("multistage_opt")
 class MultiStageOptResult(WorkflowResult):
-    """Result from a multistage optimization workflow."""
+    """Result from a multistage-optimization workflow."""
 
     _stjames_class = stjames.MultiStageOptWorkflow
 
@@ -102,7 +101,7 @@ def submit_multistage_optimization_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a multistage optimization workflow to the API.
+    Submits a multistage-optimization workflow to the API.
 
     :param initial_molecule: Molecule to optimize.
     :param mode: Mode to run the calculation in.

@@ -1,17 +1,18 @@
-"""Hydrogen bond donor/acceptor strength workflow."""
+"""Hydrogen-bond donor/acceptor-strength workflow."""
 
 import math
 from dataclasses import dataclass
 
 import stjames
 
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import MoleculeInput, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
 
 @dataclass(frozen=True, slots=True)
 class HydrogenBondAcceptorSite:
-    """A hydrogen bond acceptor site."""
+    """Hydrogen-bond-acceptor site."""
 
     atom_idx: int
     pkbhx: float
@@ -21,7 +22,7 @@ class HydrogenBondAcceptorSite:
 
 @dataclass(frozen=True, slots=True)
 class HydrogenBondDonorSite:
-    """A hydrogen bond donor site."""
+    """Hydrogen-bond-donor site."""
 
     atom_idx: int
     pk_alpha: float
@@ -30,7 +31,7 @@ class HydrogenBondDonorSite:
 
 @register_result("hydrogen_bond_basicity")
 class HydrogenBondDonorAcceptorStrengthResult(WorkflowResult):
-    """Result from a hydrogen bond donor/acceptor strength workflow."""
+    """Result from a hydrogen-bond donor/acceptor-strength workflow."""
 
     _stjames_class = stjames.HydrogenBondBasicityWorkflow
 
@@ -90,7 +91,7 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a hydrogen bond donor/acceptor strength workflow to the API.
+    Submits a hydrogen-bond donor/acceptor-strength workflow to the API.
 
     :param initial_molecule: Molecule to calculate HBA/HBD strength for.
     :param do_csearch: Whether to perform a conformational search.

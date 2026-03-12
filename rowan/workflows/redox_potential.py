@@ -18,7 +18,7 @@ from .base import (
 
 @register_result("redox_potential")
 class RedoxPotentialResult(WorkflowResult):
-    """Result from a redox potential workflow."""
+    """Result from a redox-potential workflow."""
 
     _stjames_class = stjames.RedoxPotentialWorkflow
 
@@ -59,8 +59,7 @@ class RedoxPotentialResult(WorkflowResult):
 
     def get_neutral_molecule(self) -> Calculation | None:
         """Fetch the optimized neutral molecule calculation."""
-        uuid = self.neutral_molecule_uuid
-        if not uuid:
+        if not (uuid := self.neutral_molecule_uuid):
             return None
         if "neutral_molecule" not in self._cache:
             self._cache["neutral_molecule"] = retrieve_calculation(uuid)
@@ -68,8 +67,7 @@ class RedoxPotentialResult(WorkflowResult):
 
     def get_cation_molecule(self) -> Calculation | None:
         """Fetch the optimized cation (oxidized) molecule calculation."""
-        uuid = self.cation_molecule_uuid
-        if not uuid:
+        if not (uuid := self.cation_molecule_uuid):
             return None
         if "cation_molecule" not in self._cache:
             self._cache["cation_molecule"] = retrieve_calculation(uuid)
@@ -77,8 +75,7 @@ class RedoxPotentialResult(WorkflowResult):
 
     def get_anion_molecule(self) -> Calculation | None:
         """Fetch the optimized anion (reduced) molecule calculation."""
-        uuid = self.anion_molecule_uuid
-        if not uuid:
+        if not (uuid := self.anion_molecule_uuid):
             return None
         if "anion_molecule" not in self._cache:
             self._cache["anion_molecule"] = retrieve_calculation(uuid)
@@ -100,7 +97,7 @@ def submit_redox_potential_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a redox potential workflow to the API.
+    Submits a redox-potential workflow to the API.
 
     :param initial_molecule: Molecule to calculate the redox potential of.
     :param reduction: Whether to calculate the reduction potential.

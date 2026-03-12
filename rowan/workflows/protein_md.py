@@ -34,13 +34,13 @@ class ProteinMDResult(WorkflowResult):
         """
         Fetch the energy-minimized protein structure.
 
-        Note: Makes one API call on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call on first access.
+            Results are cached. Call clear_cache() to refresh.
 
         :returns: Protein object or None if not available.
         """
-        uuid = self.minimized_protein_uuid
-        if not uuid:
+        if not (uuid := self.minimized_protein_uuid):
             return None
         if "minimized_protein" not in self._cache:
             self._cache["minimized_protein"] = retrieve_protein(uuid)
@@ -61,7 +61,7 @@ class ProteinMDResult(WorkflowResult):
         self,
         replicates: list[int],
         name: str | None = None,
-        path: Path | None = None,
+        path: Path | str | None = None,
     ) -> Path:
         """
         Download DCD trajectory files for specified replicates.
@@ -72,8 +72,7 @@ class ProteinMDResult(WorkflowResult):
         :returns: Path to the downloaded tar.gz file.
         :raises HTTPError: If the API request fails.
         """
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 

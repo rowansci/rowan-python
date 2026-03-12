@@ -114,7 +114,7 @@ class Protein(BaseModel):
             response = client.post(f"/protein/sanitize/{self.uuid}")
             response.raise_for_status()
 
-    def download_pdb_file(self, path: Path | None = None, name: str | None = None) -> None:
+    def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:
         """
         Downloads the PDB file for a protein
 
@@ -122,8 +122,7 @@ class Protein(BaseModel):
         :param name: Optional custom name for the file (defaults to protein name)
         :raises requests.HTTPError: if the request to the API fails
         """
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 

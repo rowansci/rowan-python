@@ -64,7 +64,7 @@ def submit_bde_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a bond dissociation energy (BDE) workflow to the API.
+    Submits a Bond-Dissociation Energy (BDE) workflow to the API.
 
     :param initial_molecule: Molecule to calculate BDEs for.
     :param mode: Mode to run the calculation in.

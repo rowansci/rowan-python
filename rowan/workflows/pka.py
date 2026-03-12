@@ -6,11 +6,10 @@ from typing import Literal
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
     Mode,
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -21,11 +20,16 @@ from .base import (
 @dataclass(frozen=True, slots=True)
 class pKaMicrostate:
     """
-    A microstate from a pKa calculation.
+    Microstate from a pKa calculation.
 
-    Note: Available fields depend on the pKa method used.
-    - aimnet2_wagen2024: has delta_g
-    - chemprop_nevolianis2025: has smiles and uncertainty
+    Available fields depend on the pKa method used:
+    aimnet2_wagen2024 provides delta_g; chemprop_nevolianis2025 provides smiles and uncertainty.
+
+    :param atom_index: Index of the protonation site atom.
+    :param pka: Predicted pKa value.
+    :param smiles: SMILES of the microstate (chemprop_nevolianis2025 only).
+    :param delta_g: Free energy of (de)protonation in kcal/mol (aimnet2_wagen2024 only).
+    :param uncertainty: Prediction uncertainty (chemprop_nevolianis2025 only).
     """
 
     atom_index: int
@@ -83,14 +87,7 @@ class pKaResult(WorkflowResult):
 
     def _get_structure_uuids(self) -> list[str]:
         """Extract structure UUIDs from workflow data."""
-        structures = getattr(self._workflow, "structures", None) or []
-        uuids = []
-        for s in structures:
-            if s:
-                uuid = s.get("uuid") if isinstance(s, dict) else getattr(s, "uuid", None)
-                if uuid:
-                    uuids.append(uuid)
-        return uuids
+        return [s.uuid for s in self._workflow.structures]
 
     @property
     def structures(self) -> list[Calculation]:
@@ -99,8 +96,9 @@ class pKaResult(WorkflowResult):
 
         Only available for aimnet2_wagen2024 method (3D structure-based).
 
-        Note: Makes one API call per structure on first access.
-        Results are cached. Call clear_cache() to refresh.
+        .. note::
+            Makes one API call per structure on first access.
+            Results are cached. Call clear_cache() to refresh.
 
         :raises ValueError: If method is chemprop_nevolianis2025 (no structures).
         """

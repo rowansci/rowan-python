@@ -4,10 +4,9 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..molecule import Molecule
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
-    SolventInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -73,7 +72,8 @@ class IRCResult(WorkflowResult):
 
         :returns: List of Calculation objects along the forward path.
 
-        Note: Makes one API call per step. Results are cached.
+        .. note::
+            Makes one API call per step. Results are cached.
         """
         if "forward_calcs" not in self._cache:
             calcs = [retrieve_calculation(uuid) for uuid in self.forward_uuids]
@@ -86,7 +86,8 @@ class IRCResult(WorkflowResult):
 
         :returns: List of Calculation objects along the backward path.
 
-        Note: Makes one API call per step. Results are cached.
+        .. note::
+            Makes one API call per step. Results are cached.
         """
         if "backward_calcs" not in self._cache:
             calcs = [retrieve_calculation(uuid) for uuid in self.backward_uuids]

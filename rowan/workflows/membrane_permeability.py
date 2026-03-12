@@ -16,7 +16,7 @@ from .base import (
 
 @register_result("membrane_permeability")
 class MembranePermeabilityResult(WorkflowResult):
-    """Result from a membrane permeability workflow."""
+    """Result from a membrane-permeability workflow."""
 
     _stjames_class = stjames.MembranePermeabilityWorkflow
 
@@ -69,7 +69,7 @@ def submit_membrane_permeability_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a membrane permeability workflow to the API.
+    Submits a membrane-permeability workflow to the API.
 
     :param initial_molecule: Molecule used in the workflow.
     :param method: Method used to compute membrane permeability.
@@ -88,7 +88,8 @@ def submit_membrane_permeability_workflow(
 
     match method:
         case "gnn-mtl":
-            assert isinstance(initial_molecule, str)
+            if not isinstance(initial_molecule, str):
+                raise ValueError("initial_molecule must be a SMILES string for the gnn-mtl method")
             workflow = stjames.MembranePermeabilityWorkflow(
                 initial_smiles=initial_molecule,
                 membrane_permeability_method="chemprop_ohlsson2025",

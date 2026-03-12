@@ -14,76 +14,60 @@ BinderProtocol = stjames.BoltzGenProtocol
 
 @dataclass(frozen=True, slots=True)
 class BinderScores:
-    """Scores for a generated protein binder design."""
+    """
+    Scores for a generated protein binder design.
+
+    :param iptm: Interface predicted TM-score (0-1, higher is better).
+    :param design_ptm: Predicted TM-score for the designed binder (0-1).
+    :param quality_score: Overall quality score (0-1, higher is better).
+    :param bb_rmsd: Backbone RMSD compared to initial structure (Angstrom).
+    :param loop: Fraction of residues in loop conformation.
+    :param helix: Fraction of residues in helix conformation.
+    :param sheet: Fraction of residues in sheet conformation.
+    :param liability_score: Liability score (lower is better).
+    :param liability_num_violations: Number of liability violations.
+    :param liability_high_severity_violations: Number of high-severity liability violations.
+    :param min_interaction_pae: Minimum predicted aligned error at the interface.
+    :param delta_sasa_refolded: Change in solvent-accessible surface area upon binding (A^2).
+    :param plip_hbonds_refolded: Number of hydrogen bonds at the interface.
+    :param plip_saltbridge_refolded: Number of salt bridges at the interface.
+    :param num_tokens: Number of tokens in the design.
+    :param design_hydrophobicity: Hydrophobicity of the designed binder.
+    :param num_filters_passed: Number of quality filters passed.
+    """
 
     iptm: float | None = None
-    """Interface predicted TM-score (0-1, higher is better)."""
-
     design_ptm: float | None = None
-    """Predicted TM-score for the designed binder (0-1)."""
-
     quality_score: float | None = None
-    """Overall quality score (0-1, higher is better)."""
-
     bb_rmsd: float | None = None
-    """Backbone RMSD compared to initial structure (Angstrom)."""
-
-    # Secondary structure fractions
     loop: float | None = None
-    """Fraction of residues in loop conformation."""
-
     helix: float | None = None
-    """Fraction of residues in helix conformation."""
-
     sheet: float | None = None
-    """Fraction of residues in sheet conformation."""
-
-    # Liability metrics
     liability_score: float | None = None
-    """Liability score (lower is better)."""
-
     liability_num_violations: int | None = None
-    """Number of liability violations."""
-
     liability_high_severity_violations: int | None = None
-    """Number of high-severity liability violations."""
-
-    # Interaction metrics
     min_interaction_pae: float | None = None
-    """Minimum predicted aligned error at the interface."""
-
     delta_sasa_refolded: float | None = None
-    """Change in solvent-accessible surface area upon binding (A^2)."""
-
     plip_hbonds_refolded: int | None = None
-    """Number of hydrogen bonds at the interface."""
-
     plip_saltbridge_refolded: int | None = None
-    """Number of salt bridges at the interface."""
-
-    # Other metrics
     num_tokens: int | None = None
-    """Number of tokens in the design."""
-
     design_hydrophobicity: float | None = None
-    """Hydrophobicity of the designed binder."""
-
     num_filters_passed: int | None = None
-    """Number of quality filters passed."""
 
 
 @dataclass(frozen=True, slots=True)
 class ProteinBinder:
-    """A generated protein binder design."""
+    """
+    Generated protein binder design.
+
+    :param bound_structure_uuid: UUID of the bound structure (binder + target complex).
+    :param sequence: Amino acid sequence of the designed binder.
+    :param scores: Detailed scores for the binder design.
+    """
 
     bound_structure_uuid: str | None = None
-    """UUID of the bound structure (binder + target complex)."""
-
     sequence: str | None = None
-    """Amino acid sequence of the designed binder."""
-
     scores: BinderScores | None = None
-    """Detailed scores for the binder design."""
 
     # Convenience accessors for common scores
     @property
@@ -99,7 +83,7 @@ class ProteinBinder:
 
 @register_result("protein_binder_design")
 class ProteinBinderDesignResult(WorkflowResult):
-    """Result from a protein binder design workflow."""
+    """Result from a protein-binder-design workflow."""
 
     _stjames_class = stjames.ProteinBinderDesignWorkflow
 
@@ -163,7 +147,7 @@ def submit_protein_binder_design_workflow(
     max_credits: int | None = None,
 ) -> Workflow:
     """
-    Submits a protein binder design workflow to the API.
+    Submits a protein-binder-design workflow to the API.
 
     :param binder_design_input: Input specification for the binder design (BoltzGenInput format).
     :param protocol: Design protocol to use. Options:
