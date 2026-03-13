@@ -13,7 +13,7 @@ from stjames.optimization.freezing_string_method import (
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 HCN = Molecule.from_xyz(
@@ -52,10 +52,9 @@ workflow = rowan.submit_double_ended_ts_search_workflow(
 print(
     f"View workflow privately at: https://labs.rowansci.com/double-ended-ts-search/{workflow.uuid}"
 )
-workflow.wait_for_result().fetch_latest(in_place=True)
+result = workflow.result()
 
-assert workflow and workflow.data
-print(workflow.data["forward_string_distances"])
-print(workflow.data["backward_string_distances"])
+print([p.distance for p in result.forward_path])
+print([p.distance for p in result.backward_path])
 
-print(workflow)
+print(result)

@@ -6,7 +6,7 @@ from stjames import MSAFormat
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 example_fasta = (
@@ -30,9 +30,9 @@ msa_workflow = rowan.submit_msa_workflow(
     name="CHAI Paired MSA Example",
 )
 
-msa_workflow.wait_for_result().fetch_latest(in_place=True)
+msa_result = msa_workflow.result()
 
-msa_workflow.download_msa_files(MSAFormat.CHAI, path=msa_directory)
+msa_result.download_files(MSAFormat.CHAI, path=msa_directory)
 
 tar_path = next(msa_directory.glob("*.tar.gz"))
 with tarfile.open(tar_path, "r") as tar_ref:

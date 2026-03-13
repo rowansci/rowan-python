@@ -14,7 +14,7 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 workflow = rowan.submit_multistage_optimization_workflow(
@@ -24,5 +24,5 @@ workflow = rowan.submit_multistage_optimization_workflow(
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data)
+result = workflow.result()
+print(result)

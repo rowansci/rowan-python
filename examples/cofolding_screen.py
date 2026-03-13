@@ -1,7 +1,10 @@
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# WARNING: This example submits many workflows and will consume significant credits.
+
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/cofolding-screen")
 
 HARTREE_TO_KCALMOL = 627.5096
 
@@ -110,7 +113,6 @@ ligands = [
 
 workflows = []
 results = {}
-cofolding_result_folder = rowan.create_folder(name="Cofolding results")
 
 for ligand in ligands:
     workflow = rowan.submit_protein_cofolding_workflow(
@@ -120,15 +122,13 @@ for ligand in ligands:
         initial_smiles_list=[ligand],
         ligand_binding_affinity_index=0,
         name=f"Cofolding {ligand}",
-        folder_uuid=cofolding_result_folder.uuid,
+        folder_uuid=folder,
     )
     workflows.append(workflow)
 
-for workflow in workflows:
-    workflow.wait_for_result()
-    workflow.fetch_latest(in_place=True)
+workflow_results = [(w, w.result()) for w in workflows]
 
-for workflow in workflows:
-    results[workflow.name] = workflow.data["affinity_score"]["probability_binary"]
+for workflow, result in workflow_results:
+    results[workflow.name] = result.affinity_score.probability_binary
 
 print(results)

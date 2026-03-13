@@ -2,8 +2,9 @@ import time
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 ligands = [
     "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1",
@@ -27,9 +28,22 @@ workflow = rowan.submit_batch_docking_workflow(
     pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
     executable="qvina2",
     scoring_function="vina",
+    folder_uuid=folder,
 )
 
 
 print(f"View workflow privately at: https://labs.rowansci.com/batch-docking/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data["best_scores"])
+print(f"Workflow UUID: {workflow.uuid}")
+
+# Poll for partial scores as each ligand completes.
+while not workflow.done():
+    partial = workflow.result(wait=False)
+    completed = sum(s is not None for s in partial.scores.values())
+    print(f"  {completed}/{len(ligands)} complete...")
+    time.sleep(30)
+
+result = workflow.result(wait=False)
+print(result.scores)  # dict of SMILES → best docking score
+
+# Or retrieve later by UUID:
+# result = rowan.retrieve_workflow(workflow.uuid).result()

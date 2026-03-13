@@ -2,7 +2,7 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 workflow = rowan.submit_nmr_workflow(
@@ -10,8 +10,8 @@ workflow = rowan.submit_nmr_workflow(
     name="menthol NMR",
 )
 print(f"View nmr workflow privately at: https://labs.rowansci.com/nmr/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
+result = workflow.result()
 
-# print hydrogen peaks
-for peak in workflow.data["predicted_peaks"]["1"]:
+# print hydrogen peaks (atomic number 1 = hydrogen)
+for peak in result.predicted_peaks[1]:
     print(peak)

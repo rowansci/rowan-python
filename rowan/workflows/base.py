@@ -12,6 +12,7 @@ import stjames
 from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
 
+from ..folder import Folder
 from ..molecule import Molecule as RowanMolecule
 from ..types import SMILES, MoleculeInput
 from ..utils import api_client
@@ -516,7 +517,7 @@ def submit_workflow(
     initial_molecule: MoleculeInput | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
-    folder_uuid: str | None = None,
+    folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -527,12 +528,14 @@ def submit_workflow(
     :param initial_molecule: Molecule object to use as the initial molecule.
     :param initial_smiles: SMILES string to use as the initial molecule.
     :param name: Name for the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder_uuid: UUID of the folder to store the workflow in, or a Folder object.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
     """
+    if isinstance(folder_uuid, Folder):
+        folder_uuid = folder_uuid.uuid
     if workflow_type not in stjames.WORKFLOW_MAPPING:
         raise ValueError(
             "Invalid workflow type. Must be one of:\n    " + "\n    ".join(stjames.WORKFLOW_MAPPING)
@@ -678,7 +681,7 @@ def batch_submit_workflow(
     initial_molecules: list[MoleculeInput] | None = None,
     initial_smileses: list[str] | None = None,
     names: list[str] | None = None,
-    folder_uuid: str | None = None,
+    folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
 ) -> list[Workflow]:
     """

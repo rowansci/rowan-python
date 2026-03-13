@@ -2,7 +2,7 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 # ordinarily, we'd try a 3D conformer and see what the strain is.
@@ -13,5 +13,5 @@ workflow = rowan.submit_strain_workflow(
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/strain/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+result = workflow.result()
+print(result)

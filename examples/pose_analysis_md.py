@@ -1,6 +1,6 @@
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 ligand = "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1"
@@ -18,10 +18,10 @@ cofolding_workflow = rowan.submit_protein_cofolding_workflow(
 print(
     f"View cofolding workflow privately at: https://labs.rowansci.com/protein-cofolding/{cofolding_workflow.uuid}"
 )
-cofolding_workflow.wait_for_result().fetch_latest(in_place=True)
+cofolding_result = cofolding_workflow.result()
 
 md_workflow = rowan.submit_pose_analysis_md_workflow(
-    protein=cofolding_workflow.data["predicted_refined_structure_uuid"],
+    protein=cofolding_result.predicted_refined_structure_uuid,
     initial_smiles=ligand,
     num_trajectories=1,
     simulation_time_ns=1,
@@ -31,7 +31,7 @@ md_workflow = rowan.submit_pose_analysis_md_workflow(
 print(
     f"View MD workflow privately at: https://labs.rowansci.com/pose-analysis-md/{md_workflow.uuid}"
 )
-md_workflow.wait_for_result().fetch_latest(in_place=True)
+md_result = md_workflow.result()
 
 # print ligand RMSD by frame
-print(md_workflow.data["trajectories"][0]["rmsd"])
+print(md_result.trajectories[0].ligand_rmsd)

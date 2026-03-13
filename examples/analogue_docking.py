@@ -21,7 +21,6 @@ workflow = rowan.submit_analogue_docking_workflow(
 )
 
 print(f"View MD workflow privately at: https://labs.rowansci.com/analogue-docking/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
+result = workflow.result()
 
-# print ligand RMSD by frame
-print(workflow.data)
+print(result)  # AnalogueDockingResult with .analogue_scores

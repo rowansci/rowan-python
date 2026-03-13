@@ -2,7 +2,7 @@ from stjames import Method, Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 
 
@@ -17,13 +17,10 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
     )
 
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{opt_workflow.uuid}")
-    opt_workflow.wait_for_result().fetch_latest(in_place=True)
-
-    calculation_uuid = opt_workflow.data["calculation_uuid"]
-    optimized_molecule = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
+    opt_result = opt_workflow.result()
 
     sp_workflow = rowan.submit_workflow(
-        initial_molecule=optimized_molecule,
+        initial_molecule=opt_result.molecule,
         workflow_type="basic_calculation",
         name=f"{name} {method} single point",
         workflow_data={
@@ -36,11 +33,9 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
     )
 
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{sp_workflow.uuid}")
-    sp_workflow.wait_for_result().fetch_latest(in_place=True)
+    sp_result = sp_workflow.result()
 
-    calculation_uuid = sp_workflow.data["calculation_uuid"]
-    final_molecule = rowan.retrieve_calculation_molecules(calculation_uuid)[0]
-    return final_molecule["energy"]
+    return sp_result.energy
 
 
 E1 = compute_energy_with_solvent_correction(

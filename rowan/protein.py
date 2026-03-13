@@ -4,6 +4,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel
 
+from .project import Project
 from .utils import api_client
 
 
@@ -182,7 +183,9 @@ def list_proteins(
     return [Protein(**item) for item in results]
 
 
-def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) -> Protein:
+def upload_protein(
+    name: str, file_path: Path, project_uuid: str | Project | None = None
+) -> Protein:
     """
     Uploads a protein from a PDB file to the API.
 
@@ -191,6 +194,8 @@ def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) 
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
+    if isinstance(project_uuid, Project):
+        project_uuid = project_uuid.uuid
     with api_client() as client:
         # Step 1: Read the file and post it to the conversion endpoint.
         conversion_payload = {"name": name, "text": file_path.read_text()}
@@ -213,7 +218,9 @@ def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) 
         return Protein(**final_response.json())
 
 
-def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = None) -> Protein:
+def create_protein_from_pdb_id(
+    name: str, code: str, project_uuid: str | Project | None = None
+) -> Protein:
     """
     Creates a protein from a PDB ID.
 
@@ -223,6 +230,8 @@ def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = 
     :returns: Protein object representing the created protein
     :raises requests.HTTPError: if the request to the API fails
     """
+    if isinstance(project_uuid, Project):
+        project_uuid = project_uuid.uuid
     with api_client() as client:
         # Step 1: Read the file and post it to the conversion endpoint.
         conversion_response = client.post(f"/convert/pdb_id_to_protein?pdb_id={code}")

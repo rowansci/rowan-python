@@ -1,6 +1,9 @@
 # ruff: noqa
 from . import constants
 
+api_key: str | None = None
+project_uuid: str | None = None
+
 from .calculation import *
 from .folder import *
 from .molecule import *
