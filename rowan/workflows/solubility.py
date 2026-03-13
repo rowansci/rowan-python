@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import stjames
+from rdkit import Chem
 
 from ..types import MoleculeInput
 from ..utils import api_client
@@ -62,22 +63,20 @@ def _resolve_solvent(solvent: str) -> str:
 
     :param solvent: Solvent name (e.g., "ethanol") or SMILES (e.g., "CCO").
     :returns: SMILES string.
-    :raises ValueError: If solvent name is not recognized and doesn't look like SMILES.
+    :raises ValueError: If solvent is not a recognized name or valid SMILES.
     """
     # Check if it's a known solvent name (case-insensitive)
     lower = solvent.lower().strip()
     if lower in COMMON_SOLVENTS:
         return COMMON_SOLVENTS[lower]
 
-    # Check if it looks like a SMILES (contains uppercase letters typical of SMILES)
-    # SMILES typically have uppercase C, N, O, S, F, Cl, Br, I, P, etc.
-    if any(c in solvent for c in "CNOSFIBPcnos[]()=#"):
+    # Validate as SMILES using RDKit
+    if Chem.MolFromSmiles(solvent) is not None:
         return solvent
 
-    # Unrecognized name
     raise ValueError(
         f"Unrecognized solvent '{solvent}'. "
-        f"Use a common name (e.g., 'ethanol', 'water', 'thf') or provide a SMILES string. "
+        f"Use a common name (e.g., 'ethanol', 'water', 'thf') or provide a valid SMILES string. "
         f"Available names: {', '.join(sorted(COMMON_SOLVENTS.keys()))}"
     )
 

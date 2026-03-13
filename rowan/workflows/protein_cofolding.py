@@ -161,7 +161,7 @@ class ProteinCofoldingResult(WorkflowResult):
     def predictions(self) -> list[CofoldingResult]:
         """All cofolding predictions."""
         results: list[CofoldingResult] = []
-        for r in self._workflow.cofolding_results or []:
+        for r in getattr(self._workflow, "cofolding_results", None) or []:
             scores_data = getattr(r, "scores", None)
             scores = self._make_cofolding_scores(scores_data) if scores_data else None
 
@@ -194,9 +194,10 @@ class ProteinCofoldingResult(WorkflowResult):
     @property
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow (e.g., stereochemistry issues)."""
-        return parse_messages(getattr(self._workflow, "messages", None))
+        return parse_messages(self._workflow.messages)
 
-    def _make_cofolding_scores(self, s: dict | object) -> CofoldingScores:
+    @staticmethod
+    def _make_cofolding_scores(s: dict | stjames.CofoldingScores) -> CofoldingScores:
         """Convert cofolding scores data to CofoldingScores dataclass."""
         if isinstance(s, dict):
             return CofoldingScores(
@@ -206,13 +207,14 @@ class ProteinCofoldingResult(WorkflowResult):
                 confidence_score=s.get("confidence_score"),
             )
         return CofoldingScores(
-            ptm=getattr(s, "ptm", None),
-            iptm=getattr(s, "iptm", None),
-            avg_lddt=getattr(s, "avg_lddt", None),
-            confidence_score=getattr(s, "confidence_score", None),
+            ptm=s.ptm,
+            iptm=s.iptm,
+            avg_lddt=s.avg_lddt,
+            confidence_score=s.confidence_score,
         )
 
-    def _make_affinity_score(self, a: dict | object) -> AffinityScore:
+    @staticmethod
+    def _make_affinity_score(a: dict | stjames.AffinityScore) -> AffinityScore:
         """Convert affinity score data to AffinityScore dataclass."""
         if isinstance(a, dict):
             return AffinityScore(
@@ -224,12 +226,12 @@ class ProteinCofoldingResult(WorkflowResult):
                 probability_binary2=a.get("probability_binary2"),
             )
         return AffinityScore(
-            pred_value=getattr(a, "pred_value", None),
-            pred_value1=getattr(a, "pred_value1", None),
-            pred_value2=getattr(a, "pred_value2", None),
-            probability_binary=getattr(a, "probability_binary", None),
-            probability_binary1=getattr(a, "probability_binary1", None),
-            probability_binary2=getattr(a, "probability_binary2", None),
+            pred_value=a.pred_value,
+            pred_value1=a.pred_value1,
+            pred_value2=a.pred_value2,
+            probability_binary=a.probability_binary,
+            probability_binary1=a.probability_binary1,
+            probability_binary2=a.probability_binary2,
         )
 
 
@@ -274,11 +276,7 @@ def submit_protein_cofolding_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     # At least one sequence type is required
-    has_protein = initial_protein_sequences and len(initial_protein_sequences) > 0
-    has_dna = initial_dna_sequences and len(initial_dna_sequences) > 0
-    has_rna = initial_rna_sequences and len(initial_rna_sequences) > 0
-
-    if not (has_protein or has_dna or has_rna):
+    if not (initial_protein_sequences or initial_dna_sequences or initial_rna_sequences):
         raise ValueError("At least one protein, DNA, or RNA sequence is required for cofolding")
 
     # Validate and convert model

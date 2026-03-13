@@ -26,10 +26,14 @@ from .base import (
     Workflow,
     WorkflowError,
     WorkflowResult,
+    batch_poll_status,
     batch_submit_workflow,
     create_result,
+    list_workflows,
     register_result,
+    retrieve_calculation_molecules,
     retrieve_workflow,
+    retrieve_workflows,
     submit_workflow,
 )
 from .basic_calculation import BasicCalculationResult, submit_basic_calculation_workflow

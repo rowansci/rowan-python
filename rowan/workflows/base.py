@@ -214,8 +214,6 @@ Workflow:  {self.name}
         for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
 
-        self.model_rebuild()
-
         return self
 
     def update(
@@ -237,6 +235,7 @@ Workflow:  {self.name}
         :param starred: Whether the workflow is starred.
         :param email_when_complete: Whether to send an email when complete.
         :param public: Whether the workflow is public.
+        :param in_place: Whether to update the current instance in-place.
         :raises HTTPError: If the API request fails.
         """
         old = self.fetch_latest()
@@ -272,8 +271,6 @@ Workflow:  {self.name}
 
         for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
-
-        self.model_rebuild()
 
         return self
 
@@ -314,7 +311,12 @@ Workflow:  {self.name}
             status = self.status.name.lower()
             raise WorkflowError(f"Workflow '{self.name}' {status} (uuid={self.uuid})")
 
-        return create_result(self.data or {}, self.workflow_type, self.uuid)
+        if not self.data:
+            status = self.status.name.lower() if self.status else "unknown"
+            raise WorkflowError(
+                f"Workflow '{self.name}' has no results yet (status={status}, uuid={self.uuid})"
+            )
+        return create_result(self.data, self.workflow_type, self.uuid)
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
         """
@@ -571,6 +573,103 @@ def retrieve_workflow(uuid: str) -> Workflow:
         data = response.json()
 
     return Workflow.model_validate(data)
+
+
+def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
+    """
+    Retrieve a list of workflows from the API.
+
+    :param uuids: UUIDs of the workflows to retrieve.
+    :returns: List of Workflow objects representing the retrieved workflows.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.post("/workflow/batch_retrieve", json={"uuids": uuids})
+        response.raise_for_status()
+        return [Workflow(**workflow_data) for workflow_data in response.json()]
+
+
+def batch_poll_status(uuids: list[str]) -> list[dict[str, Any]]:
+    """
+    Poll the status of a list of workflows.
+
+    :param uuids: UUIDs of the workflows to poll.
+    :returns: Status information for each workflow.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.post("/workflow/batch_status", json={"uuids": uuids})
+        response.raise_for_status()
+        return response.json()
+
+
+def retrieve_calculation_molecules(
+    uuid: str, return_frequencies: bool = False
+) -> list[dict[str, Any]]:
+    """
+    Retrieve a list of molecules from a calculation.
+
+    :param uuid: UUID of the calculation to retrieve molecules from.
+    :param return_frequencies: Whether to return the frequencies of the molecules.
+    :returns: List of dictionaries representing the molecules in the calculation.
+    :raises HTTPError: If the API request fails.
+    """
+    with api_client() as client:
+        response = client.get(
+            f"/calculation/{uuid}/molecules", params={"return_frequencies": return_frequencies}
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+def list_workflows(
+    parent_uuid: str | None = None,
+    name_contains: str | None = None,
+    public: bool | None = None,
+    starred: bool | None = None,
+    status: int | None = None,
+    workflow_type: stjames.WORKFLOW_NAME | None = None,
+    page: int = 0,
+    size: int = 10,
+) -> list[Workflow]:
+    """
+    List workflows subject to the specified criteria.
+
+    :param parent_uuid: UUID of the parent folder.
+    :param name_contains: Substring to search for in workflow names.
+    :param public: Filter workflows by their public status.
+    :param starred: Filter workflows by their starred status.
+    :param status: Filter workflows by their status.
+    :param workflow_type: Filter workflows by their type.
+    :param page: Page number to retrieve.
+    :param size: Number of items per page.
+    :returns: List of Workflow objects that match the search criteria.
+    :raises requests.HTTPError: if the request to the API fails.
+    """
+    params: dict[str, Any] = {"page": page, "size": size}
+
+    if parent_uuid is not None:
+        params["parent_uuid"] = parent_uuid
+
+    if name_contains is not None:
+        params["name_contains"] = name_contains
+
+    if public is not None:
+        params["public"] = public
+
+    if starred is not None:
+        params["starred"] = starred
+
+    if status is not None:
+        params["object_status"] = status
+
+    if workflow_type is not None:
+        params["object_type"] = workflow_type
+
+    with api_client() as client:
+        response = client.get("/workflow", params=params)
+        response.raise_for_status()
+        return [Workflow(**item) for item in response.json()["workflows"]]
 
 
 def batch_submit_workflow(

@@ -42,7 +42,7 @@ class PoseAnalysisMDResult(WorkflowResult):
 
         Each trajectory contains RMSD values, contact analysis, and cluster assignments.
         """
-        raw = getattr(self._workflow, "trajectories", []) or []
+        raw = self._workflow.trajectories or []
         return [
             TrajectoryResult(uuid=t.uuid, ligand_rmsd=t.ligand_rmsd, contacts=t.contacts)
             for t in raw
@@ -80,7 +80,7 @@ class PoseAnalysisMDResult(WorkflowResult):
     @property
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow."""
-        return parse_messages(getattr(self._workflow, "messages", None))
+        return parse_messages(self._workflow.messages)
 
     def get_atom_distances(
         self,
