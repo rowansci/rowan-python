@@ -41,7 +41,7 @@ class Protein(BaseModel):
         """
         Loads protein data
 
-        :return: protein with loaded data
+        :returns: protein with loaded data
         """
         with api_client() as client:
             response = client.get(f"/protein/{self.uuid}")
@@ -69,11 +69,11 @@ class Protein(BaseModel):
         """
         Updates protein data
 
-        :param name: The new name of the protein
-        :param data: The new data of the protein
+        :param name: New name of the protein
+        :param data: New data of the protein
         :param public: Whether the protein is public
-        :param pocket: The new pocket of the protein
-        :return: The updated protein object
+        :param pocket: New pocket of the protein
+        :returns: Updated protein object
         """
         updated_payload = {
             "name": name if name is not None else self.name,
@@ -114,7 +114,7 @@ class Protein(BaseModel):
             response = client.post(f"/protein/sanitize/{self.uuid}")
             response.raise_for_status()
 
-    def download_pdb_file(self, path: Path | None = None, name: str | None = None) -> None:
+    def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:
         """
         Downloads the PDB file for a protein
 
@@ -122,8 +122,7 @@ class Protein(BaseModel):
         :param name: Optional custom name for the file (defaults to protein name)
         :raises requests.HTTPError: if the request to the API fails
         """
-        if path is None:
-            path = Path.cwd()
+        path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 
@@ -140,8 +139,8 @@ def retrieve_protein(uuid: str) -> Protein:
     """
     Retrieves a protein from the API using its UUID.
 
-    :param uuid: The UUID of the protein to retrieve.
-    :return: A Protein object representing the retrieved protein.
+    :param uuid: UUID of the protein to retrieve.
+    :returns: Protein object representing the retrieved protein.
     :raises requests.HTTPError: if the request to the API fails.
     """
 
@@ -162,11 +161,11 @@ def list_proteins(
     """
     List proteins
 
-    :param ancestor_uuid: The UUID of the ancestor protein to filter by
+    :param ancestor_uuid: UUID of the ancestor protein to filter by
     :param name_contains: Substring to search for in protein names
-    :param page: The page number to retrieve
-    :param size: The number of items per page
-    :return: A list of Protein objects that match the search criteria
+    :param page: Page number to retrieve
+    :param size: Number of items per page
+    :returns: List of Protein objects that match the search criteria
     :raises requests.HTTPError: if the request to the API fails
     """
     params: dict[str, Any] = {"page": page, "size": size}
@@ -187,9 +186,9 @@ def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) 
     """
     Uploads a protein from a PDB file to the API.
 
-    :param name: The name of the protein to create
-    :param file_path: The path to the PDB file to upload
-    :return: A Protein object representing the uploaded protein
+    :param name: Name of the protein to create
+    :param file_path: Path to the PDB file to upload
+    :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
     with api_client() as client:
@@ -218,10 +217,10 @@ def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = 
     """
     Creates a protein from a PDB ID.
 
-    :param name: The name of the protein to create
-    :param code: The PDB ID of the protein to create
-    :param project_uuid: The UUID of the project to create the protein in
-    :return: A Protein object representing the created protein
+    :param name: Name of the protein to create
+    :param code: PDB ID of the protein to create
+    :param project_uuid: UUID of the project to create the protein in
+    :returns: Protein object representing the created protein
     :raises requests.HTTPError: if the request to the API fails
     """
     with api_client() as client:

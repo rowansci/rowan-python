@@ -29,9 +29,9 @@ class Project(BaseModel):
         """
         Update a project.
 
-        :param name: The new name of the project.
+        :param name: New name of the project.
 
-        :return: The updated project object.
+        :returns: Updated project object.
         """
         payload = {
             "name": name if name is not None else self.name,
@@ -63,8 +63,8 @@ def retrieve_project(uuid: str) -> Project:
     """
     Retrieves a project from the API by UUID. Project UUID can be found in the project's URL.
 
-    :param uuid: The UUID of the project to retrieve.
-    :return: A Project object representing the retrieved project.
+    :param uuid: UUID of the project to retrieve.
+    :returns: Project object representing the retrieved project.
     :raises HTTPError: If the API request fails.
     """
     with api_client() as client:
@@ -84,7 +84,7 @@ def list_projects(
     :param name_contains: Substring to search for in project names.
     :param page: Pagination parameter to specify the page number.
     :param size: Pagination parameter to specify the number of items per page.
-    :return: A list of Folder objects that match the search criteria.
+    :returns: List of Folder objects that match the search criteria.
     :raises requests.HTTPError: if the request to the API fails.
     """
 
@@ -110,8 +110,8 @@ def create_project(
     """
     Create a new project.
 
-    :param name: The name of the project.
-    :return: The newly created project.
+    :param name: Name of the project.
+    :returns: Newly created project.
     """
     data = {
         "name": name,
@@ -127,7 +127,7 @@ def default_project() -> Project:
     """
     Retrieves the default project from the API.
 
-    :return: A Project object representing the default project.
+    :returns: Project object representing the default project.
     :raises HTTPError: If the API request fails.
     """
     with api_client() as client:

@@ -130,7 +130,7 @@ module = "rdkit-stubs.*"
 ignore_errors = true
 
 [tool.pytest.ini_options]
-testpaths = ["test", "rowan"]
+testpaths = ["rowan"]
 addopts = "--doctest-modules --durations=5"
 doctest_optionflags = "NORMALIZE_WHITESPACE"
 

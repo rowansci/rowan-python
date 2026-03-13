@@ -37,7 +37,7 @@ class Folder(BaseModel):
         This method refreshes the folder object with the latest data from the API.
 
         :param in_place: Whether to update the current instance in-place.
-        :return: The updated instance (self).
+        :returns: Updated instance (self).
         :raises HTTPError: If the API request fails.
         """
         with api_client() as client:
@@ -69,13 +69,13 @@ class Folder(BaseModel):
         """
         Update a folder.
 
-        :param name: The new name of the folder.
-        :param parent_uuid: The UUID of the new parent folder.
-        :param notes: A description of the folder.
+        :param name: New name of the folder.
+        :param parent_uuid: UUID of the new parent folder.
+        :param notes: Description of the folder.
         :param starred: Whether the folder is starred.
         :param public: Whether the folder is public.
 
-        :return: The updated folder object.
+        :returns: Updated folder object.
         """
         payload = {
             "name": name if name is not None else self.name,
@@ -114,7 +114,7 @@ class Folder(BaseModel):
         """
         Retrieves a folder tree from the API.
 
-        :param max_depth: The maximum depth of the folder tree.
+        :param max_depth: Maximum depth of the folder tree.
         :param show_uuids: Whether to show the UUIDs of the folders.
         :raises HTTPError: If the API request fails.
         """
@@ -125,8 +125,8 @@ def retrieve_folder(uuid: str) -> Folder:
     """
     Retrieves a folder from the API by UUID. Folder UUID can be found in the folder's URL.
 
-    :param uuid: The UUID of the folder to retrieve.
-    :return: A Folder object representing the retrieved folder.
+    :param uuid: UUID of the folder to retrieve.
+    :returns: Folder object representing the retrieved folder.
     :raises HTTPError: If the API request fails.
     """
     with api_client() as client:
@@ -152,7 +152,7 @@ def list_folders(
     :param starred: Filter folders by their starred status.
     :param page: Pagination parameter to specify the page number.
     :param size: Pagination parameter to specify the number of items per page.
-    :return: A list of Folder objects that match the search criteria.
+    :returns: List of Folder objects that match the search criteria.
     :raises requests.HTTPError: if the request to the API fails.
     """
 
@@ -188,12 +188,12 @@ def create_folder(
     """
     Create a new folder.
 
-    :param name: The name of the folder.
-    :param parent_uuid: The UUID of the parent folder.
-    :param notes: A description of the folder.
+    :param name: Name of the folder.
+    :param parent_uuid: UUID of the parent folder.
+    :param notes: Description of the folder.
     :param starred: Whether the folder is starred.
     :param public: Whether the folder is public.
-    :return: The newly created folder.
+    :returns: Newly created folder.
     """
     data = {
         "name": name,
@@ -213,8 +213,8 @@ def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) 
     """
     Retrieves a folder tree from the API.
 
-    :param uuid: The UUID of the root of the folder tree.
-    :param max_depth: The maximum depth of the folder tree.
+    :param uuid: UUID of the root of the folder tree.
+    :param max_depth: Maximum depth of the folder tree.
     :param show_uuids: Whether to show the UUIDs of the folders.
     :raises HTTPError: If the API request fails.
     """

@@ -2,7 +2,7 @@ import asyncio
 import copy
 import logging
 import time
-from typing import Iterable, Literal, TypeAlias, TypedDict
+from typing import Iterable, Literal, TypedDict
 
 import numpy as np
 import stjames
@@ -10,9 +10,9 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 import rowan
+from rowan.types import RdkitMol
 from rowan.utils import ATOMIC_NUMBER_TO_ATOMIC_SYMBOL, get_api_key
 
-RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 pKaMode = Literal["reckless", "rapid", "careful"]
 TautomerMode = Literal["reckless", "rapid", "careful"]
 ConformerMode = Literal["reckless", "rapid"]
@@ -95,9 +95,10 @@ apply_nest_asyncio()
 
 
 def _get_rdkit_mol_from_uuid(calculation_uuid: str) -> RdkitMol:
-    stjames_mol_dict = rowan.retrieve_calculation_molecules(calculation_uuid)[-1]
-
-    return Chem.MolFromXYZBlock(stjames.Molecule(**stjames_mol_dict).to_xyz())
+    calc = rowan.retrieve_calculation(calculation_uuid)
+    if calc.molecule is None:
+        raise ValueError(f"Calculation {calculation_uuid} has no molecules")
+    return Chem.MolFromXYZBlock(calc.molecule.to_xyz())
 
 
 def _embed_rdkit_mol(rdkm: RdkitMol) -> RdkitMol:
@@ -147,7 +148,7 @@ def run_pka(
     :param deprotonate_elements: elements to deprotonate
     :param protonate_elements: elements to protonate
     :param folder_uuid: folder UUID
-    :return: dictionary of pKa values indexed by atom
+    :returns: dictionary of pKa values indexed by atom
     """
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
@@ -187,7 +188,7 @@ def batch_pka(
     :param pka_range: range of pKa values to calculate
     :param deprotonate_elements: elements to deprotonate
     :param protonate_elements: elements to protonate
-    :return: list of dictionary of pKa values indexed by atom
+    :returns: list of dictionary of pKa values indexed by atom
     """
     protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
@@ -233,7 +234,7 @@ async def _single_pka(
     :param deprotonate_elements: elements to deprotonate
     :param protonate_elements: elements to protonate
     :param folder_uuid: folder UUID
-    :return: dictionary of pKa values
+    :returns: dictionary of pKa values
     """
     get_api_key()
     protonate_elements = protonate_elements or [7]
@@ -311,7 +312,7 @@ def run_tautomers(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :return: list of dictionaries containing RDKit Molecule, relative energies, and weights
+    :returns: list of dictionaries containing RDKit Molecule, relative energies, and weights
     """
     return asyncio.run(_single_tautomers(mol, mode, timeout, name, folder_uuid))
 
@@ -332,7 +333,7 @@ def batch_tautomers(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :return: list of lists of dictionaries containing RDKit Molecule, relative energies, and weights
+    :returns: List of lists of dicts containing RDKit Molecule, relative energies, and weights.
     """
 
     async def _run():
@@ -357,7 +358,7 @@ async def _single_tautomers(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :return: dictionaries containing RDKit Molecule, relative energy, and weight
+    :returns: dictionaries containing RDKit Molecule, relative energy, and weight
     """
     get_api_key()
 
@@ -412,7 +413,7 @@ def run_energy(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the energy in Hartree and the conformer index
+    :returns: dictionary with the energy in Hartree and the conformer index
     """
     return asyncio.run(_single_energy(mol, method, engine, mode, timeout, name, folder_uuid))
 
@@ -439,7 +440,7 @@ def batch_energy(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: list of dictionaries with the energy in Hartree and the conformer index
+    :returns: list of dictionaries with the energy in Hartree and the conformer index
     """
 
     async def _run():
@@ -472,7 +473,7 @@ async def _single_energy(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the energy in Hartree and the conformer index
+    :returns: dictionary with the energy in Hartree and the conformer index
     """
     get_api_key()
     method = stjames.Method(method)
@@ -518,11 +519,12 @@ async def _single_energy(
 
     results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
 
-    energies = [
-        rowan.retrieve_calculation_molecules(data["calculation_uuid"])[-1]["energy"]
-        for data in results
-        if data is not None
-    ]
+    energies: list[float] = []
+    for data in results:
+        if data is not None:
+            calc = rowan.retrieve_calculation(data["calculation_uuid"])
+            if calc.energy is not None:
+                energies.append(calc.energy)
 
     return [{"conformer_index": index, "energy": energy} for index, energy in enumerate(energies)]
 
@@ -551,7 +553,7 @@ def run_optimize(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the optimized conformer(s) and optional list of energies per conformer
+    :returns: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
     return asyncio.run(
         _single_optimize(mol, method, engine, mode, return_energies, timeout, name, folder_uuid)
@@ -582,7 +584,7 @@ def batch_optimize(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the Method is invalid
-    :return: dictionaries with optimized conformer(s) and optional list of energies per conformer
+    :returns: dictionaries with optimized conformer(s) and optional list of energies per conformer
     """
 
     async def _run():
@@ -618,7 +620,7 @@ async def _single_optimize(
     :param name: name for the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the optimized conformer(s) and optional list of energies per conformer
+    :returns: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
     get_api_key()
     method = stjames.Method(method)
@@ -667,14 +669,15 @@ async def _single_optimize(
 
     results = [rowan.retrieve_workflow(uuid).data for uuid in workflow_uuids]
     calculations = [
-        rowan.retrieve_calculation_molecules(data["calculation_uuid"])
-        for data in results
-        if data is not None
+        rowan.retrieve_calculation(data["calculation_uuid"]) for data in results if data is not None
     ]
-    optimization_atoms = [cacluation[-1]["atoms"] for cacluation in calculations]
-    optimized_positions = [[atom["position"] for atom in atoms] for atoms in optimization_atoms]
-
-    energies = [cacluation[-1]["energy"] for cacluation in calculations]
+    optimized_positions: list[list[tuple[float, float, float]]] = []
+    energies: list[float] = []
+    for calc in calculations:
+        if calc.molecule is not None:
+            optimized_positions.append([atom.position for atom in calc.molecule.atoms])
+            if calc.energy is not None:
+                energies.append(calc.energy)
 
     for i, conformer in enumerate(optimized_mol.GetConformers()):
         conformer.SetPositions(np.array(optimized_positions[i]))
@@ -708,7 +711,7 @@ def run_conformers(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :return: dictionary with the RDKit Molecule and energies
+    :returns: dictionary with the RDKit Molecule and energies
     """
     return asyncio.run(
         _single_conformers(
@@ -746,7 +749,7 @@ def batch_conformers(
     :param return_energies: whether to return energies in Hartree too
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
-    :return: list of dictonaries with RDKit Molecule and energies
+    :returns: list of dictonaries with RDKit Molecule and energies
     """
 
     async def _run():
@@ -791,7 +794,7 @@ async def _single_conformers(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :return: dictionary with RDKit molecule and energies
+    :returns: dictionary with RDKit molecule and energies
     """
     get_api_key()
     method = stjames.Method(method)
@@ -861,8 +864,10 @@ async def _single_conformers(
     AllChem.EmbedMultipleConfs(mol, numConfs=num_conformers)  # type: ignore [attr-defined]
 
     for i, conformer in enumerate(mol.GetConformers()):
-        atoms = rowan.retrieve_calculation_molecules(lowest_n_uuids[i])[-1]["atoms"]
-        pos = [atom["position"] for atom in atoms]
+        calc = rowan.retrieve_calculation(lowest_n_uuids[i])
+        if calc.molecule is None:
+            raise ValueError(f"Calculation {lowest_n_uuids[i]} has no molecules")
+        pos = [atom.position for atom in calc.molecule.atoms]
         conformer.SetPositions(np.array(pos))
 
     return {
@@ -887,13 +892,13 @@ def run_charges(
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
-    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    :param mode: Mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the charges and the conformer index
+    :returns: dictionary with the charges and the conformer index
     """
     return asyncio.run(_single_charges(mol, method, engine, mode, timeout, name, folder_uuid))
 
@@ -914,13 +919,13 @@ def batch_charges(
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
-    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    :param mode: Mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: list of dictionaries with the charges and the conformer index
+    :returns: list of dictionaries with the charges and the conformer index
     """
 
     async def _run():
@@ -948,13 +953,13 @@ async def _single_charges(
     :param method: Method to use for the calculation.
     See [list of available methods](https://github.com/rowansci/stjames-public/blob/master/stjames/method.py)
     :param engine: Engine to run the charges. See [list of available engines](https://github.com/rowansci/stjames-public/blob/master/stjames/engine.py)
-    :param mode: The mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
+    :param mode: Mode to run the calculation in. See [list of available modes](https://github.com/rowansci/stjames-public/blob/master/stjames/mode.py)
     for options.
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
     :raises: MethodTooSlowError if the method is invalid
-    :return: dictionary with the charges and the conformer index
+    :returns: dictionary with the charges and the conformer index
     """
     get_api_key()
     method = stjames.Method(method)
@@ -1003,8 +1008,10 @@ async def _single_charges(
         data = rowan.retrieve_workflow(uuid).data
         if data is None:
             raise KeyError("Workflow data not found")
-        molecules = rowan.retrieve_calculation_molecules(data["calculation_uuid"])
-        return molecules[-1]["mulliken_charges"]
+        calc = rowan.retrieve_calculation(data["calculation_uuid"])
+        if calc.molecule is None or calc.molecule.charges is None:
+            raise KeyError("Calculation has no charges")
+        return calc.molecule.charges
 
     return [
         {"conformer_index": i, "charges": grab_charges(uuid)}

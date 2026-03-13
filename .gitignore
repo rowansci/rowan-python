@@ -198,3 +198,6 @@ local/
 .pixi/
 
 cyp/
+
+# AI agent instructions (not part of the project source)
+AGENTS.md
