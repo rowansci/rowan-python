@@ -7,6 +7,7 @@ import stjames
 from stjames.optimization.freezing_string_method import FSMSettings
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
@@ -35,12 +36,10 @@ class DoubleEndedTSSearchResult(WorkflowResult):
     _stjames_class = stjames.DoubleEndedTSSearchWorkflow
 
     def __post_init__(self) -> None:
-        """Parse workflow data and eagerly fetch TS calculation."""
         super().__post_init__()
-        # Eagerly fetch TS calculation
-        ts_uuid = getattr(self._workflow, "ts_guess_calculation_uuid", None)
-        if ts_uuid:
-            self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
+        if self.eager:
+            if ts_uuid := getattr(self._workflow, "ts_guess_calculation_uuid", None):
+                self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
 
     def __repr__(self) -> str:
         ts_uuid = self.ts_guess_calculation_uuid
@@ -55,7 +54,10 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
     @property
     def ts_guess_calculation(self) -> Calculation | None:
-        """The transition state guess Calculation with full molecule data."""
+        """The transition state guess Calculation with full molecule data (lazily fetched)."""
+        if "ts_calculation" not in self._cache:
+            if ts_uuid := self.ts_guess_calculation_uuid:
+                self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
         return self._cache.get("ts_calculation")
 
     @property
@@ -147,6 +149,7 @@ def submit_double_ended_ts_search_workflow(
     optimize_ts: bool = True,
     name: str = "Double-Ended TS Search Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -160,9 +163,14 @@ def submit_double_ended_ts_search_workflow(
     :param optimize_ts: Whether to optimize the found transition state.
     :param name: name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     workflow = stjames.DoubleEndedTSSearchWorkflow(
         reactant=reactant,
         product=product,

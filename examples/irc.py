@@ -2,8 +2,9 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_irc_workflow(
     initial_molecule=Molecule.from_xyz_lines(
@@ -20,8 +21,9 @@ H     1.26740151   0.88347299   0.53620841
     ),
     name="HNCO + H₂O - IRC",
     preopt=False,
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/irc/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+result = workflow.result()
+print(result)

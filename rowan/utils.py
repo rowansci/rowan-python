@@ -30,6 +30,17 @@ def get_api_key() -> str:
     )
 
 
+def get_project_uuid() -> str | None:
+    """
+    Get the active project UUID from the module-level attribute rowan.project_uuid.
+
+    :returns: Project UUID string, or None if not set.
+    """
+    if hasattr(rowan, "project_uuid") and rowan.project_uuid:
+        return rowan.project_uuid
+    return None
+
+
 def smiles_to_stjames(smiles: str) -> stjames.Molecule:
     """
     Convert a SMILES string to a `stjames.Molecule` object.

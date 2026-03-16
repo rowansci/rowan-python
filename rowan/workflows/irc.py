@@ -3,6 +3,7 @@
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
@@ -22,12 +23,10 @@ class IRCResult(WorkflowResult):
     _stjames_class = stjames.IRCWorkflow
 
     def __post_init__(self) -> None:
-        """Parse workflow data and eagerly fetch TS calculation."""
         super().__post_init__()
-        # Eagerly fetch TS calculation only
-        ts_uuid = self._workflow.starting_TS
-        if ts_uuid:
-            self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
+        if self.eager:
+            if ts_uuid := self._workflow.starting_TS:
+                self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
 
     def __repr__(self) -> str:
         n_fwd = len(self.forward_molecules)
@@ -51,7 +50,10 @@ class IRCResult(WorkflowResult):
 
     @property
     def ts_calculation(self) -> "Calculation | None":
-        """The transition state Calculation (eagerly loaded)."""
+        """The transition state Calculation (lazily fetched)."""
+        if "ts_calc" not in self._cache:
+            if ts_uuid := self.ts_uuid:
+                self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
         return self._cache.get("ts_calc")
 
     @property
@@ -115,7 +117,7 @@ class IRCResult(WorkflowResult):
             in Hartree.
         :returns: List of energies along the forward path.
         """
-        energies: list[float] = [m.energy for m in self.forward_molecules]  # type: ignore[misc]
+        energies: list[float] = [m.energy for m in self.forward_molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
 
     def get_backward_energies(self, relative: bool = False) -> list[float]:
@@ -127,7 +129,7 @@ class IRCResult(WorkflowResult):
             in Hartree.
         :returns: List of energies along the backward path.
         """
-        energies: list[float] = [m.energy for m in self.backward_molecules]  # type: ignore[misc]
+        energies: list[float] = [m.energy for m in self.backward_molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
 
 
@@ -140,6 +142,7 @@ def submit_irc_workflow(
     max_irc_steps: int = 30,
     name: str = "IRC Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -153,10 +156,15 @@ def submit_irc_workflow(
     :param max_irc_steps: Maximum number of IRC steps to perform.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):

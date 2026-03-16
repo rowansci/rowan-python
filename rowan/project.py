@@ -3,6 +3,8 @@ from typing import Any, Self
 
 from pydantic import BaseModel
 
+import rowan
+
 from .utils import api_client
 
 
@@ -17,6 +19,7 @@ class Project(BaseModel):
 
     uuid: str
     name: str | None = None
+    root_folder_uuid: str | None = None
     created_at: datetime | None = None
 
     def __repr__(self) -> str:
@@ -99,7 +102,7 @@ def list_projects(
     with api_client() as client:
         response = client.get("/project", params=params)
         response.raise_for_status()
-        items = response.json()
+        items = response.json()["projects"]
 
     return [Project(**item) for item in items]
 
@@ -121,6 +124,30 @@ def create_project(
         response.raise_for_status()
         project_data = response.json()
     return Project(**project_data)
+
+
+def set_project(name: str) -> Project:
+    """
+    Set the active project by name for all subsequent API calls.
+
+    This is equivalent to setting ``rowan.project_uuid`` directly, but lets
+    you use a human-readable name instead of a UUID.
+
+    Example::
+
+        rowan.set_project("CDK2 campaign")
+        folder = rowan.get_folder("docking/batch_1")
+
+    :param name: Exact name of the project to activate.
+    :returns: The matched Project.
+    :raises ValueError: If no project with that name is found.
+    """
+    matches = list_projects(name_contains=name, size=100)
+    project = next((p for p in matches if p.name == name), None)
+    if project is None:
+        raise ValueError(f"Project {name!r} not found")
+    rowan.project_uuid = project.uuid
+    return project
 
 
 def default_project() -> Project:

@@ -1,9 +1,8 @@
-import time
-
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 ligands = [
     "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1",
@@ -18,8 +17,6 @@ protein = rowan.create_protein_from_pdb_id(
 )
 
 protein.sanitize()
-time.sleep(60)
-protein.refresh()
 
 workflow = rowan.submit_batch_docking_workflow(
     ligands,
@@ -27,9 +24,16 @@ workflow = rowan.submit_batch_docking_workflow(
     pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
     executable="qvina2",
     scoring_function="vina",
+    folder=folder,
 )
 
 
 print(f"View workflow privately at: https://labs.rowansci.com/batch-docking/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data["best_scores"])
+print(f"Workflow UUID: {workflow.uuid}")
+
+# Stream partial scores as each ligand completes; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=30):
+    completed = sum(s is not None for s in result.scores.values())
+    print(f"  {completed}/{len(ligands)} complete...")
+
+print(result.scores)  # dict of SMILES → best docking score

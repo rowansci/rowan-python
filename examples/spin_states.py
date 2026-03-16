@@ -17,8 +17,9 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 # Methylene (CH2) - classic spin states example, triplet is ground state
 workflow = rowan.submit_spin_states_workflow(
@@ -26,8 +27,10 @@ workflow = rowan.submit_spin_states_workflow(
     states=[1, 3],  # singlet vs triplet
     mode="rapid",
     name="Methylene spin states",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/spin-states/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data)
+
+result = workflow.result()
+print(result)  # SpinStatesResult with .spin_states

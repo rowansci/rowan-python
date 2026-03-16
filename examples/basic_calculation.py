@@ -2,18 +2,26 @@ from stjames import Method, Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
     initial_molecule=Molecule.from_smiles("CC(=C)C=C"),
     method=Method.OMOL25_CONSERVING_S,
-    tasks=["energy"],
+    tasks=["optimize"],
     mode="auto",
     engine="omol25",
-    name="Isoprene Energy",
+    name="Isoprene Optimization",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+
+# Stream optimization steps as they complete; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=3):
+    if result.calculation_uuid:
+        mols = rowan.retrieve_calculation_molecules(result.calculation_uuid)
+        print(f"  {len(mols)} opt steps, energy={mols[-1].get('energy') if mols else None}")
+
+print(result)

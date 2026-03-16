@@ -13,8 +13,9 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_electronic_properties_workflow(
     initial_molecule=Molecule.from_smiles("c1ccccc1"),  # benzene
@@ -24,8 +25,9 @@ workflow = rowan.submit_electronic_properties_workflow(
     compute_num_occupied_orbitals=3,  # HOMO, HOMO-1, HOMO-2
     compute_num_virtual_orbitals=3,  # LUMO, LUMO+1, LUMO+2
     name="Benzene electronic properties",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/orbitals/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data)
+result = workflow.result()
+print(result)

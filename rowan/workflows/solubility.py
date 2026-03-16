@@ -6,6 +6,7 @@ from typing import Literal
 import stjames
 from rdkit import Chem
 
+from ..folder import Folder
 from ..types import MoleculeInput
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, extract_smiles, register_result
@@ -144,6 +145,7 @@ def submit_solubility_workflow(
     temperatures: list[float] | None = None,
     name: str = "Solubility Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -164,12 +166,17 @@ def submit_solubility_workflow(
         For kingfisher/esol, must be [298.15] (room temperature).
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the molecule has no SMILES, or solvents/temperatures are
         incompatible with the method.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     initial_smiles = extract_smiles(initial_smiles)
     # Resolve solvent names to SMILES
     if solvents is not None:

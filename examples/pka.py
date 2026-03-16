@@ -11,30 +11,33 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/pka")
 
 workflow = rowan.submit_pka_workflow(
     initial_molecule=Molecule.from_smiles("c1ccccc1O"),
     method="aimnet2_wagen2024",
     mode="reckless",
     name="Pyridine pKa",
+    folder=folder,
 )
 
 print(
     f"View pKa with aimnet2_wagen2024 privately at: https://labs.rowansci.com/pka/{workflow.uuid}"
 )
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+result = workflow.result()
+print(result)
 
 workflow2 = rowan.submit_pka_workflow(
     initial_molecule="c1ccccc1O",
     method="chemprop_nevolianis2025",
     name="Pyridine pKa (ML)",
+    folder=folder,
 )
 
 print(
     f"View pKa with chemprop_nevolianis2025 privately at: https://labs.rowansci.com/pka/{workflow2.uuid}"
 )
-workflow2.wait_for_result().fetch_latest(in_place=True)
-print(workflow2)
+result2 = workflow2.result()
+print(result2)

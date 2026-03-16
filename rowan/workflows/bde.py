@@ -7,6 +7,7 @@ from stjames.workflows.bde import find_AB_bonds as _find_AB_bonds
 from stjames.workflows.bde import find_CH_bonds as _find_CH_bonds
 from stjames.workflows.bde import find_CX_bonds as _find_CX_bonds
 
+from ..folder import Folder
 from ..utils import api_client
 from .base import (
     MoleculeInput,
@@ -61,6 +62,7 @@ def submit_bde_workflow(
     all_CX: bool = False,
     name: str = "BDE Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -73,10 +75,15 @@ def submit_bde_workflow(
     :param all_CX: Whether to dissociate all C-X bonds (X = halogen).
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.BDEWorkflow(

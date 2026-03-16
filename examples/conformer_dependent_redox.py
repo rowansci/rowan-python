@@ -3,21 +3,20 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
-
-conformer_dependent_redox_folder = rowan.create_folder(name="Conformer dependent redox workflows")
+folder = rowan.get_folder("examples/conformer-dependent-redox")
 
 workflow = rowan.submit_conformer_search_workflow(
     initial_molecule=Molecule.from_smiles("CC(C)Cc1ccc(C(=O)c2ccc(O)cc2)cc1"),
-    folder_uuid=conformer_dependent_redox_folder.uuid,
+    folder=folder,
 )
 print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
+csearch_result = workflow.result()
 
 redox_potential_workflows = []
 
-for conformer in workflow.data["conformer_uuids"][:10]:
+for conformer in csearch_result.conformer_uuids[:10]:
     uuid = conformer[0]
     molecule = rowan.retrieve_calculation_molecules(uuid)[0]
     stjames_molecule = stjames.Molecule.model_validate(molecule)
@@ -26,13 +25,10 @@ for conformer in workflow.data["conformer_uuids"][:10]:
             stjames_molecule,
             reduction=True,
             oxidization=True,
-            folder_uuid=conformer_dependent_redox_folder.uuid,
+            folder=folder,
         )
     )
 
-for workflow in redox_potential_workflows:
-    workflow.wait_for_workflow()
-    workflow.fetch_latest(in_place=True)
+redox_results = [w.result() for w in redox_potential_workflows]
 
-
-print([workflow.data["redox_potential"] for workflow in redox_potential_workflows])
+print([(r.oxidation_potential, r.reduction_potential) for r in redox_results])

@@ -3,6 +3,7 @@
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
@@ -22,11 +23,10 @@ class BasicCalculationResult(WorkflowResult):
     _stjames_class = stjames.BasicCalculationWorkflow
 
     def __post_init__(self) -> None:
-        """Parse workflow data and eagerly fetch calculation."""
         super().__post_init__()
-        calc_uuid = getattr(self._workflow, "calculation_uuid", None)
-        if calc_uuid:
-            self._cache["calculation"] = retrieve_calculation(calc_uuid)
+        if self.eager:
+            if calc_uuid := getattr(self._workflow, "calculation_uuid", None):
+                self._cache["calculation"] = retrieve_calculation(calc_uuid)
 
     def __repr__(self) -> str:
         energy = self.energy
@@ -40,7 +40,10 @@ class BasicCalculationResult(WorkflowResult):
 
     @property
     def calculation(self) -> Calculation | None:
-        """The Calculation object with full molecule data."""
+        """Lazily fetched Calculation object with full molecule data."""
+        if "calculation" not in self._cache:
+            if calc_uuid := self.calculation_uuid:
+                self._cache["calculation"] = retrieve_calculation(calc_uuid)
         return self._cache.get("calculation")
 
     @property
@@ -107,6 +110,7 @@ def submit_basic_calculation_workflow(
     engine: str | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -120,10 +124,15 @@ def submit_basic_calculation_workflow(
     :param engine: Engine to use for the calculation.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     if not tasks:
         tasks = ["optimize"]
 

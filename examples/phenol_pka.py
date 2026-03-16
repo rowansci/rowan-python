@@ -2,8 +2,9 @@ import stjames
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/phenol-pka")
 
 phenols_to_compute = {
     "p-nitrophenol": "Oc1ccc(N(=O)=O)cc1",
@@ -17,8 +18,6 @@ phenols_to_compute = {
     "p-(dimethylamino)phenol": "CN(C)c1ccc(O)cc1",
 }
 
-pka_folder = rowan.create_folder(name="Phenol pKa workflow")
-
 workflows = []
 for name, smiles in phenols_to_compute.items():
     stjames_molecule = stjames.Molecule.from_smiles(smiles)
@@ -26,14 +25,14 @@ for name, smiles in phenols_to_compute.items():
         rowan.submit_pka_workflow(
             stjames_molecule,
             name=f"pKa {name}",
-            folder_uuid=pka_folder.uuid,
+            folder=folder,
             deprotonate_elements=[8],
         )
     )
 
 
-for workflow in workflows:
-    workflow.wait_for_result()
-    workflow.fetch_latest(in_place=True)
+workflow_results = [w.result() for w in workflows]
 
-print([(workflow.name, workflow.data["conjugate_bases"][0]["pka"]) for workflow in workflows])
+print(
+    [(w.name, r.conjugate_bases[0].pka) for w, r in zip(workflows, workflow_results, strict=True)]
+)

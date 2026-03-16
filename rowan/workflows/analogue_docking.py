@@ -2,6 +2,7 @@
 
 import stjames
 
+from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..types import MoleculeInput
 from ..utils import api_client
@@ -145,6 +146,7 @@ def submit_analogue_docking_workflow(
     exhaustiveness: float = 8,
     name: str = "Analogue Docking Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -158,10 +160,15 @@ def submit_analogue_docking_workflow(
     :param exhaustiveness: Which exhaustiveness to employ.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted analogue-docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     docking_settings = {
         "executable": executable,
         "exhaustiveness": exhaustiveness,

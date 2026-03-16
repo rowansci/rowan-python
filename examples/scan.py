@@ -8,8 +8,9 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_scan_workflow(
     initial_molecule=Molecule.from_smiles("O"),
@@ -23,8 +24,9 @@ workflow = rowan.submit_scan_workflow(
     },
     calculation_method="GFN2-xTB",
     calculation_engine="xtb",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/scan/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+result = workflow.result()
+print(result)

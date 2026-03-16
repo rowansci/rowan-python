@@ -3,6 +3,7 @@
 import logging
 import time
 import warnings
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ import stjames
 from pydantic import BaseModel, ConfigDict, Field
 from rdkit import Chem
 
+from ..folder import Folder
 from ..molecule import Molecule as RowanMolecule
 from ..types import SMILES, MoleculeInput
 from ..utils import api_client
@@ -69,6 +71,7 @@ class WorkflowResult:
     workflow_data: dict[str, Any]
     workflow_type: str
     workflow_uuid: str
+    eager: bool = field(default=True, repr=False)
     _workflow: Any = field(default=None, init=False)
     _cache: dict[str, Any] = field(default_factory=dict, init=False)
 
@@ -112,7 +115,7 @@ def register_result(workflow_type: str) -> Callable[[type[WorkflowResult]], type
 
 
 def create_result(
-    workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str
+    workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str, eager: bool = True
 ) -> WorkflowResult:
     """
     Factory function to create the appropriate result type for a workflow.
@@ -120,6 +123,9 @@ def create_result(
     :param workflow_data: Raw data dict from the workflow.
     :param workflow_type: Workflow type string.
     :param workflow_uuid: UUID of the parent workflow.
+    :param eager: If True (default), eagerly fetch related data (e.g. calculations)
+        in ``__post_init__``. Set to False when polling partial results with
+        ``result(wait=False)`` to avoid unnecessary API calls.
     :returns: Typed WorkflowResult subclass, or base WorkflowResult if unknown.
     """
     result_class = RESULT_REGISTRY.get(workflow_type, WorkflowResult)
@@ -127,6 +133,7 @@ def create_result(
         workflow_data=workflow_data,
         workflow_type=workflow_type,
         workflow_uuid=workflow_uuid,
+        eager=eager,
     )
 
 
@@ -316,7 +323,27 @@ Workflow:  {self.name}
             raise WorkflowError(
                 f"Workflow '{self.name}' has no results yet (status={status}, uuid={self.uuid})"
             )
-        return create_result(self.data, self.workflow_type, self.uuid)
+        eager = self.status == stjames.Status.COMPLETED_OK
+        return create_result(self.data, self.workflow_type, self.uuid, eager=eager)
+
+    def stream_result(self, poll_interval: int = 5) -> Iterator["WorkflowResult"]:
+        """
+        Poll the workflow and yield results until complete.
+
+        Yields partial results at each poll interval while running, then yields
+        the final complete result once the workflow finishes.
+
+        :param poll_interval: Seconds between status checks.
+        :yields: WorkflowResult at each poll interval, with final complete result last.
+        :raises WorkflowError: If the workflow fails or is stopped.
+        """
+        while not self.done():
+            try:
+                yield self.result(wait=False)
+            except WorkflowError:
+                pass
+            time.sleep(poll_interval)
+        yield self.result()
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
         """
@@ -516,7 +543,7 @@ def submit_workflow(
     initial_molecule: MoleculeInput | None = None,
     initial_smiles: str | None = None,
     name: str | None = None,
-    folder_uuid: str | None = None,
+    folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -527,12 +554,14 @@ def submit_workflow(
     :param initial_molecule: Molecule object to use as the initial molecule.
     :param initial_smiles: SMILES string to use as the initial molecule.
     :param name: Name for the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder_uuid: UUID of the folder to store the workflow in, or a Folder object.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
     """
+    if isinstance(folder_uuid, Folder):
+        folder_uuid = folder_uuid.uuid
     if workflow_type not in stjames.WORKFLOW_MAPPING:
         raise ValueError(
             "Invalid workflow type. Must be one of:\n    " + "\n    ".join(stjames.WORKFLOW_MAPPING)
@@ -678,7 +707,7 @@ def batch_submit_workflow(
     initial_molecules: list[MoleculeInput] | None = None,
     initial_smileses: list[str] | None = None,
     names: list[str] | None = None,
-    folder_uuid: str | None = None,
+    folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
 ) -> list[Workflow]:
     """

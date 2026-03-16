@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..folder import Folder
 from ..types import MoleculeInput
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, extract_smiles, register_result
@@ -107,6 +108,7 @@ def submit_macropka_workflow(
     compute_aqueous_solubility: bool = True,
     name: str = "Macropka Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -124,11 +126,16 @@ def submit_macropka_workflow(
     :param compute_aqueous_solubility: Whether to compute aqueous solubility for each pH.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     initial_smiles = extract_smiles(initial_smiles)
     workflow = stjames.MacropKaWorkflow(
         initial_smiles=initial_smiles,

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..folder import Folder
 from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
@@ -102,6 +103,7 @@ def submit_nmr_workflow(
     do_optimization: bool = True,
     name: str = "NMR Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -113,10 +115,15 @@ def submit_nmr_workflow(
     :param do_optimization: Whether to optimize conformer geometries.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
     workflow_data = {"initial_molecule": mol_dict, "solvent": solvent}

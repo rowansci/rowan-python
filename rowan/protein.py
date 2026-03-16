@@ -1,9 +1,11 @@
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
 from pydantic import BaseModel
 
+from .project import Project
 from .utils import api_client
 
 
@@ -104,14 +106,54 @@ class Protein(BaseModel):
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
 
-    def sanitize(self) -> None:
+    def sanitize(self, poll_interval: float = 10.0, timeout: float = 300.0) -> None:
         """
-        Sanitizes a protein
+        Sanitizes a protein and waits for the process to complete.
 
-        :raises requests.HTTPError: if the request to the API fails
+        Protein sanitization runs asynchronously on the server. This method
+        submits the request then polls until sanitization succeeds, fails, or
+        times out.
+
+        :param poll_interval: Seconds between status checks (default 10).
+        :param timeout: Maximum seconds to wait before raising (default 300).
+        :raises RuntimeError: if sanitization fails, is stopped, or times out.
+        :raises requests.HTTPError: if any API request fails.
         """
         with api_client() as client:
             response = client.post(f"/protein/sanitize/{self.uuid}")
+            response.raise_for_status()
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            time.sleep(poll_interval)
+            self.refresh()
+            match self.sanitized:
+                case 2:  # success
+                    return
+                case 3:  # failed
+                    raise RuntimeError(
+                        f"Protein sanitization failed for {self.uuid}. "
+                        "Check the protein in the Rowan UI for details."
+                    )
+                case 4:  # stopped
+                    raise RuntimeError(f"Protein sanitization was stopped for {self.uuid}.")
+                case _:  # 1 (in progress) or None: keep polling
+                    pass
+
+        raise RuntimeError(f"Protein sanitization timed out after {timeout:.0f}s for {self.uuid}.")
+
+    def validate_protein_forcefield(self) -> None:
+        """
+        Validate that this protein can be parameterized with the MD forcefield.
+
+        Calls the server-side validation which checks that all residues are
+        recognized by OpenMM and that there are no clashing atoms. Call this
+        before submitting any MD workflow to catch preparation issues early.
+
+        :raises requests.HTTPError: if validation fails or the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(f"/protein/{self.uuid}/validate_forcefield")
             response.raise_for_status()
 
     def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:
@@ -182,7 +224,9 @@ def list_proteins(
     return [Protein(**item) for item in results]
 
 
-def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) -> Protein:
+def upload_protein(
+    name: str, file_path: Path, project_uuid: str | Project | None = None
+) -> Protein:
     """
     Uploads a protein from a PDB file to the API.
 
@@ -191,6 +235,8 @@ def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) 
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
+    if isinstance(project_uuid, Project):
+        project_uuid = project_uuid.uuid
     with api_client() as client:
         # Step 1: Read the file and post it to the conversion endpoint.
         conversion_payload = {"name": name, "text": file_path.read_text()}
@@ -213,7 +259,9 @@ def upload_protein(name: str, file_path: Path, project_uuid: str | None = None) 
         return Protein(**final_response.json())
 
 
-def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = None) -> Protein:
+def create_protein_from_pdb_id(
+    name: str, code: str, project_uuid: str | Project | None = None
+) -> Protein:
     """
     Creates a protein from a PDB ID.
 
@@ -223,6 +271,8 @@ def create_protein_from_pdb_id(name: str, code: str, project_uuid: str | None = 
     :returns: Protein object representing the created protein
     :raises requests.HTTPError: if the request to the API fails
     """
+    if isinstance(project_uuid, Project):
+        project_uuid = project_uuid.uuid
     with api_client() as client:
         # Step 1: Read the file and post it to the conversion endpoint.
         conversion_response = client.post(f"/convert/pdb_id_to_protein?pdb_id={code}")

@@ -14,15 +14,25 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_multistage_optimization_workflow(
     initial_molecule=Molecule.from_smiles("C1CCC1"),  # cyclobutane
     mode="rapid",
     name="Multistage optimization cyclobutane",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow.data)
+print(f"Workflow UUID: {workflow.uuid}")
+
+# Stream stage-by-stage progress; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=10):
+    print(f"  {len(result.calculation_uuids)} stages done, energy={result.energy}")
+
+print(result)
+
+# Or pick up a completed workflow later by UUID:
+# result = rowan.retrieve_workflow(workflow.uuid).result(wait=False)

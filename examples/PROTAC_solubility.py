@@ -1,9 +1,12 @@
 # ruff: noqa: E501
 
+# WARNING: This example submits many workflows and will consume significant credits.
+
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/protac-solubility")
 
 PROTACs = {
     4564: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)CCCCCCCCCN3C=C(CCCOC(=O)NCC4=CC=C(C(=O)NC5=CC=CC=C5N)C=C4)N=N3)C(C)(C)C)C=C2)SC=N1",
@@ -28,29 +31,25 @@ PROTACs = {
     2428: "CC1=C(C2=CC=C(CNC(=O)[C@@H]3C[C@@H](O)CN3C(=O)[C@@H](NC(=O)COCCOCCOCC(=O)NC3=CC=C(C(=O)NC4=CC=CC=C4N)C=C3)C(C)(C)C)C=C2)SC=N1",
 }
 
-protac_solubility_folder = rowan.create_folder(name="PROTAC Solubility")
-
 workflows = []
 for id, smiles in PROTACs.items():
     workflows.append(
         rowan.submit_solubility_workflow(
             initial_smiles=smiles,
-            solubility_method="fastsolv",
+            method="fastsolv",
             solvents=["CS(=O)C"],
             temperatures=[293.15],
-            folder_uuid=protac_solubility_folder.uuid,
             name=f"solubility {id}",
+            folder=folder,
         )
     )
 
 
-for workflow in workflows:
-    workflow.wait_for_result()
-    workflow.fetch_latest(in_place=True)
+workflow_results = [w.result() for w in workflows]
 
 print(
     [
-        (workflow.name, workflow.data["solubilities"]["CS(=O)C"]["solubilities"])
-        for workflow in workflows
+        (w.name, r.data["solubilities"]["CS(=O)C"]["solubilities"])
+        for w, r in zip(workflows, workflow_results, strict=True)
     ]
 )

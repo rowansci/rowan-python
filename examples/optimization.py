@@ -8,24 +8,24 @@ from stjames import Molecule
 
 import rowan
 
-# Set ROWAN_API_KEY environment variable to your API key or set rowan.api_key directly
+# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule=Molecule.from_smiles("O"),
+    initial_molecule=Molecule.from_smiles("O"),  # water
     method="GFN2-xTB",
     tasks=["optimize", "frequencies"],
     engine="xtb",
     name="Water Optimization",
+    folder=folder,
 )
 
 print(f"View optimization privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
-workflow.wait_for_result().fetch_latest(in_place=True)
-print(workflow)
+result = workflow.result()
+print(result)
 
-calc_uuid = workflow.data["calculation_uuid"]
-mol_json = rowan.retrieve_calculation_molecules(calc_uuid, return_frequencies=True)
-mols = [Molecule.model_validate(json) for json in mol_json]
+mols = result.molecules
 
 print(f"\n# molecules: {len(mols)}")
 
@@ -34,5 +34,5 @@ for mol in mols:
     print(f"{mol.angle(2, 1, 3):5.2f}")
 
 print("\nFrequencies:")
-for vibrational_mode in mols[-1].vibrational_modes:
+for vibrational_mode in mols[-1].vibrational_modes or []:
     print(f"{vibrational_mode.frequency:8.3f}")

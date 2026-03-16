@@ -3,7 +3,8 @@ from typing import Any, Self
 
 from pydantic import BaseModel
 
-from .utils import api_client
+from .project import default_project, retrieve_project
+from .utils import api_client, get_project_uuid
 
 
 class Folder(BaseModel):
@@ -207,6 +208,46 @@ def create_folder(
         response.raise_for_status()
         folder_data = response.json()
     return Folder(**folder_data)
+
+
+def get_folder(path: str, create: bool = True) -> Folder:
+    """
+    Get a folder by name or nested path within the default project.
+
+    This is the easiest way to get a folder to use as a location for calculations.
+    By default, any missing folders along the path are created automatically.
+
+    Example::
+
+        folder = rowan.get_folder("CDK2/docking/batch_1")
+        workflow = rowan.submit_docking_workflow(..., folder_uuid=folder.uuid)
+
+    :param path: Folder name or ``/``-separated path, e.g. ``"project/subdir/run1"``.
+    :param create: If True (default), create missing folders. If False, raise ValueError if any
+        segment is not found.
+    :returns: The deepest :class:`Folder` in the path.
+    :raises ValueError: If the path is empty, or ``create=False`` and a folder is not found.
+    """
+    segments = [s for s in path.split("/") if s]
+    if not segments:
+        raise ValueError(f"Invalid folder path: {path!r}")
+    if project_uuid := get_project_uuid():
+        current_uuid = retrieve_project(project_uuid).root_folder_uuid
+    else:
+        current_uuid = default_project().root_folder_uuid
+    folder = None
+    for segment in segments:
+        matches = list_folders(parent_uuid=current_uuid, name_contains=segment, size=100)
+        folder = next(
+            (f for f in matches if f.name == segment and f.parent_uuid == current_uuid),
+            None,
+        )
+        if folder is None:
+            if not create:
+                raise ValueError(f"Folder {segment!r} not found")
+            folder = create_folder(name=segment, parent_uuid=current_uuid)
+        current_uuid = folder.uuid
+    return folder  # type: ignore[return-value]
 
 
 def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) -> None:

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..folder import Folder
 from ..types import MoleculeInput
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
@@ -88,6 +89,7 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     do_optimization: bool = True,
     name: str = "Hydrogen-Bond Acceptor/Donor Strength",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -98,10 +100,15 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     :param do_optimization: Whether to perform an optimization.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.HydrogenBondBasicityWorkflow(
