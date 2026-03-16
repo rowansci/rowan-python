@@ -10,8 +10,6 @@ Available modes:
 See documentation at: https://docs.rowansci.com/science/workflows/multistage-optimization
 """
 
-import time
-
 from stjames import Molecule
 
 import rowan
@@ -30,13 +28,10 @@ workflow = rowan.submit_multistage_optimization_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/multistage-opt/{workflow.uuid}")
 print(f"Workflow UUID: {workflow.uuid}")
 
-# Poll stage-by-stage progress while running.
-while not workflow.done():
-    partial = workflow.result(wait=False)
-    print(f"  {len(partial.calculation_uuids)} stages done, energy={partial.energy}")
-    time.sleep(10)
+# Stream stage-by-stage progress; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=10):
+    print(f"  {len(result.calculation_uuids)} stages done, energy={result.energy}")
 
-result = workflow.result()
 print(result)
 
 # Or pick up a completed workflow later by UUID:

@@ -38,8 +38,7 @@ class DoubleEndedTSSearchResult(WorkflowResult):
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.eager:
-            ts_uuid = getattr(self._workflow, "ts_guess_calculation_uuid", None)
-            if ts_uuid:
+            if ts_uuid := getattr(self._workflow, "ts_guess_calculation_uuid", None):
                 self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
 
     def __repr__(self) -> str:
@@ -57,8 +56,7 @@ class DoubleEndedTSSearchResult(WorkflowResult):
     def ts_guess_calculation(self) -> Calculation | None:
         """The transition state guess Calculation with full molecule data (lazily fetched)."""
         if "ts_calculation" not in self._cache:
-            ts_uuid = self.ts_guess_calculation_uuid
-            if ts_uuid:
+            if ts_uuid := self.ts_guess_calculation_uuid:
                 self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
         return self._cache.get("ts_calculation")
 
@@ -169,9 +167,9 @@ def submit_double_ended_ts_search_workflow(
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     workflow = stjames.DoubleEndedTSSearchWorkflow(
         reactant=reactant,

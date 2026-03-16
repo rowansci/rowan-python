@@ -47,9 +47,9 @@ def submit_admet_workflow(
     :raises ValueError: If the molecule has no SMILES associated with it.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     initial_smiles = extract_smiles(initial_smiles)
     workflow = stjames.ADMETWorkflow(initial_smiles=initial_smiles)

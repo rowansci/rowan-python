@@ -1,5 +1,3 @@
-import time
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -33,12 +31,9 @@ workflow = rowan.submit_batch_docking_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/batch-docking/{workflow.uuid}")
 print(f"Workflow UUID: {workflow.uuid}")
 
-# Poll for partial scores as each ligand completes.
-while not workflow.done():
-    partial = workflow.result(wait=False)
-    completed = sum(s is not None for s in partial.scores.values())
+# Stream partial scores as each ligand completes; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=30):
+    completed = sum(s is not None for s in result.scores.values())
     print(f"  {completed}/{len(ligands)} complete...")
-    time.sleep(30)
 
-result = workflow.result()
 print(result.scores)  # dict of SMILES → best docking score

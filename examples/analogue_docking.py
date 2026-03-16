@@ -4,6 +4,9 @@ import stjames
 
 import rowan
 
+# Set your API key or use the ROWAN_API_KEY environment variable
+# rowan.api_key = "rowan-sk..."
+
 folder = rowan.get_folder("examples")
 
 citalopram_analogues = [

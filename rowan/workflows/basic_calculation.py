@@ -25,8 +25,7 @@ class BasicCalculationResult(WorkflowResult):
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.eager:
-            calc_uuid = getattr(self._workflow, "calculation_uuid", None)
-            if calc_uuid:
+            if calc_uuid := getattr(self._workflow, "calculation_uuid", None):
                 self._cache["calculation"] = retrieve_calculation(calc_uuid)
 
     def __repr__(self) -> str:
@@ -41,10 +40,9 @@ class BasicCalculationResult(WorkflowResult):
 
     @property
     def calculation(self) -> Calculation | None:
-        """The Calculation object with full molecule data (lazily fetched)."""
+        """Lazily fetched Calculation object with full molecule data."""
         if "calculation" not in self._cache:
-            calc_uuid = self.calculation_uuid
-            if calc_uuid:
+            if calc_uuid := self.calculation_uuid:
                 self._cache["calculation"] = retrieve_calculation(calc_uuid)
         return self._cache.get("calculation")
 
@@ -131,9 +129,9 @@ def submit_basic_calculation_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     if not tasks:
         tasks = ["optimize"]

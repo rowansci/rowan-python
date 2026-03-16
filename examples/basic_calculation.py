@@ -1,5 +1,3 @@
-import time
-
 from stjames import Method, Molecule
 
 import rowan
@@ -20,16 +18,10 @@ workflow = rowan.submit_basic_calculation_workflow(
 
 print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
 
-# Poll the calculation endpoint to watch optimization steps as they complete.
-calc_uuid = None
-while not workflow.done():
-    partial = workflow.result(wait=False)
-    if calc_uuid is None:
-        calc_uuid = partial.calculation_uuid
-    if calc_uuid:
-        mols = rowan.retrieve_calculation_molecules(calc_uuid)
+# Stream optimization steps as they complete; final iteration is the complete result.
+for result in workflow.stream_result(poll_interval=3):
+    if result.calculation_uuid:
+        mols = rowan.retrieve_calculation_molecules(result.calculation_uuid)
         print(f"  {len(mols)} opt steps, energy={mols[-1].get('energy') if mols else None}")
-    time.sleep(3)
 
-result = workflow.result()
 print(result)

@@ -167,9 +167,9 @@ def submit_protein_binder_design_workflow(
     :raises ValueError: If protocol is not a valid BinderProtocol.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     if isinstance(protocol, BinderProtocol):
         protocol = protocol.value

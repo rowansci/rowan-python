@@ -3,6 +3,7 @@
 import logging
 import time
 import warnings
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -324,6 +325,25 @@ Workflow:  {self.name}
             )
         eager = self.status == stjames.Status.COMPLETED_OK
         return create_result(self.data, self.workflow_type, self.uuid, eager=eager)
+
+    def stream_result(self, poll_interval: int = 5) -> Iterator["WorkflowResult"]:
+        """
+        Poll the workflow and yield results until complete.
+
+        Yields partial results at each poll interval while running, then yields
+        the final complete result once the workflow finishes.
+
+        :param poll_interval: Seconds between status checks.
+        :yields: WorkflowResult at each poll interval, with final complete result last.
+        :raises WorkflowError: If the workflow fails or is stopped.
+        """
+        while not self.done():
+            try:
+                yield self.result(wait=False)
+            except WorkflowError:
+                pass
+            time.sleep(poll_interval)
+        yield self.result()
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
         """

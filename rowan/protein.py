@@ -127,17 +127,18 @@ class Protein(BaseModel):
         while time.monotonic() < deadline:
             time.sleep(poll_interval)
             self.refresh()
-            status = self.sanitized
-            if status == 2:
-                return
-            elif status == 3:
-                raise RuntimeError(
-                    f"Protein sanitization failed for {self.uuid}. "
-                    "Check the protein in the Rowan UI for details."
-                )
-            elif status == 4:
-                raise RuntimeError(f"Protein sanitization was stopped for {self.uuid}.")
-            # status == 1 (in progress) or None: keep polling
+            match self.sanitized:
+                case 2:  # success
+                    return
+                case 3:  # failed
+                    raise RuntimeError(
+                        f"Protein sanitization failed for {self.uuid}. "
+                        "Check the protein in the Rowan UI for details."
+                    )
+                case 4:  # stopped
+                    raise RuntimeError(f"Protein sanitization was stopped for {self.uuid}.")
+                case _:  # 1 (in progress) or None: keep polling
+                    pass
 
         raise RuntimeError(f"Protein sanitization timed out after {timeout:.0f}s for {self.uuid}.")
 

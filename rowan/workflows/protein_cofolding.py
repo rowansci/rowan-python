@@ -278,9 +278,9 @@ def submit_protein_cofolding_workflow(
     :raises ValueError: If no protein, DNA, or RNA sequences are provided.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     # At least one sequence type is required
     if not (initial_protein_sequences or initial_dna_sequences or initial_rna_sequences):

@@ -73,9 +73,9 @@ def submit_fukui_workflow(
     :raises ValueError: If the solvent model is incompatible with the chosen method.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     if solvent_settings is not None:
         model = solvent_settings.get("model")

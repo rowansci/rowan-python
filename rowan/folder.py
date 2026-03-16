@@ -231,8 +231,7 @@ def get_folder(path: str, create: bool = True) -> Folder:
     segments = [s for s in path.split("/") if s]
     if not segments:
         raise ValueError(f"Invalid folder path: {path!r}")
-    project_uuid = get_project_uuid()
-    if project_uuid:
+    if project_uuid := get_project_uuid():
         current_uuid = retrieve_project(project_uuid).root_folder_uuid
     else:
         current_uuid = default_project().root_folder_uuid

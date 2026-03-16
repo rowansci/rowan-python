@@ -25,8 +25,7 @@ class IRCResult(WorkflowResult):
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.eager:
-            ts_uuid = self._workflow.starting_TS
-            if ts_uuid:
+            if ts_uuid := self._workflow.starting_TS:
                 self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
 
     def __repr__(self) -> str:
@@ -53,8 +52,7 @@ class IRCResult(WorkflowResult):
     def ts_calculation(self) -> "Calculation | None":
         """The transition state Calculation (lazily fetched)."""
         if "ts_calc" not in self._cache:
-            ts_uuid = self.ts_uuid
-            if ts_uuid:
+            if ts_uuid := self.ts_uuid:
                 self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
         return self._cache.get("ts_calc")
 
@@ -163,9 +161,9 @@ def submit_irc_workflow(
     :returns: Workflow object representing the submitted IRC workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 

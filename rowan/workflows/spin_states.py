@@ -156,9 +156,9 @@ def submit_spin_states_workflow(
     :raises ValueError: If any multiplicity is incompatible with the molecule.
     :raises requests.HTTPError: If the request to the API fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 

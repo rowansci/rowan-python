@@ -91,9 +91,9 @@ def submit_msa_workflow(
     :returns: Workflow object representing the submitted MSA workflow.
     :raises HTTPError: If the API request fails.
     """
-    if folder is not None and folder_uuid is not None:
+    if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
-    if folder is not None:
+    if folder:
         folder_uuid = folder.uuid
     if output_formats is None:
         output_formats = {"colabfold"}
