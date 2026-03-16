@@ -4,6 +4,7 @@ from pathlib import Path
 
 import stjames
 
+from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
@@ -105,8 +106,10 @@ def submit_protein_md_workflow(
     ionic_strength_M: float = 0.10,
     water_buffer: float = 6.0,
     save_solvent: bool = False,
+    validate_forcefield: bool = True,
     name: str = "Protein MD Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -126,14 +129,25 @@ def submit_protein_md_workflow(
     :param ionic_strength_M: ionic strength of the solution, in M (molar)
     :param water_buffer: amount of water to add around the protein, in A
     :param save_solvent: whether solvent should be saved
+    :param validate_forcefield: if True (default), validate the protein forcefield
+        compatibility before submitting. Raises an error early if the protein cannot
+        be parameterized or has clashing residues.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     if isinstance(protein, Protein):
         protein = protein.uuid
+
+    if validate_forcefield:
+        Protein(uuid=protein).validate_protein_forcefield()
 
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein=protein,

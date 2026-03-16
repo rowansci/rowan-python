@@ -1,5 +1,3 @@
-import time
-
 import stjames
 
 import rowan
@@ -124,8 +122,6 @@ protein = rowan.create_protein_from_pdb_id(
 )
 
 protein.sanitize()
-time.sleep(60)
-protein.refresh()
 
 for ligand in ligands:
     workflow = rowan.submit_docking_workflow(
@@ -133,7 +129,7 @@ for ligand in ligands:
         pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
         initial_molecule=stjames.Molecule.from_smiles(ligand),
         name=f"Docking {ligand}",
-        folder_uuid=folder,
+        folder=folder,
     )
     workflows.append(workflow)
 

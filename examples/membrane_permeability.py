@@ -4,18 +4,21 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/membrane-permeability")
 
 smiles = "CC1=C(N=CN1)CSCCNC(=NC)NC#N"
 
 gnn_mtl_workflow = rowan.submit_membrane_permeability_workflow(
     smiles,
     name="GNN=MTL permeability",
+    folder=folder,
 )
 
 pypermm_workflow = rowan.submit_membrane_permeability_workflow(
     Chem.MolFromSmiles(smiles),
     method="pypermm",
     name="Oseltamivir Membrane Permeability (PyPermm)",
+    folder=folder,
 )
 
 print("View these workflows privately:")

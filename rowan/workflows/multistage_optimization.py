@@ -3,6 +3,7 @@
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
@@ -22,11 +23,11 @@ class MultiStageOptResult(WorkflowResult):
     _stjames_class = stjames.MultiStageOptWorkflow
 
     def __post_init__(self) -> None:
-        """Parse workflow data and eagerly fetch final calculation."""
         super().__post_init__()
-        uuids = self.calculation_uuids
-        if uuids:
-            self._cache["final_calculation"] = retrieve_calculation(uuids[-1])
+        if self.eager:
+            uuids = self.calculation_uuids
+            if uuids:
+                self._cache["final_calculation"] = retrieve_calculation(uuids[-1])
 
     def __repr__(self) -> str:
         energy = self.energy
@@ -61,8 +62,32 @@ class MultiStageOptResult(WorkflowResult):
 
     @property
     def final_calculation(self) -> Calculation | None:
-        """The final Calculation object with full molecule data (eagerly fetched)."""
+        """The final Calculation object with full molecule data (lazily fetched)."""
+        if "final_calculation" not in self._cache:
+            uuids = self.calculation_uuids
+            if uuids:
+                self._cache["final_calculation"] = retrieve_calculation(uuids[-1])
         return self._cache.get("final_calculation")
+
+    def get_stage_energies(self) -> list[tuple[str, float | None]]:
+        """
+        Fetch energies for all completed stages.
+
+        Useful for polling partial results — call this on each poll to see which
+        stages have completed and their energies.
+
+        :returns: List of (calculation_uuid, energy_in_hartree) for each completed stage.
+
+        .. note::
+            Makes one API call per completed stage. Results are not cached since
+            this is intended for use during polling with ``result(wait=False)``.
+        """
+        results = []
+        for uuid in self.calculation_uuids:
+            calc = retrieve_calculation(uuid)
+            energy = calc.molecule.energy if calc.molecule else None
+            results.append((uuid, energy))
+        return results
 
     @property
     def molecule(self) -> Molecule | None:
@@ -98,6 +123,7 @@ def submit_multistage_optimization_workflow(
     frequencies: bool = False,
     name: str = "Multistage Optimization Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -111,10 +137,15 @@ def submit_multistage_optimization_workflow(
     :param frequencies: Whether to calculate frequencies.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.MultiStageOptWorkflow(

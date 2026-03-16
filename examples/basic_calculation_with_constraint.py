@@ -4,11 +4,13 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_workflow(
     initial_molecule=Molecule.from_smiles("CCCC"),
     workflow_type="basic_calculation",
     name="Constrained Butane",
+    folder_uuid=folder,
     workflow_data={
         "settings": {
             "method": "gfn2_xtb",

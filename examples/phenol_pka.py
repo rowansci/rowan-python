@@ -25,7 +25,7 @@ for name, smiles in phenols_to_compute.items():
         rowan.submit_pka_workflow(
             stjames_molecule,
             name=f"pKa {name}",
-            folder_uuid=folder,
+            folder=folder,
             deprotonate_elements=[8],
         )
     )

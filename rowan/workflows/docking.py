@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..types import MoleculeInput
 from ..utils import api_client
@@ -134,6 +135,7 @@ def submit_docking_workflow(
     do_pose_refinement: bool = True,
     name: str = "Docking Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -150,10 +152,15 @@ def submit_docking_workflow(
     :param do_pose_refinement: Whether or not to optimize output poses.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(protein, Protein):

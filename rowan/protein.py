@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
@@ -105,14 +106,53 @@ class Protein(BaseModel):
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
 
-    def sanitize(self) -> None:
+    def sanitize(self, poll_interval: float = 10.0, timeout: float = 300.0) -> None:
         """
-        Sanitizes a protein
+        Sanitizes a protein and waits for the process to complete.
 
-        :raises requests.HTTPError: if the request to the API fails
+        Protein sanitization runs asynchronously on the server. This method
+        submits the request then polls until sanitization succeeds, fails, or
+        times out.
+
+        :param poll_interval: Seconds between status checks (default 10).
+        :param timeout: Maximum seconds to wait before raising (default 300).
+        :raises RuntimeError: if sanitization fails, is stopped, or times out.
+        :raises requests.HTTPError: if any API request fails.
         """
         with api_client() as client:
             response = client.post(f"/protein/sanitize/{self.uuid}")
+            response.raise_for_status()
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            time.sleep(poll_interval)
+            self.refresh()
+            status = self.sanitized
+            if status == 2:
+                return
+            elif status == 3:
+                raise RuntimeError(
+                    f"Protein sanitization failed for {self.uuid}. "
+                    "Check the protein in the Rowan UI for details."
+                )
+            elif status == 4:
+                raise RuntimeError(f"Protein sanitization was stopped for {self.uuid}.")
+            # status == 1 (in progress) or None: keep polling
+
+        raise RuntimeError(f"Protein sanitization timed out after {timeout:.0f}s for {self.uuid}.")
+
+    def validate_protein_forcefield(self) -> None:
+        """
+        Validate that this protein can be parameterized with the MD forcefield.
+
+        Calls the server-side validation which checks that all residues are
+        recognized by OpenMM and that there are no clashing atoms. Call this
+        before submitting any MD workflow to catch preparation issues early.
+
+        :raises requests.HTTPError: if validation fails or the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(f"/protein/{self.uuid}/validate_forcefield")
             response.raise_for_status()
 
     def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:

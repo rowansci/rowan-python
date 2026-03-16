@@ -4,6 +4,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 
 def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, name: str) -> float:
@@ -11,6 +12,7 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         initial_molecule=molecule,
         workflow_type="basic_calculation",
         name=f"{name} {method} optimization",
+        folder_uuid=folder,
         workflow_data={
             "settings": {"method": method, "tasks": ["optimize"]},
         },
@@ -23,6 +25,7 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
         initial_molecule=opt_result.molecule,
         workflow_type="basic_calculation",
         name=f"{name} {method} single point",
+        folder_uuid=folder,
         workflow_data={
             "settings": {
                 "method": method,

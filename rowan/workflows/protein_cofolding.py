@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
@@ -248,6 +249,7 @@ def submit_protein_cofolding_workflow(
     name: str = "Protein-Ligand Co-Folding",
     model: CofoldingModel | str = CofoldingModel.BOLTZ_2,
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -270,11 +272,16 @@ def submit_protein_cofolding_workflow(
     :param name: Name of the workflow.
     :param model: Model to use for the computation.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If no protein, DNA, or RNA sequences are provided.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     # At least one sequence type is required
     if not (initial_protein_sequences or initial_dna_sequences or initial_rna_sequences):
         raise ValueError("At least one protein, DNA, or RNA sequence is required for cofolding")

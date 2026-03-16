@@ -26,12 +26,14 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_bde_workflow(
     initial_molecule=Molecule.from_smiles("CCCC"),
     mode="rapid",
     all_CH=True,
     name="Butane BDE",
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/bde/{workflow.uuid}")

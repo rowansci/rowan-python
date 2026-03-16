@@ -2,6 +2,7 @@
 
 import stjames
 
+from ..folder import Folder
 from ..types import MoleculeInput
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
@@ -47,6 +48,7 @@ def submit_ion_mobility_workflow(
     do_optimization: bool = True,
     name: str = "Ion-Mobility Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -60,10 +62,15 @@ def submit_ion_mobility_workflow(
     :param do_optimization: Whether to perform an optimization on the molecule.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.IonMobilityWorkflow(

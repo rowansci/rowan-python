@@ -19,8 +19,6 @@ protein = rowan.create_protein_from_pdb_id(
 )
 
 protein.sanitize()
-time.sleep(60)
-protein.refresh()
 
 workflow = rowan.submit_batch_docking_workflow(
     ligands,
@@ -28,7 +26,7 @@ workflow = rowan.submit_batch_docking_workflow(
     pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
     executable="qvina2",
     scoring_function="vina",
-    folder_uuid=folder,
+    folder=folder,
 )
 
 
@@ -42,8 +40,5 @@ while not workflow.done():
     print(f"  {completed}/{len(ligands)} complete...")
     time.sleep(30)
 
-result = workflow.result(wait=False)
+result = workflow.result()
 print(result.scores)  # dict of SMILES → best docking score
-
-# Or retrieve later by UUID:
-# result = rowan.retrieve_workflow(workflow.uuid).result()

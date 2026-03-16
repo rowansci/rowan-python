@@ -3,6 +3,7 @@
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
@@ -121,6 +122,7 @@ def submit_conformer_search_workflow(
     transition_state: bool = False,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -139,10 +141,15 @@ def submit_conformer_search_workflow(
     :param transition_state: Whether to optimize the transition state.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     if conf_gen_settings is None:
         conf_gen_settings = stjames.ETKDGSettings()
 

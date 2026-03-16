@@ -15,6 +15,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 HCN = Molecule.from_xyz(
     """\
@@ -47,6 +48,7 @@ workflow = rowan.submit_double_ended_ts_search_workflow(
     optimize_inputs=True,
     optimize_ts=True,
     name="H-C≡N Isomerization",
+    folder=folder,
 )
 
 print(

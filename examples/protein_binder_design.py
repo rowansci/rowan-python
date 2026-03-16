@@ -23,6 +23,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 # Design a protein to bind brilacidin (antimicrobial small molecule)
 # Based on: https://github.com/HannesStark/boltzgen/blob/main/example/protein_binding_small_molecule/brilacidin.yaml
@@ -48,6 +49,7 @@ workflow = rowan.submit_protein_binder_design_workflow(
     num_designs=10,  # number of designs to generate
     budget=2,  # number of designs to return after diversity filtering
     name="Brilacidin binder design",
+    folder=folder,
 )
 
 print(

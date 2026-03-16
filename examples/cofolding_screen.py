@@ -122,7 +122,7 @@ for ligand in ligands:
         initial_smiles_list=[ligand],
         ligand_binding_affinity_index=0,
         name=f"Cofolding {ligand}",
-        folder_uuid=folder,
+        folder=folder,
     )
     workflows.append(workflow)
 

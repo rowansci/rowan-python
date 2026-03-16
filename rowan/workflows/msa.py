@@ -5,6 +5,7 @@ from typing import Literal
 
 import stjames
 
+from ..folder import Folder
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
 
@@ -28,7 +29,7 @@ class MSAResult(WorkflowResult):
 
     def download_files(
         self,
-        format: MSAOutputFormat | None = None,
+        format: MSAOutputFormat | stjames.MSAFormat | None = None,
         path: Path | str | None = None,
     ) -> list[Path]:
         """
@@ -49,7 +50,8 @@ class MSAResult(WorkflowResult):
 
         path.mkdir(parents=True, exist_ok=True)
 
-        formats_to_download = [format] if format else self._output_formats
+        fmt_str: str = format.value if isinstance(format, stjames.MSAFormat) else format  # type: ignore[assignment]
+        formats_to_download = [fmt_str] if format is not None else self._output_formats
         downloaded_paths = []
 
         for fmt in formats_to_download:
@@ -73,6 +75,7 @@ def submit_msa_workflow(
     output_formats: set[MSAOutputFormat | stjames.MSAFormat] | None = None,
     name: str = "MSA Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -83,10 +86,15 @@ def submit_msa_workflow(
         Defaults to {"colabfold"}.
     :param name: Name to assign to the workflow.
     :param folder_uuid: UUID of the folder where the workflow will be stored.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted MSA workflow.
     :raises HTTPError: If the API request fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     if output_formats is None:
         output_formats = {"colabfold"}
 

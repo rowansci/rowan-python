@@ -2,12 +2,11 @@ import tarfile
 from pathlib import Path
 
 # from chai_lab.chai1 import run_inference
-from stjames import MSAFormat
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 example_fasta = (
     ">protein|name=example-protein\n"
@@ -26,13 +25,14 @@ msa_workflow = rowan.submit_msa_workflow(
         "VLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR",
         "VHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH",
     ],
-    output_formats=[MSAFormat.CHAI],
+    output_formats=["chai"],
     name="CHAI Paired MSA Example",
+    folder=folder,
 )
 
 msa_result = msa_workflow.result()
 
-msa_result.download_files(MSAFormat.CHAI, path=msa_directory)
+msa_result.download_files("chai", path=msa_directory)
 
 tar_path = next(msa_directory.glob("*.tar.gz"))
 with tarfile.open(tar_path, "r") as tar_ref:

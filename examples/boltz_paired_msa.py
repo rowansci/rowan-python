@@ -1,12 +1,11 @@
 import tarfile
 from pathlib import Path
 
-from stjames import MSAFormat
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 msa_directory = Path("msa_directory")
 
@@ -15,13 +14,14 @@ msa_workflow = rowan.submit_msa_workflow(
         "VLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR",
         "VHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH",
     ],
-    output_formats=[MSAFormat.BOLTZ],
+    output_formats=["boltz"],
     name="Boltz Paired MSA Example",
+    folder=folder,
 )
 
 msa_result = msa_workflow.result()
 
-msa_result.download_files(MSAFormat.BOLTZ, path=msa_directory)
+msa_result.download_files("boltz", path=msa_directory)
 
 tar_path = next(msa_directory.glob("*.tar.gz"))
 with tarfile.open(tar_path, "r") as tar_ref:

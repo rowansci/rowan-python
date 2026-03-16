@@ -3,6 +3,7 @@
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..utils import api_client
 from .base import (
     Message,
@@ -94,6 +95,7 @@ def submit_redox_potential_workflow(
     mode: Mode = Mode.RAPID,
     name: str = "Redox Potential Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -105,10 +107,15 @@ def submit_redox_potential_workflow(
     :param mode: Mode to run the calculation in.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.RedoxPotentialWorkflow(

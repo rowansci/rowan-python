@@ -4,6 +4,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_irc_workflow(
     initial_molecule=Molecule.from_xyz_lines(
@@ -20,6 +21,7 @@ H     1.26740151   0.88347299   0.53620841
     ),
     name="HNCO + H₂O - IRC",
     preopt=False,
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/irc/{workflow.uuid}")

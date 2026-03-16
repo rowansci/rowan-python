@@ -2,6 +2,7 @@
 
 import stjames
 
+from ..folder import Folder
 from ..protein import Protein
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
@@ -27,8 +28,9 @@ class BatchDockingResult(WorkflowResult):
     def scores(self) -> dict[str, float | None]:
         """Docking scores indexed by SMILES."""
         smiles_list = self._workflow.initial_smiles_list
-        scores = self._workflow.best_scores
-        return dict(zip(smiles_list, scores, strict=True))
+        scores = self._workflow.best_scores or []
+        padded = list(scores) + [None] * (len(smiles_list) - len(scores))
+        return dict(zip(smiles_list, padded, strict=True))
 
 
 def submit_batch_docking_workflow(
@@ -40,6 +42,7 @@ def submit_batch_docking_workflow(
     exhaustiveness: float = 8,
     name: str = "Batch Docking Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -53,10 +56,15 @@ def submit_batch_docking_workflow(
     :param exhaustiveness: Docking exhaustiveness parameter.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     docking_settings = {
         "executable": executable,
         "exhaustiveness": exhaustiveness,

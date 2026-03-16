@@ -4,17 +4,21 @@ Run an optimization calculation on a molecule using Rowan.
 See documentation at: https://docs.rowansci.com/science/quantum-chemistry/geometry-optimization
 """
 
+from stjames import Molecule
+
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule="O",  # SMILES for water
+    initial_molecule=Molecule.from_smiles("O"),  # water
     method="GFN2-xTB",
     tasks=["optimize", "frequencies"],
     engine="xtb",
     name="Water Optimization",
+    folder=folder,
 )
 
 print(f"View optimization privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")

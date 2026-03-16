@@ -13,12 +13,14 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples/pka")
 
 workflow = rowan.submit_pka_workflow(
     initial_molecule=Molecule.from_smiles("c1ccccc1O"),
     method="aimnet2_wagen2024",
     mode="reckless",
     name="Pyridine pKa",
+    folder=folder,
 )
 
 print(
@@ -31,6 +33,7 @@ workflow2 = rowan.submit_pka_workflow(
     initial_molecule="c1ccccc1O",
     method="chemprop_nevolianis2025",
     name="Pyridine pKa (ML)",
+    folder=folder,
 )
 
 print(

@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 import stjames
 
+from ..folder import Folder
 from ..utils import api_client
 from .base import (
     MoleculeInput,
@@ -66,6 +67,7 @@ def submit_membrane_permeability_workflow(
     method: Literal["gnn-mtl", "pypermm"] = "gnn-mtl",
     name: str = "Membrane Permeability Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -75,10 +77,15 @@ def submit_membrane_permeability_workflow(
     :param method: Method used to compute membrane permeability.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     data: dict[str, Any] = {
         "name": name,
         "folder_uuid": folder_uuid,

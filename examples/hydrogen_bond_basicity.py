@@ -13,12 +13,14 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_hydrogen_bond_basicity_workflow(
     initial_molecule=Molecule.from_smiles("CC(=O)N(C)C"),  # dimethylacetamide
     do_csearch=True,  # run conformer search (default)
     do_optimization=True,  # optimize structures (default)
     name="DMA hydrogen bond basicity",
+    folder=folder,
 )
 
 print(

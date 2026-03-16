@@ -9,7 +9,7 @@ folder = rowan.get_folder("examples/conformer-dependent-redox")
 
 workflow = rowan.submit_conformer_search_workflow(
     initial_molecule=Molecule.from_smiles("CC(C)Cc1ccc(C(=O)c2ccc(O)cc2)cc1"),
-    folder_uuid=folder,
+    folder=folder,
 )
 print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
 csearch_result = workflow.result()
@@ -25,7 +25,7 @@ for conformer in csearch_result.conformer_uuids[:10]:
             stjames_molecule,
             reduction=True,
             oxidization=True,
-            folder_uuid=folder,
+            folder=folder,
         )
     )
 

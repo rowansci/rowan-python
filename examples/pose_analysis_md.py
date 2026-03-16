@@ -2,6 +2,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 ligand = "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1"
 
@@ -13,6 +14,7 @@ cofolding_workflow = rowan.submit_protein_cofolding_workflow(
     ligand_binding_affinity_index=0,
     name=f"Cofolding {ligand}",
     do_pose_refinement=True,
+    folder=folder,
 )
 
 print(
@@ -26,6 +28,7 @@ md_workflow = rowan.submit_pose_analysis_md_workflow(
     num_trajectories=1,
     simulation_time_ns=1,
     name="Downstream molecular dynamics",
+    folder=folder,
 )
 
 print(

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import stjames
 
 from ..calculation import retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
@@ -106,6 +107,7 @@ def submit_tautomer_search_workflow(
     mode: Mode = Mode.CAREFUL,
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -115,10 +117,15 @@ def submit_tautomer_search_workflow(
     :param mode: Mode to run the calculation in (reckless, rapid, careful).
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.TautomerWorkflow(

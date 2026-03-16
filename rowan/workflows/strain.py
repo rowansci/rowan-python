@@ -5,6 +5,7 @@ import math
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
+from ..folder import Folder
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
@@ -114,6 +115,7 @@ def submit_strain_workflow(
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
     name: str = "Strain Workflow",
     folder_uuid: str | None = None,
+    folder: Folder | None = None,
     max_credits: int | None = None,
 ) -> Workflow:
     """
@@ -127,10 +129,15 @@ def submit_strain_workflow(
         max 50 conformers.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
+    :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    if folder is not None and folder_uuid is not None:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder is not None:
+        folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
     workflow = stjames.StrainWorkflow(

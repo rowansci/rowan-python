@@ -2,6 +2,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
+folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_protein_cofolding_workflow(
     initial_protein_sequences=[
@@ -14,6 +15,7 @@ workflow = rowan.submit_protein_cofolding_workflow(
     name="Torcetrapib Cofolding",
     do_pose_refinement=True,
     compute_strain=False,
+    folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
