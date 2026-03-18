@@ -114,13 +114,15 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     def download_edge_trajectories(
         self,
         edge_index: int,
+        lambda_vals: list[float] | None = None,
         path: Path | str | None = None,
         name: str | None = None,
     ) -> Path:
         """
-        Download all DCD trajectory files for a specific perturbation edge.
+        Download DCD trajectory files for a specific perturbation edge.
 
         :param edge_index: Index of the edge (0-based, matching ``edges`` order).
+        :param lambda_vals: Lambda values to download. Defaults to all windows.
         :param path: Directory to save the file to. Defaults to current directory.
         :param name: Custom name for the tar.gz file (without extension).
         :returns: Path to the downloaded tar.gz file.
@@ -134,10 +136,14 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         path = Path(path) if path is not None else Path.cwd()
         path.mkdir(parents=True, exist_ok=True)
 
+        params: dict = {"edge_index": edge_index}
+        if lambda_vals is not None:
+            params["lambda_vals"] = lambda_vals
+
         with api_client() as client:
             response = client.post(
                 f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
-                params={"edge_index": edge_index},
+                params=params,
             )
             response.raise_for_status()
 
