@@ -24,7 +24,7 @@ protein = rowan.create_protein_from_pdb_id(
     "CDK2", "1HCK", project_uuid=rowan.default_project().uuid
 )
 
-protein.sanitize()
+protein.prepare()
 
 for ligand in ligands:
     workflow = rowan.submit_docking_workflow(

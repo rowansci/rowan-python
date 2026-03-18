@@ -2,7 +2,9 @@
 
 import stjames
 
+from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
+from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
 from ..types import MoleculeInput
 from ..utils import api_client
@@ -48,16 +50,16 @@ class AnalogueDockingResult(WorkflowResult):
             for smiles, scores in self._workflow.analogue_scores.items()
         }
 
-    def get_pose(self, smiles: str, index: int = 0) -> Protein:
+    def get_pose(self, smiles: str, index: int = 0) -> Calculation:
         """
-        Fetch a docked pose structure for a specific analogue.
+        Fetch a docked ligand pose as a calculation with 3D coordinates.
 
         :param smiles: SMILES string of the analogue.
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :returns: Protein object with the docked ligand pose.
+        :returns: Calculation containing the docked ligand molecule with 3D coordinates.
         :raises KeyError: If the SMILES is not found.
         :raises IndexError: If index is out of range.
-        :raises ValueError: If the pose has no structure UUID.
+        :raises ValueError: If the pose has no UUID.
         """
         scores = self.analogue_scores.get(smiles)
         if scores is None:
@@ -67,26 +69,42 @@ class AnalogueDockingResult(WorkflowResult):
 
         uuid = scores[index].pose
         if not uuid:
-            raise ValueError(f"Pose {index} for '{smiles}' has no structure UUID")
+            raise ValueError(f"Pose {index} for '{smiles}' has no UUID")
 
         cache_key = f"pose_{smiles}_{index}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = retrieve_protein(uuid)
+            self._cache[cache_key] = retrieve_calculation(uuid)
         return self._cache[cache_key]
 
-    def get_poses(self, smiles: str) -> list[Protein]:
+    @property
+    def best_poses(self) -> dict[str, Molecule]:
         """
-        Fetch all docked pose structures for a specific analogue.
+        Best docked pose per analogue, keyed by SMILES.
+
+        Fetches the final geometry from each analogue's top-scoring pose.
+        Analogues with no successful poses are excluded.
+
+        :returns: Dictionary mapping SMILES to docked ``Molecule`` with 3D coordinates.
+        """
+        result: dict[str, Molecule] = {}
+        for smiles, scores in self.analogue_scores.items():
+            if scores:
+                result[smiles] = self.get_pose(smiles).molecules[-1]
+        return result
+
+    def get_poses(self, smiles: str) -> list[Calculation]:
+        """
+        Fetch all docked ligand poses as calculations with 3D coordinates.
 
         :param smiles: SMILES string of the analogue.
-        :returns: List of Protein objects for each pose (ordered by score).
+        :returns: List of Calculations for each pose (ordered by score).
         :raises KeyError: If the SMILES is not found.
         """
         scores = self.analogue_scores.get(smiles)
         if scores is None:
             raise KeyError(f"Analogue '{smiles}' not found")
 
-        poses: list[Protein] = []
+        poses: list[Calculation] = []
         for i, score in enumerate(scores):
             if score.pose:
                 poses.append(self.get_pose(smiles, i))

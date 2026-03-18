@@ -13,6 +13,7 @@ from stjames import (
     MonteCarloMultipleMinimumSettings,
     SolventModel,
     iMTDGCSettings,
+    iMTDSettings,
 )
 
 from .admet import ADMETResult, submit_admet_workflow
@@ -59,6 +60,10 @@ from .hydrogen_bond_donor_acceptor_strength import (
     submit_hydrogen_bond_basicity_workflow,
     submit_hydrogen_bond_donor_acceptor_strength_workflow,
 )
+from .interaction_energy_decomposition import (
+    InteractionEnergyDecompositionResult,
+    submit_interaction_energy_decomposition_workflow,
+)
 from .ion_mobility import IonMobilityResult, submit_ion_mobility_workflow
 from .irc import IRCResult, submit_irc_workflow
 from .macropka import (
@@ -90,9 +95,26 @@ from .protein_cofolding import (
     submit_protein_cofolding_workflow,
 )
 from .protein_md import ProteinMDResult, submit_protein_md_workflow
+from .rbfe_graph import (
+    RelativeBindingFreeEnergyGraphEdge,
+    RelativeBindingFreeEnergyGraphResult,
+    submit_relative_binding_free_energy_graph_workflow,
+)
 from .redox_potential import RedoxPotentialResult, submit_redox_potential_workflow
+from .relative_binding_free_energy_perturbation import (
+    RelativeBindingFreeEnergyDiagnostics,
+    RelativeBindingFreeEnergyPerturbationResult,
+    RelativeBindingFreeEnergyResult,
+    submit_relative_binding_free_energy_perturbation_workflow,
+)
 from .scan import ScanResult, submit_scan_workflow
 from .solubility import SolubilityEntry, SolubilityResult, submit_solubility_workflow
+from .solvent_dependent_conformers import (
+    SolventDependentConformer,
+    SolventDependentConformerProperties,
+    SolventDependentConformersResult,
+    submit_solvent_dependent_conformers_workflow,
+)
 from .spin_states import SpinState, SpinStatesResult, submit_spin_states_workflow
 from .strain import StrainResult, submit_strain_workflow
 from .tautomer_search import Tautomer, TautomerResult, submit_tautomer_search_workflow
