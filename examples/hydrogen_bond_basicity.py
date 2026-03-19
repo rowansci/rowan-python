@@ -15,7 +15,7 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
-workflow = rowan.submit_hydrogen_bond_basicity_workflow(
+workflow = rowan.submit_hydrogen_bond_donor_acceptor_strength_workflow(
     initial_molecule=Molecule.from_smiles("CC(=O)N(C)C"),  # dimethylacetamide
     do_csearch=True,  # run conformer search (default)
     do_optimization=True,  # optimize structures (default)
