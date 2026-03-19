@@ -1,5 +1,5 @@
 ## Workflow Class and Functions
-::: rowan.workflow
+::: rowan.workflows
     handler: python
     options:
       show_source: false
