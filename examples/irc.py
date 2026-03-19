@@ -27,3 +27,4 @@ H     1.26740151   0.88347299   0.53620841
 print(f"View workflow privately at: https://labs.rowansci.com/irc/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <IRCResult forward_steps=10 backward_steps=10>

@@ -57,7 +57,7 @@ class TautomerResult(WorkflowResult):
         n = len(tautomers)
         if tautomers:
             lowest = min(tautomers, key=lambda t: t.energy)
-            return f"<TautomerResult tautomers={n} lowest_energy={lowest.energy:.6f}>"
+            return f"<TautomerResult tautomers={n} lowest_energy={lowest.energy:.6f} H>"
         return f"<TautomerResult tautomers={n}>"
 
     @property

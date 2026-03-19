@@ -33,4 +33,5 @@ workflow = rowan.submit_spin_states_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/spin-states/{workflow.uuid}")
 
 result = workflow.result()
-print(result)  # SpinStatesResult with .spin_states
+print(result)
+# e.g. <SpinStatesResult states=2 ground=(mult=3, E=-39.123456 Ha)>

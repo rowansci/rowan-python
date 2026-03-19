@@ -30,3 +30,4 @@ workflow = rowan.submit_scan_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/scan/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <ScanResult points=5>

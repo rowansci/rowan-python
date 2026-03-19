@@ -17,4 +17,5 @@ workflow = rowan.submit_solubility_workflow(
 
 print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
 result = workflow.result()
-print(result)  # Solubility in log(mol/L), temperature in kelvin
+print(result)
+# e.g. <SolubilityResult solvents=['water']>

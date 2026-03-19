@@ -142,6 +142,75 @@ class Protein(BaseModel):
 
         raise RuntimeError(f"Protein sanitization timed out after {timeout:.0f}s for {self.uuid}.")
 
+    def prepare(
+        self,
+        find_missing_residues: bool = True,
+        add_missing_atoms: bool = True,
+        remove_heterogens: bool = True,
+        keep_waters: bool = False,
+        remove_hydrogens: bool = False,
+        remove_invalid_hydrogens: bool = False,
+        add_hydrogens: bool = True,
+        add_hydrogen_ph: float = 7.0,
+        optimize_hydrogens: bool = True,
+        poll_interval: float = 10.0,
+        timeout: float = 300.0,
+    ) -> None:
+        """
+        Prepare a protein for simulation and waits for the process to complete.
+
+        Runs PDBFixer to fix nonstandard residues, add missing atoms/hydrogens,
+        and optionally optimizes hydrogen positions with OpenMM. This is the
+        recommended method for preparing proteins before MD or RBFE workflows.
+
+        :param find_missing_residues: Identify and model missing residues.
+        :param add_missing_atoms: Add missing heavy atoms to residues.
+        :param remove_heterogens: Remove ligands, salts, and other heterogens.
+        :param keep_waters: Preserve water molecules when removing heterogens.
+        :param remove_hydrogens: Remove all existing hydrogens before adding new ones.
+        :param remove_invalid_hydrogens: Remove hydrogens not matching the forcefield template.
+        :param add_hydrogens: Add missing hydrogen atoms.
+        :param add_hydrogen_ph: pH used to determine protonation states when adding hydrogens.
+        :param optimize_hydrogens: Optimize hydrogen positions with OpenMM energy minimization.
+        :param poll_interval: Seconds between status checks (default 10).
+        :param timeout: Maximum seconds to wait before raising (default 300).
+        :raises RuntimeError: If preparation fails, is stopped, or times out.
+        :raises requests.HTTPError: If any API request fails.
+        """
+        params = {
+            "find_missing_residues": find_missing_residues,
+            "add_missing_atoms": add_missing_atoms,
+            "remove_heterogens": remove_heterogens,
+            "keep_waters": keep_waters,
+            "remove_hydrogens": remove_hydrogens,
+            "remove_invalid_hydrogens": remove_invalid_hydrogens,
+            "add_hydrogens": add_hydrogens,
+            "add_hydrogen_ph": add_hydrogen_ph,
+            "optimize_hydrogens": optimize_hydrogens,
+        }
+        with api_client() as client:
+            response = client.post(f"/protein/prepare/{self.uuid}", params=params)
+            response.raise_for_status()
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            time.sleep(poll_interval)
+            self.refresh()
+            match self.sanitized:
+                case 2:
+                    return
+                case 3:
+                    raise RuntimeError(
+                        f"Protein preparation failed for {self.uuid}. "
+                        "Check the protein in the Rowan UI for details."
+                    )
+                case 4:
+                    raise RuntimeError(f"Protein preparation was stopped for {self.uuid}.")
+                case _:
+                    pass
+
+        raise RuntimeError(f"Protein preparation timed out after {timeout:.0f}s for {self.uuid}.")
+
     def validate_protein_forcefield(self) -> None:
         """
         Validate that this protein can be parameterized with the MD forcefield.
@@ -149,6 +218,9 @@ class Protein(BaseModel):
         Calls the server-side validation which checks that all residues are
         recognized by OpenMM and that there are no clashing atoms. Call this
         before submitting any MD workflow to catch preparation issues early.
+
+        If validation fails, try re-preparing with ``remove_invalid_hydrogens=True``:
+        ``protein.prepare(remove_invalid_hydrogens=True)``
 
         :raises requests.HTTPError: if validation fails or the API request fails.
         """

@@ -5,6 +5,7 @@ from typing import Any, Self
 
 import stjames
 from pydantic import BaseModel, ConfigDict, PrivateAttr
+from rdkit import Chem
 
 
 class Molecule(BaseModel):
@@ -196,7 +197,7 @@ class Molecule(BaseModel):
 
         :param i: First atom index (1-based).
         :param j: Second atom index (1-based).
-        :returns: Distance in Ångströms.
+        :returns: Distance in Angstroms.
         """
         return self._stjames.distance(i, j)
 
@@ -224,3 +225,44 @@ class Molecule(BaseModel):
         :returns: Dihedral angle in degrees (0-360) or radians.
         """
         return self._stjames.dihedral(i, j, k, l, degrees=degrees)
+
+
+def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
+    """
+    Load named ligands from a multi-molecule file.
+
+    Molecule names are read from the title field of each record. Use this when
+    ligand identity needs to be preserved - for example, building a ligand dict
+    for an RBFE workflow where names are used as keys throughout submission and
+    results.
+
+    Supported formats (all carry per-molecule name fields):
+    - SDF / MOL (``.sdf``, ``.mol``) - name from the title line
+    - MOL2 (``.mol2``) - name from the ``@<TRIPOS>MOLECULE`` block
+
+    :param path: Path to an SDF, MOL, or MOL2 file.
+    :returns: Dict mapping ligand name to Molecule, in file order.
+    :raises ValueError: If no valid molecules are found or the format is unsupported.
+    """
+    path = Path(path)
+    suffix = path.suffix.lower()
+
+    if suffix in {".sdf", ".mol"}:
+        supplier = Chem.SDMolSupplier(str(path), removeHs=False)
+        pairs = [(rdkm.GetProp("_Name"), rdkm) for rdkm in supplier if rdkm is not None]
+    elif suffix == ".mol2":
+        text = path.read_text()
+        blocks = [b for b in text.split("@<TRIPOS>MOLECULE") if b.strip()]
+        pairs = []
+        for block in blocks:
+            rdkm = Chem.MolFromMol2Block("@<TRIPOS>MOLECULE" + block, removeHs=False)
+            if rdkm is not None:
+                name = rdkm.GetProp("_Name") if rdkm.HasProp("_Name") else ""
+                pairs.append((name, rdkm))
+    else:
+        raise ValueError(f"Unsupported file format: {suffix!r} (expected .sdf, .mol, or .mol2)")
+
+    if not pairs:
+        raise ValueError(f"No valid molecules found in {path}")
+
+    return {name: Molecule(_stjames=stjames.Molecule.from_rdkit(rdkm)) for name, rdkm in pairs}

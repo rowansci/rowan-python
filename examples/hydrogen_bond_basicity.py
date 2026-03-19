@@ -28,3 +28,4 @@ print(
 )
 result = workflow.result()
 print(result)
+# e.g. <HydrogenBondDonorAcceptorStrengthResult acceptors=2 donors=1>

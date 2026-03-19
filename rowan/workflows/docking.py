@@ -4,7 +4,9 @@ from dataclasses import dataclass
 
 import stjames
 
+from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
+from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
 from ..types import MoleculeInput
 from ..utils import api_client
@@ -54,14 +56,14 @@ class DockingResult(WorkflowResult):
         """UUIDs of optimized conformers."""
         return self._workflow.conformers
 
-    def get_pose(self, index: int = 0) -> Protein:
+    def get_pose(self, index: int = 0) -> Calculation:
         """
-        Fetch a docked pose structure.
+        Fetch a docked ligand pose as a calculation with 3D coordinates.
 
         :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :returns: Protein object with the docked ligand pose.
+        :returns: Calculation containing the docked ligand molecule with 3D coordinates.
         :raises IndexError: If index is out of range.
-        :raises ValueError: If the pose has no structure UUID.
+        :raises ValueError: If the pose has no UUID.
         """
         scores = self.scores
         if index < 0 or index >= len(scores):
@@ -69,20 +71,25 @@ class DockingResult(WorkflowResult):
 
         uuid = scores[index].pose
         if not uuid:
-            raise ValueError(f"Pose {index} has no structure UUID")
+            raise ValueError(f"Pose {index} has no UUID")
 
         cache_key = f"pose_{index}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = retrieve_protein(uuid)
+            self._cache[cache_key] = retrieve_calculation(uuid)
         return self._cache[cache_key]
 
-    def get_poses(self) -> list[Protein]:
-        """
-        Fetch all docked pose structures.
+    @property
+    def best_pose(self) -> Molecule:
+        """Best docked pose as a Molecule with 3D coordinates."""
+        return self.get_pose(0).molecules[-1]
 
-        :returns: List of Protein objects for each pose (ordered by score).
+    def get_poses(self) -> list[Calculation]:
         """
-        poses: list[Protein] = []
+        Fetch all docked ligand poses as calculations with 3D coordinates.
+
+        :returns: List of Calculations for each pose (ordered by score).
+        """
+        poses: list[Calculation] = []
         for i, score in enumerate(self.scores):
             if score.pose:
                 poses.append(self.get_pose(i))

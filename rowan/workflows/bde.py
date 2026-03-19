@@ -35,7 +35,7 @@ class BDEResult(WorkflowResult):
 
     def __repr__(self) -> str:
         n = len(self.bdes)
-        return f"<BDEResult energy={self.energy} bdes={n}>"
+        return f"<BDEResult energy={self.energy} H bdes={n}>"
 
     @property
     def energy(self) -> float | None:

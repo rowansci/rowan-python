@@ -57,3 +57,4 @@ print(
 )
 result = workflow.result()
 print(result)
+# e.g. <ProteinBinderDesignResult binders=4 best_iptm=0.85>

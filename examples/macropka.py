@@ -14,4 +14,5 @@ workflow = rowan.submit_macropka_workflow(
 
 print(f"View workflow privately at: https://labs.rowansci.com/macropka/{workflow.uuid}")
 result = workflow.result()
-print(result)  # Solubility units are log(mol/L)
+print(result)
+# e.g. <MacropKaResult isoelectric_point=6.5 pka_values=3>

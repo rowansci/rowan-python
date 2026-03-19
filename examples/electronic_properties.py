@@ -31,3 +31,4 @@ workflow = rowan.submit_electronic_properties_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/orbitals/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <ElectronicPropertiesResult dipole=1.85 D>
