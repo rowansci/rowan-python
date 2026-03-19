@@ -28,6 +28,7 @@ print(
 )
 result = workflow.result()
 print(result)
+# e.g. <pKaResult acid=4.75>
 
 workflow2 = rowan.submit_pka_workflow(
     initial_molecule="c1ccccc1O",
@@ -41,3 +42,4 @@ print(
 )
 result2 = workflow2.result()
 print(result2)
+# e.g. <pKaResult acid=4.75>

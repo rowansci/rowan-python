@@ -5,12 +5,12 @@ import rowan
 
 folder = rowan.get_folder("examples")
 
-# Naphthalene–guanine non-covalent complex.
-# Fragment 1 (atoms 1–18): naphthalene
-# Fragment 2 (atoms 19–34): guanine
+# Naphthalene-guanine non-covalent complex.
+# Fragment 1 (atoms 1-18): naphthalene
+# Fragment 2 (atoms 19-34): guanine
 naphthalene_guanine_xyz = """\
 34
-name: Structure 1; charge: 0; multiplicity: 1; smiles: Nc1nc2nc[nH]c2c(=O)[nH]1.c1ccc2ccccc2c1;
+name: Naphthalene-Guanine; charge: 0; multiplicity: 1;
 C    -0.33944955   0.04784594   0.19447983
 C    -0.35035696  -1.34375866   0.21601688
 C    -1.56463757  -2.03222175   0.20796367
@@ -51,19 +51,24 @@ dimer = rowan.Molecule.from_xyz(naphthalene_guanine_xyz)
 
 workflow = rowan.submit_interaction_energy_decomposition_workflow(
     initial_molecule=dimer,
-    fragment1_indices=list(range(1, 19)),  # atoms 1–18: naphthalene
+    fragment1_indices=list(range(1, 19)),  # atoms 1-18: naphthalene
     folder=folder,
-    name="Naphthalene–Guanine SAPT0",
+    name="Naphthalene-Guanine SAPT0",
 )
 
 print(f"View at: https://labs.rowansci.com/workflow/{workflow.uuid}")
 
 result = workflow.result()
 print(result)
-# <InteractionEnergyDecompositionResult total_interaction_energy=-10.234>
+# <InteractionEnergyDecompositionResult total_interaction_energy=-3.462>
 
-print(f"  Total:          {result.total_interaction_energy:.3f} kcal/mol")
-print(f"  Electrostatic:  {result.electrostatic_interaction_energy:.3f} kcal/mol")
-print(f"  Exchange:       {result.exchange_interaction_energy:.3f} kcal/mol")
-print(f"  Dispersion:     {result.dispersion_interaction_energy:.3f} kcal/mol")
-print(f"  Induction:      {result.induction_interaction_energy:.3f} kcal/mol")
+print(f"Total:         {result.total_interaction_energy:>8.3f} kcal/mol")
+# Total:            -3.462 kcal/mol
+print(f"Electrostatic: {result.electrostatic_interaction_energy:>8.3f} kcal/mol")
+# Electrostatic:   -15.450 kcal/mol
+print(f"Exchange:      {result.exchange_interaction_energy:>8.3f} kcal/mol")
+# Exchange:         38.280 kcal/mol
+print(f"Dispersion:    {result.dispersion_interaction_energy:>8.3f} kcal/mol")
+# Dispersion:      -23.695 kcal/mol
+print(f"Induction:     {result.induction_interaction_energy:>8.3f} kcal/mol")
+# Induction:        -2.597 kcal/mol

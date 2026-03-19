@@ -34,3 +34,4 @@ print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow
 
 result = workflow.result()
 print(result)
+# e.g. <ConformerSearchResult conformers=12>

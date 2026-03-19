@@ -15,3 +15,4 @@ workflow = rowan.submit_admet_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/solubility/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <ADMETResult properties=42 preview={'mw': 180.16, 'tpsa': 75.3, ...}>

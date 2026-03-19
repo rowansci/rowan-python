@@ -31,7 +31,7 @@ class ElectronicPropertiesResult(WorkflowResult):
     _stjames_class = stjames.ElectronicPropertiesWorkflow
 
     def __repr__(self) -> str:
-        return f"<ElectronicPropertiesResult dipole={self.dipole}>"
+        return f"<ElectronicPropertiesResult dipole={self.dipole} D>"
 
     @property
     def dipole(self) -> tuple[float, float, float] | None:
@@ -75,16 +75,14 @@ class ElectronicPropertiesResult(WorkflowResult):
     @property
     def density_cube(self) -> list[tuple[float, float, float, float]] | None:
         """Electron density cube as list of (x, y, z, value) points."""
-        cube = self._workflow.density_cube
-        if cube is None:
+        if not (cube := self._workflow.density_cube):
             return None
         return [(p.x, p.y, p.z, p.val) for p in cube.cube_points]
 
     @property
     def electrostatic_potential_cube(self) -> list[tuple[float, float, float, float]] | None:
         """Electrostatic potential cube as list of (x, y, z, value) points."""
-        cube = self._workflow.electrostatic_potential_cube
-        if cube is None:
+        if not (cube := self._workflow.electrostatic_potential_cube):
             return None
         return [(p.x, p.y, p.z, p.val) for p in cube.cube_points]
 

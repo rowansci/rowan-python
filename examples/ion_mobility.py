@@ -16,4 +16,4 @@ workflow = rowan.submit_ion_mobility_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/ion_mobility/{workflow.uuid}")
 result = workflow.result()
 
-print(result.average_ccs)  # Å**2
+print(result.average_ccs)  # A^2

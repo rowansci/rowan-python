@@ -38,4 +38,5 @@ workflow = rowan.submit_bde_workflow(
 
 print(f"View workflow privately at: https://labs.rowansci.com/bde/{workflow.uuid}")
 result = workflow.result()
-print(result)  # BDEResult with .bdes and .energy
+print(result)
+# e.g. <BDEResult energy=-152.234567 Ha bdes=8>

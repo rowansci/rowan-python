@@ -40,8 +40,10 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
     _stjames_class = stjames.RBFEGraphWorkflow
 
     def __repr__(self) -> str:
-        n = len(self.edges) if self.graph else 0
-        return f"<RelativeBindingFreeEnergyGraphResult edges={n} ligands={len(self.ligands)}>"
+        g = self._workflow.graph
+        n_edges = len(g.edges) if g else 0
+        n_ligands = len(self._workflow.ligands)
+        return f"<RelativeBindingFreeEnergyGraphResult edges={n_edges} ligands={n_ligands}>"
 
     @property
     def ligands(self) -> dict[str, Molecule]:
@@ -55,14 +57,12 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
 
         Pass directly to ``submit_rbfe_perturbation_workflow(graph=...)``.
         """
-        g = self._workflow.graph
-        return g.model_dump(mode="json") if g else None
+        return g.model_dump(mode="json") if (g := self._workflow.graph) else None
 
     @property
     def edges(self) -> list[RelativeBindingFreeEnergyGraphEdge]:
         """Graph edges. Empty list if graph is not yet built."""
-        g = self._workflow.graph
-        if not g:
+        if not (g := self._workflow.graph):
             return []
         return [
             RelativeBindingFreeEnergyGraphEdge(

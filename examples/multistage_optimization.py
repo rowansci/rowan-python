@@ -33,6 +33,7 @@ for result in workflow.stream_result(poll_interval=10):
     print(f"  {len(result.calculation_uuids)} stages done, energy={result.energy}")
 
 print(result)
+# e.g. <MultiStageOptResult energy=-76.234567 H>
 
 # Or pick up a completed workflow later by UUID:
 # result = rowan.retrieve_workflow(workflow.uuid).result(wait=False)

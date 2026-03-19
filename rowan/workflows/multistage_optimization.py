@@ -32,7 +32,7 @@ class MultiStageOptResult(WorkflowResult):
     def __repr__(self) -> str:
         energy = self.energy
         e_str = f"{energy:.6f}" if energy is not None else "None"
-        return f"<MultiStageOptResult energy={e_str}>"
+        return f"<MultiStageOptResult energy={e_str} H>"
 
     @property
     def calculation_uuids(self) -> list[str]:

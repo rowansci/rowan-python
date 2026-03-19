@@ -27,7 +27,7 @@ class StrainResult(WorkflowResult):
     _stjames_class = stjames.StrainWorkflow
 
     def __repr__(self) -> str:
-        return f"<StrainResult strain={self.strain}>"
+        return f"<StrainResult strain={self.strain} kcal/mol>"
 
     @property
     def strain(self) -> float | None:

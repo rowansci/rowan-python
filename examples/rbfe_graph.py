@@ -8,7 +8,7 @@ import rowan
 folder = rowan.get_folder("examples")
 data_dir = Path(__file__).parent / "data"
 
-# Load TYK2 ligands from SDF — 3D coordinates are used by the graph builder
+# Load TYK2 ligands from SDF - 3D coordinates are used by the graph builder
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
 
 print(f"Loaded {len(ligands)} ligands: {list(ligands.keys())}")
@@ -27,4 +27,4 @@ print(result)
 # <RelativeBindingFreeEnergyGraphResult edges=18 ligands=16>
 
 for edge in result.edges:
-    print(f"  {edge.ligand_a} → {edge.ligand_b}  score={edge.score:.3f}")
+    print(f"  {edge.ligand_a} -> {edge.ligand_b}  score={edge.score:.3f}")

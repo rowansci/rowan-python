@@ -18,3 +18,4 @@ workflow = rowan.submit_fukui_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/fukui/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <FukuiResult global_electrophilicity_index=2.34 eV>

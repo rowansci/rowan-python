@@ -30,4 +30,5 @@ workflow = rowan.submit_analogue_docking_workflow(
 print(f"View MD workflow privately at: https://labs.rowansci.com/analogue-docking/{workflow.uuid}")
 result = workflow.result()
 
-print(result)  # AnalogueDockingResult with .analogue_scores
+print(result)
+# e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC...')>

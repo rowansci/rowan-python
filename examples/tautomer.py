@@ -16,3 +16,4 @@ workflow = rowan.submit_tautomer_search_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/tautomers/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <TautomerResult tautomers=3 lowest_energy=-323.456789 H>

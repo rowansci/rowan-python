@@ -17,7 +17,7 @@ class IonMobilityResult(WorkflowResult):
     def __repr__(self) -> str:
         ccs = self.average_ccs
         std = self.average_ccs_stdev
-        return f"<IonMobilityResult average_ccs={ccs} stdev={std}>"
+        return f"<IonMobilityResult average_ccs={ccs} A^2 stdev={std} A^2>"
 
     @property
     def average_ccs(self) -> float | None:

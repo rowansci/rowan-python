@@ -86,11 +86,11 @@ class AnalogueDockingResult(WorkflowResult):
 
         :returns: Dictionary mapping SMILES to docked ``Molecule`` with 3D coordinates.
         """
-        result: dict[str, Molecule] = {}
-        for smiles, scores in self.analogue_scores.items():
-            if scores:
-                result[smiles] = self.get_pose(smiles).molecules[-1]
-        return result
+        return {
+            smiles: self.get_pose(smiles).molecules[-1]
+            for smiles, scores in self.analogue_scores.items()
+            if scores
+        }
 
     def get_poses(self, smiles: str) -> list[Calculation]:
         """

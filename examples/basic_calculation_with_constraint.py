@@ -32,3 +32,4 @@ workflow = rowan.submit_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <BasicCalculationResult energy=-76.234567 H>

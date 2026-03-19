@@ -89,7 +89,8 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     @property
     def edges(self) -> list[RelativeBindingFreeEnergyGraphEdge]:
         """Graph edges with per-edge FEP results."""
-        g = self._workflow.graph
+        if not (g := self._workflow.graph):
+            return []
         return [
             RelativeBindingFreeEnergyGraphEdge(
                 ligand_a=e.ligand_a,
@@ -170,8 +171,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     @property
     def ligand_dg_results(self) -> dict[str, RelativeBindingFreeEnergyResult] | None:
         """Per-ligand binding free energy results, or None if not yet computed."""
-        raw = self._workflow.ligand_dg_results
-        if raw is None:
+        if (raw := self._workflow.ligand_dg_results) is None:
             return None
         return {
             k: RelativeBindingFreeEnergyResult(dg=v.dg, dg_err=v.dg_err) for k, v in raw.items()
@@ -180,8 +180,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     @property
     def diagnostics(self) -> RelativeBindingFreeEnergyDiagnostics | None:
         """Aggregate QC metrics from the FEP simulation."""
-        d = self._workflow.diagnostics
-        if d is None:
+        if (d := self._workflow.diagnostics) is None:
             return None
         return RelativeBindingFreeEnergyDiagnostics(
             cycle_closure_rms=d.cycle_closure_rms,
@@ -265,30 +264,29 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     if folder:
         folder_uuid = folder.uuid
 
-    if isinstance(protein, Protein):
-        protein = protein.uuid
+    protein_uuid = protein.uuid if isinstance(protein, Protein) else protein
 
     if validate_forcefield:
-        Protein(uuid=protein).validate_protein_forcefield()
+        Protein(uuid=protein_uuid).validate_protein_forcefield()
 
     if graph_result.graph is None:
-        raise ValueError("RBFEGraphResult has no graph — has the workflow completed successfully?")
+        raise ValueError("RBFEGraphResult has no graph - has the workflow completed successfully?")
 
     # Apply tmd_settings, then override with any explicitly provided params
-    p = _PRESETS[tmd_settings]
+    tmd = _PRESETS[tmd_settings]
     settings = TMDRBFESettings(
         forcefield=forcefield,
-        charge_method=charge_method if charge_method is not None else p["charge_method"],
-        n_eq_steps=n_eq_steps if n_eq_steps is not None else p["n_eq_steps"],
-        n_frames=n_frames if n_frames is not None else p["n_frames"],
+        charge_method=charge_method if charge_method is not None else tmd["charge_method"],
+        n_eq_steps=n_eq_steps if n_eq_steps is not None else tmd["n_eq_steps"],
+        n_frames=n_frames if n_frames is not None else tmd["n_frames"],
         steps_per_frame=steps_per_frame,
-        n_windows=n_windows if n_windows is not None else p["n_windows"],
-        min_overlap=min_overlap if min_overlap is not None else p["min_overlap"],
-        target_overlap=target_overlap if target_overlap is not None else p["target_overlap"],
+        n_windows=n_windows if n_windows is not None else tmd["n_windows"],
+        min_overlap=min_overlap if min_overlap is not None else tmd["min_overlap"],
+        target_overlap=target_overlap if target_overlap is not None else tmd["target_overlap"],
         water_sampling_padding=water_sampling_padding,
         rest_max_temperature_scale=rest_max_temperature_scale,
         rest_temperature_scale_interpolation=rest_temperature_scale_interpolation,
-        local_md_steps=local_md_steps if local_md_steps is not None else p["local_md_steps"],
+        local_md_steps=local_md_steps if local_md_steps is not None else tmd["local_md_steps"],
         local_md_k=local_md_k,
         local_md_radius=local_md_radius,
         local_md_free_reference=local_md_free_reference,
@@ -302,8 +300,8 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     workflow = stjames.RelativeBindingFreeEnergyPerturbationWorkflow(
         ligands=ligands_dict,
         graph=graph_result.graph,
-        protein=protein,
-        target=protein,
+        target=protein_uuid,
+        protein=protein_uuid,
         settings=settings,
     )
 

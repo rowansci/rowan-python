@@ -31,7 +31,7 @@ class BasicCalculationResult(WorkflowResult):
     def __repr__(self) -> str:
         energy = self.energy
         e_str = f"{energy:.6f}" if energy is not None else "None"
-        return f"<BasicCalculationResult energy={e_str}>"
+        return f"<BasicCalculationResult energy={e_str} H>"
 
     @property
     def calculation_uuid(self) -> str | None:

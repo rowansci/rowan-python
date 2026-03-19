@@ -63,7 +63,7 @@ class SpinStatesResult(WorkflowResult):
         n = len(states)
         if states:
             g = min(states, key=lambda s: s.energy)
-            return f"<SpinStatesResult states={n} ground=(mult={g.multiplicity}, E={g.energy})>"
+            return f"<SpinStatesResult states={n} ground=(mult={g.multiplicity}, E={g.energy} H)>"
         return f"<SpinStatesResult states={n}>"
 
     @property

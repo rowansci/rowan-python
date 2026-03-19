@@ -25,3 +25,4 @@ for result in workflow.stream_result(poll_interval=3):
         print(f"  {len(mols)} opt steps, energy={mols[-1].get('energy') if mols else None}")
 
 print(result)
+# e.g. <BasicCalculationResult energy=-76.234567 H>

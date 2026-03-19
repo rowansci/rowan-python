@@ -17,3 +17,4 @@ workflow = rowan.submit_strain_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/strain/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <StrainResult strain=2.34 kcal/mol>

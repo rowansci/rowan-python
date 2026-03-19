@@ -24,3 +24,4 @@ workflow = rowan.submit_redox_potential_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/redox-potential/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <RedoxPotentialResult oxidation=1.234V reduction=-0.567V>

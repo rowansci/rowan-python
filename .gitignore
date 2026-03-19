@@ -201,7 +201,8 @@ cyp/
 
 # AI agent instructions (not part of the project source)
 AGENTS.md
-notes.md
 
 # MSA download output directories
 msa_directory/
+
+notes.md

@@ -35,25 +35,29 @@ perturbation_workflow = rowan.submit_relative_binding_free_energy_perturbation_w
 print(
     f"Submitted! View at: https://labs.rowansci.com/relative-binding-free-energy-perturbation/{perturbation_workflow.uuid}"
 )
-print(f"UUID: {perturbation_workflow.uuid}")
+print(f"UUID: {perturbation_workflow.uuid}  # save this to retrieve results later")
 
-# Come back later to retrieve results:
+# Come back later to retrieve results (comment out the submission code above,
+# then uncomment the block below — see also examples/retrieve_workflow.py):
 #
-# workflow = rowan.retrieve_workflow(perturbation_workflow.uuid)
+# workflow = rowan.retrieve_workflow("your-workflow-uuid-here")
 # result = workflow.result()
 # print(result)
 # # <RelativeBindingFreeEnergyPerturbationResult ligands=16>
 #
-# # Per-ligand ΔΔG relative to the reference
+# # Per-ligand ddG relative to the reference
 # for name, res in result.ligand_dg_results.items():
-#     print(f"  {name}: ΔΔG = {res.dg:.2f} ± {res.dg_err:.2f} kcal/mol")
+#     print(f"  {name}: ddG = {res.dg:.2f} +/- {res.dg_err:.2f} kcal/mol")
+# # ejm_31: ddG = 1.79 +/- 0.09 kcal/mol
+# # ejm_42: ddG = 1.27 +/- 0.08 kcal/mol
+# # ...
 #
 # # QC
 # print(result.diagnostics)
 # # RelativeBindingFreeEnergyDiagnostics(
-# #     cycle_closure_rms=..., windows_completed=52, windows_failed=...
+# #     cycle_closure_rms=..., windows_completed=..., windows_failed=...
 # # )
 #
 # # Per-edge results
 # for edge in result.edges:
-#     print(f"  {edge.ligand_a} → {edge.ligand_b}: ΔΔG={edge.ddg:.2f} kcal/mol")
+#     print(f"  {edge.ligand_a} -> {edge.ligand_b}: ddG={edge.ddg:.2f} kcal/mol")

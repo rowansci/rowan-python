@@ -60,3 +60,4 @@ print([p.distance for p in result.forward_path])
 print([p.distance for p in result.backward_path])
 
 print(result)
+# e.g. <DoubleEndedTSSearchResult ts_uuid='abc123...' fwd=5 bwd=5>

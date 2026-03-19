@@ -21,3 +21,4 @@ workflow = rowan.submit_protein_cofolding_workflow(
 print(f"View workflow privately at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
 result = workflow.result()
 print(result)
+# e.g. <ProteinCofoldingResult predictions=5 iptm=0.87>

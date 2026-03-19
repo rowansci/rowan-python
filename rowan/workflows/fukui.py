@@ -16,7 +16,7 @@ class FukuiResult(WorkflowResult):
 
     def __repr__(self) -> str:
         gei = self.global_electrophilicity_index
-        return f"<FukuiResult global_electrophilicity_index={gei}>"
+        return f"<FukuiResult global_electrophilicity_index={gei} eV>"
 
     @property
     def global_electrophilicity_index(self) -> float | None:
