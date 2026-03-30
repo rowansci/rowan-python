@@ -1,5 +1,3 @@
-from stjames import Method, Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -7,11 +5,9 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule=Molecule.from_smiles("CC(=C)C=C"),
-    method=Method.OMOL25_CONSERVING_S,
+    initial_molecule="CC(=C)C=C",
+    preset="semiempirical",
     tasks=["optimize"],
-    mode="auto",
-    engine="omol25",
     name="Isoprene Optimization",
     folder=folder,
 )

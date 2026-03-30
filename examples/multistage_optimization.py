@@ -10,8 +10,6 @@ Available modes:
 See documentation at: https://docs.rowansci.com/science/workflows/multistage-optimization
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -19,7 +17,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_multistage_optimization_workflow(
-    initial_molecule=Molecule.from_smiles("C1CCC1"),  # cyclobutane
+    initial_molecule=rowan.Molecule.from_smiles("C1CCC1"),  # cyclobutane
     mode="rapid",
     name="Multistage optimization cyclobutane",
     folder=folder,

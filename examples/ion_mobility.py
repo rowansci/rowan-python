@@ -1,5 +1,3 @@
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -7,7 +5,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_ion_mobility_workflow(
-    Molecule.from_smiles("c1ccccn1"),
+    rowan.Molecule.from_smiles("c1ccccn1"),
     name="pyridinium CCS",
     protonate=True,
     folder=folder,

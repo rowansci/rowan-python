@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import stjames
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -16,7 +14,7 @@ citalopram_analogues = [
 ]
 
 data_dir = Path(__file__).parent / "data"
-bound_pose = stjames.Molecule.from_file(str(data_dir / "citalopram_1iep.xyz"))
+bound_pose = rowan.Molecule.from_xyz_file(str(data_dir / "citalopram_1iep.xyz"))
 
 protein = rowan.upload_protein("1IEP receptor", data_dir / "1iep_receptorH.pdb")
 

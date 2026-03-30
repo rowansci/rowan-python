@@ -9,8 +9,6 @@ Note: This workflow does not optimize molecular geometries.
 See documentation at: https://docs.rowansci.com/science/workflows/orbitals
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -18,7 +16,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_electronic_properties_workflow(
-    initial_molecule=Molecule.from_smiles("c1ccccc1"),  # benzene
+    initial_molecule=rowan.Molecule.from_smiles("c1ccccc1"),  # benzene
     method="b97_3c",  # default: lightweight DFT
     compute_density_cube=True,
     compute_electrostatic_potential_cube=True,

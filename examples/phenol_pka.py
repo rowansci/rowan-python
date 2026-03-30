@@ -1,5 +1,3 @@
-import stjames
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -20,10 +18,9 @@ phenols_to_compute = {
 
 workflows = []
 for name, smiles in phenols_to_compute.items():
-    stjames_molecule = stjames.Molecule.from_smiles(smiles)
     workflows.append(
         rowan.submit_pka_workflow(
-            stjames_molecule,
+            rowan.Molecule.from_smiles(smiles),
             name=f"pKa {name}",
             folder=folder,
             deprotonate_elements=[8],

@@ -22,8 +22,12 @@ print(
 )
 cofolding_result = cofolding_workflow.result()
 
+# Cofolding predictions lack hydrogens — prepare but keep the ligand for MD
+protein = rowan.Protein(uuid=cofolding_result.predicted_refined_structure_uuid)
+protein.prepare(remove_heterogens=False)
+
 md_workflow = rowan.submit_pose_analysis_md_workflow(
-    protein=cofolding_result.predicted_refined_structure_uuid,
+    protein=protein,
     initial_smiles=ligand,
     num_trajectories=1,
     simulation_time_ns=1,

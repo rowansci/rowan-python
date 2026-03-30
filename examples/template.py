@@ -1,5 +1,3 @@
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -7,7 +5,8 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule=Molecule.from_smiles("CC(=C)C=C"),
+    initial_molecule=rowan.Molecule.from_smiles("CC(=C)C=C"),
+    tasks=["optimize"],
     folder=folder,
 )
 

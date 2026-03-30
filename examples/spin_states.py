@@ -13,8 +13,6 @@ Available modes:
 See documentation at: https://docs.rowansci.com/science/workflows/spin-states
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -23,7 +21,7 @@ folder = rowan.get_folder("examples")
 
 # Methylene (CH2) - classic spin states example, triplet is ground state
 workflow = rowan.submit_spin_states_workflow(
-    initial_molecule=Molecule.from_smiles("[CH2]"),
+    initial_molecule=rowan.Molecule.from_smiles("[CH2]"),
     states=[1, 3],  # singlet vs triplet
     mode="rapid",
     name="Methylene spin states",

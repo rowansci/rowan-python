@@ -9,7 +9,7 @@ from .molecule import Molecule as RowanMolecule
 
 RdkitMol: TypeAlias = Chem.rdchem.Mol | Chem.rdchem.RWMol
 StJamesMolecule: TypeAlias = stjames.Molecule
-MoleculeInput: TypeAlias = dict[str, Any] | RowanMolecule | StJamesMolecule | RdkitMol
+MoleculeInput: TypeAlias = dict[str, Any] | RowanMolecule | StJamesMolecule | RdkitMol | str
 SolventInput: TypeAlias = stjames.Solvent | str | None
 SMILES: TypeAlias = str
 UUID: TypeAlias = str

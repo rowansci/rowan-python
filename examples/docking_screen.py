@@ -1,5 +1,3 @@
-import stjames
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -30,9 +28,10 @@ for ligand in ligands:
     workflow = rowan.submit_docking_workflow(
         protein.uuid,
         pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
-        initial_molecule=stjames.Molecule.from_smiles(ligand),
+        initial_molecule=rowan.Molecule.from_smiles(ligand),
         name=f"Docking {ligand}",
         folder=folder,
+        do_pose_refinement=False,
     )
     workflows.append(workflow)
 

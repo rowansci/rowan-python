@@ -7,8 +7,6 @@ of hydrogen-bond donors using neural network potentials and r2SCAN-3c.
 See documentation at: https://docs.rowansci.com/science/workflows/hydrogen-bond-basicity
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -16,7 +14,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_hydrogen_bond_donor_acceptor_strength_workflow(
-    initial_molecule=Molecule.from_smiles("CC(=O)N(C)C"),  # dimethylacetamide
+    initial_molecule=rowan.Molecule.from_smiles("CC(=O)N(C)C"),  # dimethylacetamide
     do_csearch=True,  # run conformer search (default)
     do_optimization=True,  # optimize structures (default)
     name="DMA hydrogen bond basicity",

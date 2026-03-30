@@ -1,5 +1,3 @@
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -7,7 +5,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_fukui_workflow(
-    initial_molecule=Molecule.from_smiles("C1=CC=C(C=C1)C(=O)O"),
+    initial_molecule=rowan.Molecule.from_smiles("C1=CC=C(C=C1)C(=O)O"),
     optimization_method="gfn2_xtb",
     fukui_method="gfn1_xtb",
     name="Benzoic Acid Fukui",

@@ -7,8 +7,6 @@ See documentiation at: https://docs.rowansci.com/science/workflows/pka
 and preprint at: https://rowansci.com/publications/pka-prediction
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -16,7 +14,7 @@ import rowan
 folder = rowan.get_folder("examples/pka")
 
 workflow = rowan.submit_pka_workflow(
-    initial_molecule=Molecule.from_smiles("c1ccccc1O"),
+    initial_molecule=rowan.Molecule.from_smiles("c1ccccc1O"),
     method="aimnet2_wagen2024",
     mode="reckless",
     name="Pyridine pKa",

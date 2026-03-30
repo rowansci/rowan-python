@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Self
 
 import stjames
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rdkit import Chem
 
 from ..folder import Folder
@@ -71,7 +71,7 @@ class WorkflowResult:
     workflow_data: dict[str, Any]
     workflow_type: str
     workflow_uuid: str
-    eager: bool = field(default=True, repr=False)
+    complete: bool = field(default=True, repr=False)
     _workflow: Any = field(default=None, init=False)
     _cache: dict[str, Any] = field(default_factory=dict, init=False)
 
@@ -83,8 +83,11 @@ class WorkflowResult:
     def __post_init__(self) -> None:
         """Parse workflow data into stjames object for typed access."""
         if self._stjames_class is not None:
-            obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
-            object.__setattr__(self, "_workflow", obj)
+            try:
+                obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
+                object.__setattr__(self, "_workflow", obj)
+            except ValidationError:
+                pass  # incomplete or invalid data; _workflow stays None
 
     @property
     def data(self) -> dict[str, Any]:
@@ -115,7 +118,7 @@ def register_result(workflow_type: str) -> Callable[[type[WorkflowResult]], type
 
 
 def create_result(
-    workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str, eager: bool = True
+    workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str, complete: bool = True
 ) -> WorkflowResult:
     """
     Factory function to create the appropriate result type for a workflow.
@@ -123,7 +126,7 @@ def create_result(
     :param workflow_data: Raw data dict from the workflow.
     :param workflow_type: Workflow type string.
     :param workflow_uuid: UUID of the parent workflow.
-    :param eager: If True (default), eagerly fetch related data (e.g. calculations)
+    :param complete: If True (default), eagerly fetch related data (e.g. calculations)
         in ``__post_init__``. Set to False when polling partial results with
         ``result(wait=False)`` to avoid unnecessary API calls.
     :returns: Typed WorkflowResult subclass, or base WorkflowResult if unknown.
@@ -133,7 +136,7 @@ def create_result(
         workflow_data=workflow_data,
         workflow_type=workflow_type,
         workflow_uuid=workflow_uuid,
-        eager=eager,
+        complete=complete,
     )
 
 
@@ -323,8 +326,8 @@ Workflow:  {self.name}
             raise WorkflowError(
                 f"Workflow '{self.name}' has no results yet (status={status}, uuid={self.uuid})"
             )
-        eager = self.status == stjames.Status.COMPLETED_OK
-        return create_result(self.data, self.workflow_type, self.uuid, eager=eager)
+        complete = self.status == stjames.Status.COMPLETED_OK
+        return create_result(self.data, self.workflow_type, self.uuid, complete=complete)
 
     def stream_result(self, poll_interval: int = 5) -> Iterator["WorkflowResult"]:
         """
@@ -525,6 +528,8 @@ def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
     :returns: Dict representation suitable for API submission.
     """
     match mol:
+        case str():
+            return RowanMolecule.from_smiles(mol).to_stjames().model_dump(mode="json")
         case RowanMolecule():
             return mol.to_stjames().model_dump(mode="json")
         case stjames.Molecule():

@@ -1,6 +1,17 @@
 """Basic calculation workflow - perform quantum chemical calculations."""
 
+from typing import Any, Literal, TypedDict, cast
+
 import stjames
+from stjames import (
+    BasisSet,
+    Correction,
+    Engine,
+    Method,
+    OptimizationSettings,
+    Settings,
+    SolventSettings,
+)
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
@@ -15,6 +26,28 @@ from .base import (
 )
 from .constants import to_relative_kcal
 
+PresetName = Literal[
+    "general_nnp", "organic_nnp", "rapid_semiempirical", "routine_dft", "careful_dft"
+]
+
+
+class _PresetsDict(TypedDict, total=True):
+    general_nnp: Settings
+    organic_nnp: Settings
+    rapid_semiempirical: Settings
+    routine_dft: Settings
+    careful_dft: Settings
+
+
+# Named presets for common level-of-theory combinations
+_PRESETS: _PresetsDict = {
+    "general_nnp": Settings(method=Method.OMOL25_CONSERVING_S),
+    "organic_nnp": Settings(method=Method.AIMNET2_WB97MD3),
+    "rapid_semiempirical": Settings(method=Method.GFN2_XTB),
+    "routine_dft": Settings(method=Method.R2SCAN, basis_set="vDZP", corrections=[Correction.D4]),
+    "careful_dft": Settings(method=Method.WB97MD3BJ, basis_set="vDZP"),
+}
+
 
 @register_result("basic_calculation")
 class BasicCalculationResult(WorkflowResult):
@@ -24,7 +57,7 @@ class BasicCalculationResult(WorkflowResult):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.eager:
+        if self.complete:
             if calc_uuid := getattr(self._workflow, "calculation_uuid", None):
                 self._cache["calculation"] = retrieve_calculation(calc_uuid)
 
@@ -101,13 +134,32 @@ class BasicCalculationResult(WorkflowResult):
         return mol.frequencies if mol else None
 
 
+def settings_from_preset(preset: PresetName, **overrides: Any) -> stjames.Settings:
+    """
+    Construct a `Settings` object from a named preset.
+
+    :param preset: Preset name — see `PresetName` for options.
+    :param overrides: Any `Settings` fields to override (e.g. tasks, mode, solvent_settings).
+    :returns: Validated `Settings` object.
+    :raises ValueError: if an unknown preset name is given.
+    """
+    if preset not in _PRESETS:
+        raise ValueError(f"Unknown preset {preset!r}. Choose from: {list(_PRESETS)}")
+    base = _PRESETS[cast(PresetName, preset)]
+    return Settings.model_validate({**base.model_dump(), **overrides})
+
+
 def submit_basic_calculation_workflow(
     initial_molecule: MoleculeInput,
-    method: stjames.Method | str = "omol25_conserving_s",
-    basis_set: stjames.BasisSet | str | None = None,
-    tasks: list[str] | None = None,
+    tasks: list[str],
+    method: Method | str | None = None,
+    basis_set: BasisSet | str | None = None,
     mode: str = "auto",
-    engine: str | None = None,
+    engine: Engine | str | None = None,
+    corrections: list[str] | None = None,
+    solvent_settings: SolventSettings | dict[str, Any] | None = None,
+    opt_settings: OptimizationSettings | dict[str, Any] | None = None,
+    preset: PresetName | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -117,39 +169,80 @@ def submit_basic_calculation_workflow(
     Submit a basic-calculation workflow to the API.
 
     :param initial_molecule: Molecule to perform the calculation on.
-    :param method: Method to use for the calculation.
-    :param basis_set: Basis set to use (if any).
-    :param tasks: Tasks to perform for the calculation.
-    :param mode: Mode to run the calculation in.
-    :param engine: Engine to use for the calculation.
-    :param name: Name of the workflow.
+    :param tasks: Tasks to perform, see `Task` (e.g. optimize, energy, frequencies).
+    :param method: Computational method, see `Method`. Default: `omol25_conserving_s`.
+    :param basis_set: Basis set, see `BasisSet`.
+    :param mode: Accuracy mode, see `Mode`. Default: `auto`.
+    :param engine: Compute engine, see `Engine`. Auto-selected from method if not specified.
+    :param corrections: Dispersion corrections, see `Correction`.
+    :param solvent_settings: Solvent settings as a dict or `SolventSettings`.
+    :param opt_settings: Optimization settings as a dict or `OptimizationSettings`.
+    :param preset: Named preset, mutually exclusive with method/engine/basis_set/corrections.
+        - `general_nnp` — omol25_conserving_s on omol25
+        - `organic_nnp` — aimnet2_wb97md3 on aimnet2
+        - `rapid_semiempirical` — gfn2_xtb on xtb
+        - `routine_dft` — r2scan-D4/vDZP on gpu4pyscf
+        - `careful_dft` — wb97m_d3bj/vDZP on gpu4pyscf
+    :param name: Workflow name.
     :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    :param folder: Folder to place the workflow in.
+    :param max_credits: Maximum credits to use.
+    :returns: Submitted workflow.
+    :raises requests.HTTPError: if the API request fails.
+    :raises ValueError: if preset is combined with method/engine/basis_set/corrections.
+
+    To resubmit with identical settings insulated from future preset changes, use
+    `submit_workflow` directly with `workflow_data` from a previous result.
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    if not tasks:
-        tasks = ["optimize"]
+
+    if preset is not None:
+        if any(x is not None for x in [method, engine, corrections, basis_set]):
+            raise ValueError(
+                "preset is mutually exclusive with method, engine, basis_set, and corrections."
+            )
+        settings = settings_from_preset(
+            preset,
+            tasks=tasks,
+            mode=mode,
+            solvent_settings=solvent_settings,
+            **({"opt_settings": opt_settings} if opt_settings else {}),
+        )
+    else:
+        if method is None:
+            method = "omol25_conserving_s"
+
+        if isinstance(method, str):
+            method = stjames.Method(method)
+
+        if isinstance(solvent_settings, dict):
+            solvent_settings = stjames.SolventSettings(**solvent_settings)
+
+        if isinstance(opt_settings, dict):
+            opt_settings = stjames.OptimizationSettings(**opt_settings)
+
+        settings_kwargs: dict[str, Any] = {
+            "method": method,
+            "basis_set": basis_set,
+            "tasks": tasks,
+            "mode": mode,
+            "corrections": corrections or [],
+            "solvent_settings": solvent_settings,
+        }
+        if opt_settings is not None:
+            settings_kwargs["opt_settings"] = opt_settings
+        settings = stjames.Settings(**settings_kwargs)
 
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    if isinstance(method, str):
-        method = stjames.Method(method)
-
     workflow = stjames.BasicCalculationWorkflow(
         initial_molecule=initial_molecule,
-        settings=stjames.Settings(
-            method=method,
-            basis_set=basis_set,
-            tasks=tasks,
-            mode=mode,
-        ),
-        engine=engine or method.default_engine(),
+        settings=settings,
+        tasks=settings.tasks,
+        engine=settings.engine,
     )
 
     data = {

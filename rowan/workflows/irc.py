@@ -24,7 +24,7 @@ class IRCResult(WorkflowResult):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.eager:
+        if self.complete:
             if ts_uuid := self._workflow.starting_TS:
                 self._cache["ts_calc"] = retrieve_calculation(ts_uuid)
 

@@ -17,8 +17,6 @@ Rapid is recommended for most work.
 See documentation at: https://docs.rowansci.com/science/workflows/conformers
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -26,7 +24,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_conformer_search_workflow(
-    initial_molecule=Molecule.from_smiles("CCOCC"),
+    initial_molecule=rowan.Molecule.from_smiles("CCOCC"),
     folder=folder,
 )
 

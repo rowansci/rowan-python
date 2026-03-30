@@ -4,8 +4,6 @@ Run an scan calculation on a molecule using Rowan.
 See documentation at: https://docs.rowansci.com/science/workflows/scan
 """
 
-from stjames import Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -13,7 +11,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_scan_workflow(
-    initial_molecule=Molecule.from_smiles("O"),
+    initial_molecule=rowan.Molecule.from_smiles("O"),
     name="Water Angle scan",
     scan_settings={
         "type": "angle",

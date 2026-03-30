@@ -211,7 +211,7 @@ class Protein(BaseModel):
 
         raise RuntimeError(f"Protein preparation timed out after {timeout:.0f}s for {self.uuid}.")
 
-    def validate_protein_forcefield(self) -> None:
+    def validate_protein_forcefield(self, exclude_residue_names: list[str] | None = None) -> None:
         """
         Validate that this protein can be parameterized with the MD forcefield.
 
@@ -219,13 +219,21 @@ class Protein(BaseModel):
         recognized by OpenMM and that there are no clashing atoms. Call this
         before submitting any MD workflow to catch preparation issues early.
 
+        Ligand residues (``LIG``) are always excluded — they are parameterized
+        separately by the MD workflow from the provided SMILES.
+
         If validation fails, try re-preparing with ``remove_invalid_hydrogens=True``:
         ``protein.prepare(remove_invalid_hydrogens=True)``
 
+        :param exclude_residue_names: Additional residue names to skip during validation.
         :raises requests.HTTPError: if validation fails or the API request fails.
         """
+        excluded = list({"LIG"} | {name.upper() for name in (exclude_residue_names or [])})
         with api_client() as client:
-            response = client.post(f"/protein/{self.uuid}/validate_forcefield")
+            response = client.post(
+                f"/protein/{self.uuid}/validate_forcefield",
+                json=excluded,
+            )
             response.raise_for_status()
 
     def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:

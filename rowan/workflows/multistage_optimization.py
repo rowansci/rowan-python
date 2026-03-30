@@ -24,7 +24,7 @@ class MultiStageOptResult(WorkflowResult):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.eager:
+        if self.complete:
             uuids = self.calculation_uuids
             if uuids:
                 self._cache["final_calculation"] = retrieve_calculation(uuids[-1])

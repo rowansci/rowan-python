@@ -1,5 +1,3 @@
-from stjames import Method, Molecule
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -7,32 +5,27 @@ import rowan
 folder = rowan.get_folder("examples")
 
 
-def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, name: str) -> float:
-    opt_workflow = rowan.submit_workflow(
+def compute_energy_with_solvent_correction(
+    molecule: rowan.Molecule, method: rowan.Method, name: str
+) -> float:
+    opt_workflow = rowan.submit_basic_calculation_workflow(
         initial_molecule=molecule,
-        workflow_type="basic_calculation",
+        method=method,
+        tasks=["optimize"],
         name=f"{name} {method} optimization",
-        folder_uuid=folder,
-        workflow_data={
-            "settings": {"method": method, "tasks": ["optimize"]},
-        },
+        folder=folder,
     )
 
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{opt_workflow.uuid}")
     opt_result = opt_workflow.result()
 
-    sp_workflow = rowan.submit_workflow(
+    sp_workflow = rowan.submit_basic_calculation_workflow(
         initial_molecule=opt_result.molecule,
-        workflow_type="basic_calculation",
+        method=method,
+        tasks=["energy"],
+        solvent_settings={"solvent": "water", "model": "cpcmx"},
         name=f"{name} {method} single point",
-        folder_uuid=folder,
-        workflow_data={
-            "settings": {
-                "method": method,
-                "tasks": ["energy"],
-                "solvent_settings": {"solvent": "water", "model": "cpcmx"},
-            },
-        },
+        folder=folder,
     )
 
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{sp_workflow.uuid}")
@@ -42,6 +35,6 @@ def compute_energy_with_solvent_correction(molecule: Molecule, method: Method, n
 
 
 E1 = compute_energy_with_solvent_correction(
-    Molecule.from_smiles("CC(=O)Oc1ccccc1C(=O)O"), Method.OMOL25_CONSERVING_S, "aspirin"
+    rowan.Molecule.from_smiles("CC(=O)Oc1ccccc1C(=O)O"), rowan.Method.OMOL25_CONSERVING_S, "aspirin"
 )
 print(E1)

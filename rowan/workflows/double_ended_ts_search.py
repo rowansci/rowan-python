@@ -9,8 +9,9 @@ from stjames.optimization.freezing_string_method import FSMSettings
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
+from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, register_result
+from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .constants import to_relative_kcal
 
 
@@ -37,7 +38,7 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if self.eager:
+        if self.complete:
             if ts_uuid := getattr(self._workflow, "ts_guess_calculation_uuid", None):
                 self._cache["ts_calculation"] = retrieve_calculation(ts_uuid)
 
@@ -141,8 +142,8 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
 
 def submit_double_ended_ts_search_workflow(
-    reactant: dict[str, Any] | stjames.Molecule,
-    product: dict[str, Any] | stjames.Molecule,
+    reactant: MoleculeInput,
+    product: MoleculeInput,
     calculation_settings: stjames.Settings | dict[str, Any] | None = None,
     search_settings: FSMSettings | dict[str, Any] | None = None,
     optimize_inputs: bool = False,
@@ -171,9 +172,13 @@ def submit_double_ended_ts_search_workflow(
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
+
+    reactant_dict = molecule_to_dict(reactant)
+    product_dict = molecule_to_dict(product)
+
     workflow = stjames.DoubleEndedTSSearchWorkflow(
-        reactant=reactant,
-        product=product,
+        reactant=reactant_dict,
+        product=product_dict,
         calculation_settings=calculation_settings,
         search_settings=search_settings,
         optimize_inputs=optimize_inputs,
@@ -184,9 +189,7 @@ def submit_double_ended_ts_search_workflow(
         "folder_uuid": folder_uuid,
         "workflow_type": "double_ended_ts_search",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": reactant
-        if isinstance(reactant, dict)
-        else reactant.model_dump(mode="json"),
+        "initial_molecule": reactant_dict,
         "max_credits": max_credits,
     }
 
