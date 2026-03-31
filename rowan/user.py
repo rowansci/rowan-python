@@ -1,3 +1,7 @@
+import hashlib
+import hmac
+import time
+
 from pydantic import BaseModel
 
 from .utils import api_client
@@ -135,3 +139,64 @@ def whoami() -> User:
         response.raise_for_status()
 
     return User(**response.json())
+
+
+def get_webhook_secret() -> str | None:
+    """Get current webhook secret, or None if not set."""
+    with api_client() as client:
+        response = client.get("/user/me/webhook_secret")
+        response.raise_for_status()
+    return response.json().get("webhook_secret")
+
+
+def create_webhook_secret() -> str:
+    """Create a webhook secret if one doesn't exist, return it."""
+    with api_client() as client:
+        response = client.post("/user/me/webhook_secret")
+        response.raise_for_status()
+    return response.json()["webhook_secret"]
+
+
+def rotate_webhook_secret() -> str:
+    """Generate a new webhook secret, invalidating the old one."""
+    with api_client() as client:
+        response = client.post("/user/me/webhook_secret/rotate")
+        response.raise_for_status()
+    return response.json()["webhook_secret"]
+
+
+def verify_webhook_secret(
+    raw_body: bytes,
+    signature_header: str,
+    secret: str,
+    max_age_seconds: int = 300,
+) -> bool:
+    """Verify an incoming webhook request from Rowan.
+
+    :param raw_body: The raw (unparsed) request body bytes.
+    :param signature_header: Value of the X-Rowan-Signature header.
+    :param secret: Your webhook secret (from :func:`create_webhook_secret` or
+        :func:`rotate_webhook_secret`).
+    :param max_age_seconds: Reject requests older than this many seconds (default 5 min).
+    :returns: True if the signature is valid and the request is fresh.
+    """
+    try:
+        parts = dict(part.split("=", 1) for part in signature_header.split(","))
+    except ValueError:
+        return False
+    timestamp = parts.get("t", "")
+    received_digest = parts.get("sha256", "")
+
+    if not timestamp or not received_digest:
+        return False
+
+    if abs(time.time() - int(timestamp)) > max_age_seconds:
+        return False
+
+    expected_digest = hmac.new(
+        secret.encode(),
+        f"{timestamp}.".encode() + raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_digest, received_digest)

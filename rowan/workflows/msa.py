@@ -77,6 +77,7 @@ def submit_msa_workflow(
     folder_uuid: str | None = None,
     folder: Folder | None = None,
     max_credits: int | None = None,
+    webhook_url: str | None = None,
 ) -> Workflow:
     """
     Submits a Multiple Sequence Alignment (MSA) workflow to the API.
@@ -88,6 +89,7 @@ def submit_msa_workflow(
     :param folder_uuid: UUID of the folder where the workflow will be stored.
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
+    :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :returns: Workflow object representing the submitted MSA workflow.
     :raises HTTPError: If the API request fails.
     """
@@ -119,11 +121,12 @@ def submit_msa_workflow(
     )
 
     data = {
-        "name": name,
-        "folder_uuid": folder_uuid,
         "workflow_type": "msa",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
+        "name": name,
+        "folder_uuid": folder_uuid,
         "max_credits": max_credits,
+        "webhook_url": webhook_url,
     }
 
     with api_client() as client:

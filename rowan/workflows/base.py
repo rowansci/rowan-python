@@ -161,6 +161,7 @@ class Workflow(BaseModel):
     :param data: Data of the workflow.
     :param email_when_complete: Whether to send an email when the workflow completes.
     :param max_credits: Maximum number of credits to use for the workflow.
+    :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param elapsed: Elapsed time of the workflow.
     :param credits_charged: Number of credits charged for the workflow.
     :param logfile: Workflow logfile.
@@ -550,6 +551,7 @@ def submit_workflow(
     name: str | None = None,
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
+    webhook_url: str | None = None,
 ) -> Workflow:
     """
     Submits a workflow to the API.
@@ -561,6 +563,7 @@ def submit_workflow(
     :param name: Name for the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in, or a Folder object.
     :param max_credits: Maximum number of credits to use for the workflow.
+    :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
@@ -578,6 +581,7 @@ def submit_workflow(
         "workflow_type": workflow_type,
         "workflow_data": workflow_data,
         "max_credits": max_credits,
+        "webhook_url": webhook_url,
     }
 
     if initial_smiles is not None:
@@ -714,6 +718,7 @@ def batch_submit_workflow(
     names: list[str] | None = None,
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
+    webhook_url: str | None = None,
 ) -> list[Workflow]:
     """
     Submits a batch of workflows to the API.
@@ -728,6 +733,7 @@ def batch_submit_workflow(
     :param names: Names for the submitted workflows.
     :param folder_uuid: UUID of the folder to store the workflows in.
     :param max_credits: Maximum number of credits to use per workflow.
+    :param webhook_url: URL to call when each workflow completes.
     :returns: List of Workflow objects representing the submitted workflows.
     """
     if names is not None:
@@ -750,6 +756,7 @@ def batch_submit_workflow(
                     name=name,
                     folder_uuid=folder_uuid,
                     max_credits=max_credits,
+                    webhook_url=webhook_url,
                 )
             )
     elif initial_molecules is not None:
@@ -763,6 +770,7 @@ def batch_submit_workflow(
                     name=name,
                     folder_uuid=folder_uuid,
                     max_credits=max_credits,
+                    webhook_url=webhook_url,
                 )
             )
     else:

@@ -144,6 +144,7 @@ def submit_docking_workflow(
     folder_uuid: str | None = None,
     folder: Folder | None = None,
     max_credits: int | None = None,
+    webhook_url: str | None = None,
 ) -> Workflow:
     """
     Submits a docking workflow to the API.
@@ -161,6 +162,7 @@ def submit_docking_workflow(
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
+    :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :returns: Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
@@ -190,12 +192,13 @@ def submit_docking_workflow(
     )
 
     data = {
-        "name": name,
-        "folder_uuid": folder_uuid,
         "workflow_type": "docking",
         "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
+        "name": name,
+        "folder_uuid": folder_uuid,
         "max_credits": max_credits,
+        "webhook_url": webhook_url,
     }
 
     with api_client() as client:

@@ -93,6 +93,7 @@ def submit_interaction_energy_decomposition_workflow(
     folder_uuid: str | None = None,
     folder: Folder | None = None,
     max_credits: int | None = None,
+    webhook_url: str | None = None,
 ) -> Workflow:
     """
     Submits an interaction energy decomposition (SAPT0) workflow to the API.
@@ -109,6 +110,7 @@ def submit_interaction_energy_decomposition_workflow(
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
+    :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If both folder and folder_uuid are provided, or if fragment 1
         contains atoms covalently bonded to atoms outside fragment 1.
@@ -135,12 +137,13 @@ def submit_interaction_energy_decomposition_workflow(
     )
 
     data = {
-        "name": name,
-        "folder_uuid": folder_uuid,
         "workflow_type": "interaction_energy_decomposition",
         "workflow_data": workflow.model_dump(mode="json"),
         "initial_molecule": initial_molecule,
+        "name": name,
+        "folder_uuid": folder_uuid,
         "max_credits": max_credits,
+        "webhook_url": webhook_url,
     }
 
     with api_client() as client:
