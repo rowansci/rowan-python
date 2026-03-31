@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "3.0.0"
+version = "3.0.1"
 description = "Rowan Python Library"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -124,10 +124,6 @@ convention = "numpy"
 exclude = ["examples"]
 plugins = ["pydantic.mypy"]
 warn_unused_ignores = true
-
-[[tool.mypy.overrides]]
-module = "rdkit-stubs.*"
-ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["rowan"]

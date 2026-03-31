@@ -21,7 +21,7 @@ def _validate_fragment_separation(molecule: MoleculeInput, fragment1_indices: li
     stj_mol = molecule_to_stjames(molecule)
     xyz = stj_mol.to_xyz()
 
-    rdmol = Chem.MolFromXYZBlock(xyz)
+    rdmol = Chem.MolFromXYZBlock(xyz)  # type: ignore[attr-defined]
     if rdmol is None:
         return  # Can't determine connectivity, skip validation
     rdDetermineBonds.DetermineConnectivity(rdmol)

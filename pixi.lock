@@ -1542,8 +1542,8 @@ packages:
   requires_python: '>=3.10'
 - pypi: ./
   name: rowan-python
-  version: 3.0.0
-  sha256: e16a09184edd70d83396a080574904e4c7acb699f92d4e4befa7ab79310cfa94
+  version: 3.0.1
+  sha256: 85c6e382a91cfe45b568518629d759f44dc91de7c9a282dec22dff6bf773c583
   requires_dist:
   - httpx
   - stjames>=0.0.174
