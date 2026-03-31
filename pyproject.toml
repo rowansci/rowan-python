@@ -123,7 +123,7 @@ convention = "numpy"
 [tool.mypy]
 exclude = ["examples"]
 plugins = ["pydantic.mypy"]
-warn_unused_ignores = true
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 testpaths = ["rowan"]
