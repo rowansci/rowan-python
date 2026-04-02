@@ -78,7 +78,7 @@ class User(BaseModel):
     weekly_credits: float | None = None
     credits: float | None = None
     billing_name: str | None = None
-    billing_address: str | None = None
+    billing_address: str | dict | None = None
     credit_balance_warning: float | None = None
     organization: Organization | None = None
     organization_role: OrganizationRole | None = None
