@@ -412,7 +412,7 @@ def run_energy(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the energy in Hartree and the conformer index
     """
     return asyncio.run(_single_energy(mol, method, engine, mode, timeout, name, folder_uuid))
@@ -439,7 +439,7 @@ def batch_energy(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: list of dictionaries with the energy in Hartree and the conformer index
     """
 
@@ -472,7 +472,7 @@ async def _single_energy(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the energy in Hartree and the conformer index
     """
     get_api_key()
@@ -552,7 +552,7 @@ def run_optimize(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
     return asyncio.run(
@@ -583,7 +583,7 @@ def batch_optimize(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the Method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionaries with optimized conformer(s) and optional list of energies per conformer
     """
 
@@ -619,7 +619,7 @@ async def _single_optimize(
     :param timeout: time in seconds before the Workflow times out
     :param name: name for the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the optimized conformer(s) and optional list of energies per conformer
     """
     get_api_key()
@@ -897,7 +897,7 @@ def run_charges(
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the charges and the conformer index
     """
     return asyncio.run(_single_charges(mol, method, engine, mode, timeout, name, folder_uuid))
@@ -924,7 +924,7 @@ def batch_charges(
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: list of dictionaries with the charges and the conformer index
     """
 
@@ -958,7 +958,7 @@ async def _single_charges(
     :param timeout: timeout in seconds
     :param name: name of the job
     :param folder_uuid: folder UUID
-    :raises: MethodTooSlowError if the method is invalid
+    :raises MethodTooSlowError: if the method is invalid
     :returns: dictionary with the charges and the conformer index
     """
     get_api_key()
