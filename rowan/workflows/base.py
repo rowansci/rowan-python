@@ -49,6 +49,20 @@ def parse_messages(raw_messages: list[stjames.Message] | None) -> list[Message]:
     return [Message(title=m.title, body=m.body, type=m.type) for m in raw_messages]
 
 
+@dataclass(frozen=True, slots=True)
+class DispatchInfo:
+    """Estimated dispatch information for a workflow.
+
+    :param to_be_dispatched: whether workflow will be queued (vs starting immediately).
+    :param compute_hardware: hardware type (CPU, H200, A100, etc.).
+    :param estimated_runtime_minutes: estimated runtime in minutes, or None if unknown.
+    """
+
+    to_be_dispatched: bool | None
+    compute_hardware: str | None
+    estimated_runtime_minutes: float | None
+
+
 class WorkflowError(Exception):
     """Raised when a workflow fails or is stopped."""
 
@@ -312,6 +326,11 @@ Workflow:  {self.name}
         :returns: WorkflowResult subclass with typed access to results.
         :raises WorkflowError: If the workflow failed or was stopped.
         """
+        if self.status == stjames.Status.DRAFT:
+            raise WorkflowError(
+                f"Cannot get result of draft workflow '{self.name}'. Call submit_draft() first."
+            )
+
         if wait:
             while not self.done():
                 time.sleep(poll_interval)
@@ -410,6 +429,50 @@ Workflow:  {self.name}
         with api_client() as client:
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
             response.raise_for_status()
+
+    def dispatch_info(self) -> DispatchInfo:
+        """Fetch estimated dispatch information for this workflow.
+
+        :returns: estimated time, hardware, and queue info.
+        :raises HTTPError: if the API request fails.
+        """
+        if self.data is None:
+            self.fetch_latest(in_place=True)
+        payload = {"workflow_type": self.workflow_type, "workflow_data": self.data}
+        with api_client() as client:
+            response = client.post("/workflow/dispatch_information", json=payload)
+            response.raise_for_status()
+        raw = response.json()
+        time_est = raw.get("time_estimate_min")
+        if isinstance(time_est, dict):
+            time_est = time_est.get("average")
+        info = DispatchInfo(
+            to_be_dispatched=raw.get("to_be_dispatched"),
+            compute_hardware=raw.get("compute_hardware"),
+            estimated_runtime_minutes=time_est,
+        )
+        if info.estimated_runtime_minutes is None:
+            logger.info(
+                "Runtime estimation not available for workflow type '%s'.",
+                self.workflow_type,
+            )
+        return info
+
+    def submit_draft(self) -> Self:
+        """Submit a draft workflow for execution.
+
+        :returns: updated workflow instance.
+        :raises WorkflowError: if workflow is not in DRAFT status.
+        :raises HTTPError: if the API request fails.
+        """
+        if self.status != stjames.Status.DRAFT:
+            raise WorkflowError(
+                f"Cannot submit draft: workflow status is {self.status.name}, not DRAFT"
+            )
+        with api_client() as client:
+            response = client.post(f"/workflow/{self.uuid}/submit_draft")
+            response.raise_for_status()
+        return self.fetch_latest(in_place=True)
 
     def download_msa_files(
         self, msa_format: stjames.MSAFormat, path: Path | str | None = None
@@ -552,6 +615,7 @@ def submit_workflow(
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
     webhook_url: str | None = None,
+    is_draft: bool = False,
 ) -> Workflow:
     """
     Submits a workflow to the API.
@@ -564,6 +628,7 @@ def submit_workflow(
     :param folder_uuid: UUID of the folder to store the workflow in, or a Folder object.
     :param max_credits: Maximum number of credits to use for the workflow.
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
+    :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
     :raises HTTPError: If the API request fails.
@@ -582,6 +647,7 @@ def submit_workflow(
         "workflow_data": workflow_data,
         "max_credits": max_credits,
         "webhook_url": webhook_url,
+        "is_draft": is_draft,
     }
 
     if initial_smiles is not None:

@@ -98,6 +98,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     folder: Folder | None = None,
     max_credits: int | None = None,
     webhook_url: str | None = None,
+    is_draft: bool = False,
 ) -> Workflow:
     """
     Submits an RBFE graph construction workflow to the API.
@@ -117,6 +118,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
+    :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: If both folder and folder_uuid are provided.
     :raises requests.HTTPError: if the request to the API fails.
@@ -144,6 +146,7 @@ def submit_relative_binding_free_energy_graph_workflow(
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
         "webhook_url": webhook_url,
+        "is_draft": is_draft,
     }
 
     with api_client() as client:

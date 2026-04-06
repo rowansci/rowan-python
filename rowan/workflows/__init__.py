@@ -23,6 +23,7 @@ from .analogue_docking import (
 )
 from .base import (
     RESULT_REGISTRY,
+    DispatchInfo,
     Solvent,
     Workflow,
     WorkflowError,

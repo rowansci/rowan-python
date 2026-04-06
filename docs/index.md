@@ -12,6 +12,7 @@
         - Workflow
         - WorkflowResult
         - WorkflowError
+        - DispatchInfo
         - Message
         - Solvent
         - Mode

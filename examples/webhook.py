@@ -10,11 +10,13 @@ secret = rowan.create_webhook_secret()
 # Rotate to a new secret (invalidates the old one)
 # secret = rowan.rotate_webhook_secret()
 
+folder = rowan.get_folder("examples")
 oseltamivir = "C1CCOC(=O)C1=C[C@@H](OC(CC)CC)[C@H](NC(C)=O)[C@@H]([NH3+])C1CCC1"
 
 workflow = rowan.submit_admet_workflow(
     initial_smiles=oseltamivir,
-    name="Oseltamivir ADMET (webhook)",
+    name="Webhook - ADMET",
+    folder=folder,
     webhook_url="https://your-server.com/webhook",
 )
 
