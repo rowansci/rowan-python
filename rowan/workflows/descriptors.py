@@ -5,7 +5,7 @@ from typing import Any
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 
@@ -18,8 +18,7 @@ class DescriptorsResult(WorkflowResult):
 
     def __repr__(self) -> str:
         d = self.descriptors or {}
-        preview = {k: d[k] for k in list(d.keys())[:5]} if d else {}
-        return f"<DescriptorsResult count={len(d)} preview={preview}>"
+        return f"<DescriptorsResult n={len(d)}>"
 
     @property
     def descriptors(self) -> dict[str, Any] | None:
@@ -29,6 +28,8 @@ class DescriptorsResult(WorkflowResult):
 
 def submit_descriptors_workflow(
     initial_molecule: MoleculeInput,
+    solvent: SolventInput = "water",
+    do_optimization: bool = True,
     name: str = "Descriptors Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -40,6 +41,10 @@ def submit_descriptors_workflow(
     Submits a descriptors workflow to the API.
 
     :param initial_molecule: Molecule to calculate the descriptors of.
+    :param solvent: Solvent for COSMO descriptor calculation (e.g. "water").
+        When provided, additional COSMO descriptors are computed.
+    :param do_optimization: Whether to run GFN2-xTB geometry optimization
+        before computing descriptors.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -53,12 +58,20 @@ def submit_descriptors_workflow(
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
+
+    workflow_data = {
+        "initial_molecule": mol_dict,
+        "solvent": solvent,
+        "do_optimization": do_optimization,
+    }
+
+    workflow = stjames.DescriptorsWorkflow.model_validate(workflow_data)
 
     data = {
         "workflow_type": "descriptors",
-        "workflow_data": {},
-        "initial_molecule": initial_molecule,
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
