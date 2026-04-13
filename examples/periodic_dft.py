@@ -21,8 +21,8 @@ folder = rowan.get_folder("examples/periodic_dft")
 # Lattice vectors in Angstrom; Al has 13 electrons so multiplicity=2.
 cell = rowan.PeriodicCell(
     lattice_vectors=(
-        (0.0,    2.0230, 2.0230),
-        (2.0230, 0.0,    2.0230),
+        (0.0, 2.0230, 2.0230),
+        (2.0230, 0.0, 2.0230),
         (2.0230, 2.0230, 0.0),
     )
 )
@@ -35,10 +35,10 @@ al_fcc = rowan.Molecule.from_atoms(
 
 # Marzari–Vanderbilt cold smearing is recommended for metals.
 pbc_settings = rowan.PBCDFTSettings(
-    pw_cutoff=7.5,           # Hartree; SSSP efficiency recommends ~7–9 Ha for Al
-    kpoints=(4, 4, 4),       # Monkhorst–Pack grid; increase for production runs
+    pw_cutoff=7.5,  # Hartree; SSSP efficiency recommends ~7–9 Ha for Al
+    kpoints=(4, 4, 4),  # Monkhorst–Pack grid; increase for production runs
     smearing=rowan.PBCDFTSmearing.MV,
-    degauss=0.01,            # Hartree smearing width
+    degauss=0.01,  # Hartree smearing width
 )
 
 workflow = rowan.submit_basic_calculation_workflow(

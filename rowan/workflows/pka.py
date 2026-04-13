@@ -183,8 +183,7 @@ def submit_pka_workflow(
         )
     if method in _PKA_SMILES_METHODS and not initial_smiles:
         raise ValueError(
-            f"{method} requires a SMILES string. "
-            "Provide a SMILES string, not a 3D structure."
+            f"{method} requires a SMILES string. Provide a SMILES string, not a 3D structure."
         )
     if method in _PKA_WATER_ONLY_METHODS and solvent != "water":
         raise ValueError(f"{method} only supports water as solvent.")
