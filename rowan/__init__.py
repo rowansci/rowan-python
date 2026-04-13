@@ -3,15 +3,21 @@ from . import constants
 from stjames import (
     Constraint,
     ConstraintType,
+    ConformerGenSettingsUnion,
     Correction,
     Engine,
+    ETKDGSettings,
+    iMTDSettings,
     Method,
     Mode,
+    MultiStageOptSettings,
     OptimizationSettings,
+    PBCDFTSettings,
     Settings,
     SolventSettings,
     Task,
 )
+from stjames.pbc_dft_settings import PBCDFTSmearing
 from stjames.optimization.freezing_string_method import (
     FSMInterpolation,
     FSMOptimizationCoordinates,

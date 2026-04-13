@@ -1,6 +1,7 @@
 """Tautomer-search workflow - find tautomeric forms of molecules."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import stjames
 
@@ -105,6 +106,8 @@ class TautomerResult(WorkflowResult):
 def submit_tautomer_search_workflow(
     initial_molecule: MoleculeInput,
     mode: Mode = Mode.CAREFUL,
+    conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
+    multistage_opt_settings: stjames.MultiStageOptSettings | None = None,
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -116,7 +119,11 @@ def submit_tautomer_search_workflow(
     Submits a tautomer-search workflow to the API.
 
     :param initial_molecule: Molecule to find tautomers for.
-    :param mode: Mode to run the calculation in (reckless, rapid, careful).
+    :param mode: *Deprecated.* Ignored when ``multistage_opt_settings`` is provided.
+    :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
+        250 initial conformers, 20 max conformers, and 15 kcal/mol MMFF energy cutoff.
+    :param multistage_opt_settings: Optimization settings for tautomer ranking.
+        Defaults to AIMNet2/wB97M-D3 optimization with CPCMx singlepoint.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -132,14 +139,17 @@ def submit_tautomer_search_workflow(
         folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    workflow = stjames.TautomerWorkflow(
-        initial_molecule=initial_molecule,
-        mode=mode,
-    )
+    workflow_kwargs: dict[str, Any] = {"initial_molecule": initial_molecule, "mode": mode}
+    if conf_gen_settings is not None:
+        workflow_kwargs["conf_gen_settings"] = conf_gen_settings
+    if multistage_opt_settings is not None:
+        workflow_kwargs["multistage_opt_settings"] = multistage_opt_settings
+
+    workflow = stjames.TautomerWorkflow(**workflow_kwargs)
 
     data = {
         "workflow_type": "tautomers",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": initial_molecule,
         "name": name,
         "folder_uuid": folder_uuid,
