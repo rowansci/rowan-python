@@ -1,6 +1,7 @@
 """Strain workflow - calculate molecular strain energy."""
 
 import math
+from typing import Any
 
 import stjames
 
@@ -113,6 +114,7 @@ def submit_strain_workflow(
     harmonic_constraint_spring_constant: float = 5.0,
     constrain_hydrogens: bool = False,
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
+    multistage_opt_settings: stjames.MultiStageOptSettings | None = None,
     name: str = "Strain Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -129,6 +131,8 @@ def submit_strain_workflow(
     :param constrain_hydrogens: Whether to constrain hydrogen positions. Default False.
     :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
         max 50 conformers.
+    :param multistage_opt_settings: Optimization settings for conformer ranking.
+        Defaults to AIMNet2/wB97M-D3 optimization with CPCMx singlepoint.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -144,12 +148,16 @@ def submit_strain_workflow(
         folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    workflow = stjames.StrainWorkflow(
-        initial_molecule=initial_molecule,
-        harmonic_constraint_spring_constant=harmonic_constraint_spring_constant,
-        constrain_hydrogens=constrain_hydrogens,
-        conf_gen_settings=conf_gen_settings or stjames.ETKDGSettings(max_confs=50),
-    )
+    workflow_kwargs: dict[str, Any] = {
+        "initial_molecule": initial_molecule,
+        "harmonic_constraint_spring_constant": harmonic_constraint_spring_constant,
+        "constrain_hydrogens": constrain_hydrogens,
+        "conf_gen_settings": conf_gen_settings or stjames.ETKDGSettings(max_confs=50),
+    }
+    if multistage_opt_settings is not None:
+        workflow_kwargs["multistage_opt_settings"] = multistage_opt_settings
+
+    workflow = stjames.StrainWorkflow(**workflow_kwargs)
 
     data = {
         "workflow_type": "strain",
