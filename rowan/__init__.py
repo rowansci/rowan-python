@@ -1,6 +1,7 @@
 # ruff: noqa
 from . import constants
 from stjames import (
+    Atom,
     Constraint,
     ConstraintType,
     ConformerGenSettingsUnion,
@@ -13,6 +14,7 @@ from stjames import (
     MultiStageOptSettings,
     OptimizationSettings,
     PBCDFTSettings,
+    PeriodicCell,
     Settings,
     SolventSettings,
     Task,
