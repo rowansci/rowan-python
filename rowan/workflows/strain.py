@@ -130,7 +130,7 @@ def submit_strain_workflow(
         constraints (kcal/mol/A). Default 5.0.
     :param constrain_hydrogens: Whether to constrain hydrogen positions. Default False.
     :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
-        max 50 conformers.
+        max 200 conformers.
     :param multistage_opt_settings: Optimization settings for conformer ranking.
         Defaults to AIMNet2/wB97M-D3 optimization with CPCMx singlepoint.
     :param name: Name of the workflow.
@@ -152,7 +152,7 @@ def submit_strain_workflow(
         "initial_molecule": initial_molecule,
         "harmonic_constraint_spring_constant": harmonic_constraint_spring_constant,
         "constrain_hydrogens": constrain_hydrogens,
-        "conf_gen_settings": conf_gen_settings or stjames.ETKDGSettings(max_confs=50),
+        "conf_gen_settings": conf_gen_settings or stjames.ETKDGSettings(max_confs=200),
     }
     if multistage_opt_settings is not None:
         workflow_kwargs["multistage_opt_settings"] = multistage_opt_settings

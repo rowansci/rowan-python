@@ -119,7 +119,7 @@ def submit_tautomer_search_workflow(
     Submits a tautomer-search workflow to the API.
 
     :param initial_molecule: Molecule to find tautomers for.
-    :param mode: *Deprecated.* Ignored when ``multistage_opt_settings`` is provided.
+    :param mode: *Deprecated.*
     :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
         250 initial conformers, 20 max conformers, and 15 kcal/mol MMFF energy cutoff.
     :param multistage_opt_settings: Optimization settings for tautomer ranking.

@@ -87,6 +87,32 @@ class Molecule(BaseModel):
         """
         return cls(_stjames=stj)
 
+    @classmethod
+    def from_atoms(
+        cls,
+        atoms: list[stjames.Atom],
+        charge: int = 0,
+        multiplicity: int = 1,
+        cell: stjames.PeriodicCell | None = None,
+    ) -> Self:
+        """
+        Create molecule from a list of atoms.
+
+        :param atoms: List of Atom objects.
+        :param charge: Molecular charge (default 0).
+        :param multiplicity: Spin multiplicity (default 1).
+        :param cell: PeriodicCell for periodic boundary conditions.
+        :returns: Molecule instance.
+        """
+        return cls(
+            _stjames=stjames.Molecule(
+                atoms=atoms,
+                charge=charge,
+                multiplicity=multiplicity,
+                cell=cell,
+            )
+        )
+
     def to_xyz(self) -> str:
         """Convert to XYZ format string."""
         return self._stjames.to_xyz()
@@ -183,6 +209,11 @@ class Molecule(BaseModel):
     def thermal_free_energy_correction(self) -> float | None:
         """Thermal correction to Gibbs free energy (Hartree)."""
         return self._stjames.thermal_free_energy_corr
+
+    @property
+    def cell(self) -> stjames.PeriodicCell | None:
+        """Unit cell for periodic boundary conditions."""
+        return self._stjames.cell
 
     @property
     def gradient(self) -> list[tuple[float, float, float]] | None:

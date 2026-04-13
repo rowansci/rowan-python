@@ -7,13 +7,9 @@ Key settings for PBC calculations:
 - ``smearing``: occupation smearing type — recommended for metals to aid SCF convergence
 - ``degauss``: smearing width in Hartree (typical range: 0.005–0.02)
 
-Periodic molecules are constructed from atomic positions + lattice vectors via stjames.
+Periodic molecules are constructed from atomic positions + lattice vectors.
 See documentation at: https://docs.rowansci.com/science/workflows/basic-calculation
 """
-
-import stjames
-import stjames.molecule
-from stjames.periodic_cell import PeriodicCell
 
 import rowan
 
@@ -23,20 +19,19 @@ folder = rowan.get_folder("examples/periodic_dft")
 
 # Build bulk Al FCC primitive cell.
 # Lattice vectors in Angstrom; Al has 13 electrons so multiplicity=2.
-cell = PeriodicCell(
+cell = rowan.PeriodicCell(
     lattice_vectors=(
         (0.0,    2.0230, 2.0230),
         (2.0230, 0.0,    2.0230),
         (2.0230, 2.0230, 0.0),
     )
 )
-stj_mol = stjames.Molecule(
-    atoms=[stjames.molecule.Atom(atomic_number=13, position=(0.0, 0.0, 0.0))],
+al_fcc = rowan.Molecule.from_atoms(
+    atoms=[rowan.Atom(atomic_number=13, position=(0.0, 0.0, 0.0))],
     charge=0,
     multiplicity=2,
     cell=cell,
 )
-al_fcc = rowan.Molecule.from_stjames(stj_mol)
 
 # Marzari–Vanderbilt cold smearing is recommended for metals.
 pbc_settings = rowan.PBCDFTSettings(
