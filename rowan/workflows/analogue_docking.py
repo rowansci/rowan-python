@@ -162,6 +162,9 @@ def submit_analogue_docking_workflow(
     executable: str = "vina",
     scoring_function: str = "vinardo",
     exhaustiveness: float = 8,
+    num_conformers_per_analogue: int = 100,
+    require_posebusters: bool = False,
+    run_local_optimization: bool = False,
     name: str = "Analogue Docking Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -178,6 +181,9 @@ def submit_analogue_docking_workflow(
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Which exhaustiveness to employ.
+    :param num_conformers_per_analogue: Maximum number of conformers to generate per analogue.
+    :param require_posebusters: Filter conformers based on PoseBusters validity before docking.
+    :param run_local_optimization: Whether to run a local opt in docking pocket or just score.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -207,6 +213,9 @@ def submit_analogue_docking_workflow(
         initial_molecule=initial_molecule,
         protein=protein,
         docking_settings=docking_settings,
+        num_conformers_per_analogue=num_conformers_per_analogue,
+        require_posebusters=require_posebusters,
+        run_local_optimization=run_local_optimization,
     )
 
     data = {
