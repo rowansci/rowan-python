@@ -52,28 +52,36 @@ class Molecule(BaseModel):
         return cls(_stjames=stjames.Molecule.from_smiles(smiles))
 
     @classmethod
-    def from_xyz(cls, xyz_string: str, charge: int = 0, multiplicity: int = 1) -> Self:
+    def from_xyz(
+        cls, xyz_string: str, charge: int | None = None, multiplicity: int | None = None
+    ) -> Self:
         """
-        Create molecule from XYZ string.
+        Create Molecule from XYZ string.
 
-        :param xyz_string: XYZ format string.
-        :param charge: Molecular charge (default 0).
-        :param multiplicity: Spin multiplicity (default 1).
-        :returns: Molecule instance.
+        :param xyz_string: XYZ format string
+        :param charge: charge
+        :param multiplicity: spin multiplicity
+        :returns: Molecule
         """
-        stj = stjames.Molecule.from_xyz(xyz_string)
-        stj = stjames.Molecule(atoms=stj.atoms, charge=charge, multiplicity=multiplicity)
-        return cls(_stjames=stj)
+        return cls(
+            _stjames=stjames.Molecule.from_xyz(
+                xyz_string,
+                charge=charge,
+                multiplicity=multiplicity,
+            )
+        )
 
     @classmethod
-    def from_xyz_file(cls, path: str | Path, charge: int = 0, multiplicity: int = 1) -> Self:
+    def from_xyz_file(
+        cls, path: str | Path, charge: int | None = None, multiplicity: int | None = None
+    ) -> Self:
         """
         Create molecule from XYZ file.
 
-        :param path: Path to XYZ file.
-        :param charge: Molecular charge (default 0).
-        :param multiplicity: Spin multiplicity (default 1).
-        :returns: Molecule instance.
+        :param path: path to XYZ file
+        :param charge: charge
+        :param multiplicity: spin multiplicity
+        :returns: Molecule
         """
         return cls.from_xyz(Path(path).read_text(), charge=charge, multiplicity=multiplicity)
 
@@ -82,8 +90,8 @@ class Molecule(BaseModel):
         """
         Create from stjames.Molecule.
 
-        :param stj: stjames.Molecule instance.
-        :returns: Molecule instance.
+        :param stj: stjames.Molecule
+        :returns: Molecule
         """
         return cls(_stjames=stj)
 
