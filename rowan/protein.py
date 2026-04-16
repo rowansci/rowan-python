@@ -305,7 +305,7 @@ def list_proteins(
 
 
 def upload_protein(
-    name: str, file_path: Path, project_uuid: str | Project | None = None
+    name: str, file_path: str | Path, project_uuid: str | Project | None = None
 ) -> Protein:
     """
     Uploads a protein from a PDB file to the API.
@@ -315,6 +315,7 @@ def upload_protein(
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
+    file_path = Path(file_path)
     if isinstance(project_uuid, Project):
         project_uuid = project_uuid.uuid
     with api_client() as client:
