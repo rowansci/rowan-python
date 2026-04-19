@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 import stjames
+from stjames import ENGINE_METHODS, Engine, Method
 
 from ..folder import Folder
 from ..types import MoleculeInput
@@ -155,6 +156,7 @@ def submit_electronic_properties_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
+    :raises ValueError: If the method is not supported by the psi4 engine.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if folder and folder_uuid:
@@ -164,7 +166,15 @@ def submit_electronic_properties_workflow(
     initial_molecule = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
-        method = stjames.Method(method)
+        method = Method(method)
+
+    supported_methods = ENGINE_METHODS[Engine.PSI4]
+    if method not in supported_methods:
+        supported_names = sorted(m.value for m in supported_methods)
+        raise ValueError(
+            f"Method '{method.value}' is not supported by the psi4 engine. "
+            f"Supported methods: {', '.join(supported_names)}"
+        )
 
     settings = stjames.Settings(method=method, basis_set=basis_set)
 
