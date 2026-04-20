@@ -188,7 +188,16 @@ def submit_pka_workflow(
     if method in _PKA_WATER_ONLY_METHODS and solvent != "water":
         raise ValueError(f"{method} only supports water as solvent.")
 
-    protonate_elements = protonate_elements or [7]
+    if method == "chemprop_nevolianis2025" and protonate_elements:
+        raise ValueError(
+            "chemprop_nevolianis2025 was only trained on deprotonation data; "
+            "protonation is disabled. Leave `protonate_elements` unset or pass []."
+        )
+
+    if method == "chemprop_nevolianis2025":
+        protonate_elements = []
+    else:
+        protonate_elements = protonate_elements or [7]
     deprotonate_elements = deprotonate_elements or [7, 8, 16]
 
     workflow = stjames.pKaWorkflow(
