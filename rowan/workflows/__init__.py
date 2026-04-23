@@ -84,6 +84,7 @@ from .multistage_optimization import (
 )
 from .nmr import NMRPeak, NMRResult, submit_nmr_workflow
 from .pka import pKaMicrostate, pKaResult, submit_pka_workflow
+from .pocket_detection import Pocket, PocketDetectionResult, submit_pocket_detection_workflow
 from .pose_analysis_md import PoseAnalysisMDResult, submit_pose_analysis_md_workflow
 from .protein_binder_design import (
     ProteinBinder,
