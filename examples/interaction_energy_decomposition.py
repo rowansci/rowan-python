@@ -56,7 +56,7 @@ workflow = rowan.submit_interaction_energy_decomposition_workflow(
     name="Naphthalene-Guanine SAPT0",
 )
 
-print(f"View at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View at: https://labs.rowansci.com/interaction-energy-decomposition/{workflow.uuid}")
 
 result = workflow.result()
 print(result)

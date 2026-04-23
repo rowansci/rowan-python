@@ -18,6 +18,8 @@ msa_workflow = rowan.submit_msa_workflow(
     folder=folder,
 )
 
+print(f"View workflow privately at: https://labs.rowansci.com/msa/{msa_workflow.uuid}")
+
 msa_result = msa_workflow.result()
 
 msa_result.download_files("colabfold", path=msa_directory)

@@ -27,6 +27,7 @@ workflow = rowan.submit_pka_workflow(
     name="Phenol pKa (aimnet2_wagen2024)",
     folder=folder,
 )
+print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}")
 print(f"View at: https://labs.rowansci.com/pka/{workflow.uuid}")
 result = workflow.result()
 print(result)

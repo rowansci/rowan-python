@@ -13,7 +13,7 @@ workflow = rowan.submit_solvent_dependent_conformers_workflow(
     name="Alanine Dipeptide Solvent-Dependent Conformers",
 )
 
-print(f"View at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View at: https://labs.rowansci.com/solvent-dependent-conformers/{workflow.uuid}")
 
 result = workflow.result()
 print(result)

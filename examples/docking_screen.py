@@ -35,6 +35,7 @@ for ligand in ligands:
     )
     workflows.append(workflow)
 
+print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}")
 
 workflow_results = [(w, w.result()) for w in workflows]
 

@@ -27,6 +27,7 @@ for name, smiles in phenols_to_compute.items():
         )
     )
 
+print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}")
 
 workflow_results = [w.result() for w in workflows]
 

@@ -15,7 +15,7 @@ import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
-folder = rowan.get_folder("examples/periodic_dft")
+folder = rowan.get_folder("examples")
 
 # Build bulk Al FCC primitive cell.
 # Lattice vectors in Angstrom; Al has 13 electrons so multiplicity=2.

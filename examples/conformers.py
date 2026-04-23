@@ -28,7 +28,7 @@ workflow = rowan.submit_conformer_search_workflow(
     folder=folder,
 )
 
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View workflow privately at: https://labs.rowansci.com/conformer-search/{workflow.uuid}")
 
 result = workflow.result()
 print(result)

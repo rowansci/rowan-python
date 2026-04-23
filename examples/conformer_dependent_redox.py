@@ -8,7 +8,7 @@ workflow = rowan.submit_conformer_search_workflow(
     initial_molecule=rowan.Molecule.from_smiles("CC(C)Cc1ccc(C(=O)c2ccc(O)cc2)cc1"),
     folder=folder,
 )
-print(f"View workflow privately at: https://labs.rowansci.com/workflow/{workflow.uuid}")
+print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}")
 csearch_result = workflow.result()
 
 redox_potential_workflows = []

@@ -44,6 +44,7 @@ for id, smiles in PROTACs.items():
         )
     )
 
+print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}")
 
 workflow_results = [w.result() for w in workflows]
 
