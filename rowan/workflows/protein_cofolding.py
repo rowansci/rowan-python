@@ -9,8 +9,12 @@ from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
-# Re-export cofolding model enum from stjames
 CofoldingModel = stjames.CofoldingModel
+# `ConstraintTarget` aliases stjames's `Token` - one position in an input
+# (a protein/nucleic-acid residue or a ligand atom) addressable by a constraint.
+ConstraintTarget = stjames.workflows.protein_cofolding.Token
+ContactConstraint = stjames.workflows.protein_cofolding.ContactConstraint
+PocketConstraint = stjames.workflows.protein_cofolding.PocketConstraint
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +248,9 @@ def submit_protein_cofolding_workflow(
     ligand_binding_affinity_index: int | None = None,
     use_msa_server: bool = True,
     use_potentials: bool = False,
+    contact_constraints: list[ContactConstraint] | None = None,
+    pocket_constraints: list[PocketConstraint] | None = None,
+    num_samples: int | None = None,
     compute_strain: bool = False,
     do_pose_refinement: bool = False,
     name: str = "Protein-Ligand Co-Folding",
@@ -260,6 +267,10 @@ def submit_protein_cofolding_workflow(
     Predicts the 3D structure of protein-protein, protein-ligand, protein-DNA,
     protein-RNA, or other biomolecular complexes.
 
+    See `examples/protein_cofolding_with_constraints.py` for a worked example
+    of using `ConstraintTarget`, `ContactConstraint`, and `PocketConstraint`
+    (Boltz-2 only).
+
     :param initial_protein_sequences: Protein sequences to be cofolded.
     :param initial_dna_sequences: DNA sequences to be cofolded.
     :param initial_rna_sequences: RNA sequences to be cofolded.
@@ -267,7 +278,10 @@ def submit_protein_cofolding_workflow(
     :param ligand_binding_affinity_index: Index of the ligand for which to compute
         the binding affinity.
     :param use_msa_server: Whether to use the MSA server for the computation.
-    :param use_potentials: Whether to use potentials for the computation.
+    :param use_potentials: Whether to use potentials (inference-time steering) with Boltz.
+    :param contact_constraints: Boltz contact constraints between two tokens.
+    :param pocket_constraints: Boltz pocket constraints between a binder and contact tokens.
+    :param num_samples: Number of diffusion samples to generate. If None, uses the model default.
     :param compute_strain: Whether to compute the strain of the pose
         (if `pose_refinement` is enabled).
     :param do_pose_refinement: Whether to optimize non-rotatable bonds in output poses.
@@ -302,6 +316,9 @@ def submit_protein_cofolding_workflow(
     workflow = stjames.ProteinCofoldingWorkflow(
         use_msa_server=use_msa_server,
         use_potentials=use_potentials,
+        contact_constraints=contact_constraints or [],
+        pocket_constraints=pocket_constraints or [],
+        num_samples=num_samples,
         model=model_str,
         ligand_binding_affinity_index=ligand_binding_affinity_index,
         initial_smiles_list=initial_smiles_list,

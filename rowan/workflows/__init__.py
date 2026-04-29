@@ -92,7 +92,11 @@ from .protein_binder_design import (
     submit_protein_binder_design_workflow,
 )
 from .protein_cofolding import (
+    CofoldingModel,
     CofoldingResult,
+    ConstraintTarget,
+    ContactConstraint,
+    PocketConstraint,
     ProteinCofoldingResult,
     submit_protein_cofolding_workflow,
 )
