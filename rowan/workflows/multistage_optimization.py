@@ -1,18 +1,14 @@
 """Multistage optimization workflow - optimize molecules with staged methods."""
 
-from typing import Sequence
-
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput
+from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
-    Method,
-    Settings,
-    Task,
+    Mode,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -120,8 +116,10 @@ class MultiStageOptResult(WorkflowResult):
 
 def submit_multistage_optimization_workflow(
     initial_molecule: MoleculeInput,
-    optimization_settings: Sequence[Settings] | None = None,
-    singlepoint_settings: Settings | None = None,
+    mode: Mode = Mode.RAPID,
+    solvent: SolventInput = None,
+    xtb_preopt: bool = True,
+    transition_state: bool = False,
     frequencies: bool = False,
     name: str = "Multistage Optimization Workflow",
     folder_uuid: str | None = None,
@@ -133,15 +131,12 @@ def submit_multistage_optimization_workflow(
     """
     Submits a multistage-optimization workflow to the API.
 
-    When neither `optimization_settings` nor `singlepoint_settings` is supplied,
-    defaults to a 3-stage `r2scan_3c//gfn2_xtb//gfn_ff` stack (matching the
-    multistage-opt submit form's `mode: "rapid"` + `xtb_preopt: true` default).
-
     :param initial_molecule: Molecule to optimize.
-    :param optimization_settings: Optimization stages to apply in order.
-    :param singlepoint_settings: Final singlepoint settings, applied after the
-        last optimization stage.
-    :param frequencies: Whether to calculate frequencies on the last optimization step.
+    :param mode: Mode to run the calculation in.
+    :param solvent: Solvent for the final single-point calculation.
+    :param xtb_preopt: Whether to pre-optimize with xTB.
+    :param transition_state: Whether this is a transition state optimization.
+    :param frequencies: Whether to calculate frequencies.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -157,18 +152,12 @@ def submit_multistage_optimization_workflow(
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
-    if optimization_settings is None:
-        optimization_settings = [
-            Settings(method=Method.GFN_FF, tasks=[Task.OPTIMIZE]),
-            Settings(method=Method.GFN2_XTB, tasks=[Task.OPTIMIZE]),
-        ]
-    if singlepoint_settings is None:
-        singlepoint_settings = Settings(method=Method.R2SCAN3C, tasks=[Task.ENERGY])
-
     workflow = stjames.MultiStageOptWorkflow(
         initial_molecule=mol_dict,
-        optimization_settings=optimization_settings or (),
-        singlepoint_settings=singlepoint_settings,
+        mode=mode,
+        solvent=solvent,
+        xtb_preopt=xtb_preopt,
+        transition_state=transition_state,
         frequencies=frequencies,
     )
 

@@ -25,12 +25,6 @@ logger.setLevel(logging.INFO)
 Mode = stjames.Mode
 Solvent = stjames.Solvent
 MessageType = stjames.MessageType
-Method = stjames.Method
-Task = stjames.Task
-Settings = stjames.Settings
-MultiStageOptSettings = stjames.MultiStageOptSettings
-ETKDGSettings = stjames.ETKDGSettings
-ConformerGenSettings = stjames.conformers.ConformerGenSettings
 
 
 @dataclass(frozen=True, slots=True)

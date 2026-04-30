@@ -8,13 +8,6 @@ from ..molecule import Molecule
 from ..types import MoleculeInput, SolventInput
 from ..utils import api_client
 from .base import (
-    ConformerGenSettings,
-    ETKDGSettings,
-    Method,
-    Mode,
-    MultiStageOptSettings,
-    Settings,
-    Task,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -121,68 +114,12 @@ class ConformerSearchResult(WorkflowResult):
         return self._cache[cache_key]
 
 
-_FINAL_METHOD_TO_MSO_RECIPE: dict[Method, tuple[Method, Method | None]] = {
-    Method.AIMNET2_WB97MD3: (Method.AIMNET2_WB97MD3, None),
-    Method.OMOL25_CONSERVING_S: (Method.OMOL25_CONSERVING_S, None),
-    Method.GFN2_XTB: (Method.GFN2_XTB, None),
-    Method.G_XTB: (Method.GFN2_XTB, Method.G_XTB),
-    Method.R2SCAN3C: (Method.GFN2_XTB, Method.R2SCAN3C),
-}
-
-
-def _mso_for_final_method(
-    final_method: Method,
-    solvent: SolventInput = None,
-    transition_state: bool = False,
-) -> MultiStageOptSettings:
-    """Build a `MultiStageOptSettings` for `final_method` matching tinbergen's
-    conformer-search MSO presets. Falls back to a single opt stage at
-    `final_method` for methods without a named preset.
-
-    `solvent` and `transition_state` are merged into each stage's `Settings`
-    when supplied; the named preset itself is independent of them (mirrors how
-    tinbergen's form keeps the preset dropdown separate from the solvent / TS
-    toggles).
-    """
-    opt_method, sp_method = _FINAL_METHOD_TO_MSO_RECIPE.get(final_method, (final_method, None))
-
-    def _solvent_settings_for(method: Method) -> dict | None:
-        if not solvent:
-            return None
-        return {
-            "solvent": solvent,
-            "model": "alpb" if method in stjames.XTB_METHODS else "cpcm",
-        }
-
-    opt_stage = Settings(
-        method=opt_method,
-        tasks=[Task.OPTIMIZE],
-        mode=Mode.AUTO,
-        solvent_settings=_solvent_settings_for(opt_method),
-        opt_settings={"transition_state": transition_state, "constraints": []},
-    )
-    sp_stage: Settings | None = None
-    if sp_method is not None:
-        sp_stage = Settings(
-            method=sp_method,
-            tasks=[Task.ENERGY],
-            mode=Mode.AUTO,
-            solvent_settings=_solvent_settings_for(sp_method),
-        )
-
-    return MultiStageOptSettings(
-        optimization_settings=[opt_stage],
-        singlepoint_settings=sp_stage,
-    )
-
-
 def submit_conformer_search_workflow(
     initial_molecule: MoleculeInput,
-    conf_gen_settings: ConformerGenSettings | None = None,
-    final_method: Method | str = "aimnet2_wb97md3",
+    conf_gen_settings: stjames.ConformerGenSettings | None = None,
+    final_method: stjames.Method | str = "aimnet2_wb97md3",
     solvent: SolventInput = None,
     transition_state: bool = False,
-    multistage_opt_settings: MultiStageOptSettings | None = None,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -201,16 +138,9 @@ def submit_conformer_search_workflow(
         - ``LyrebirdSettings``  -- Rowan ML model
         - ``iMTDGCSettings``  -- CREST iMTD-GC metadynamics, more thorough
         - ``MonteCarloMultipleMinimumSettings``  -- MCMM conformer search
-    :param final_method: Method to use for the final optimization. Ignored if
-        `multistage_opt_settings` is provided.
-    :param solvent: Solvent to use for the final optimization. Ignored if
-        `multistage_opt_settings` is provided.
-    :param transition_state: Whether to optimize the transition state. Ignored
-        if `multistage_opt_settings` is provided.
-    :param multistage_opt_settings: Optimization stages and singlepoint settings
-        for ranking conformers. When provided, takes precedence over
-        `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
-        built from those three params.
+    :param final_method: Method to use for the final optimization.
+    :param solvent: Solvent to use for the final optimization.
+    :param transition_state: Whether to optimize the transition state.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -225,20 +155,34 @@ def submit_conformer_search_workflow(
     if folder:
         folder_uuid = folder.uuid
     if conf_gen_settings is None:
-        conf_gen_settings = ETKDGSettings()
+        conf_gen_settings = stjames.ETKDGSettings()
 
     mol_dict = molecule_to_dict(initial_molecule)
 
-    if multistage_opt_settings is None:
-        if isinstance(final_method, str):
-            final_method = Method(final_method)
-        multistage_opt_settings = _mso_for_final_method(
-            final_method, solvent=solvent, transition_state=transition_state
-        )
+    if isinstance(final_method, str):
+        final_method = stjames.Method(final_method)
+
+    solvent_model = None
+    if solvent:
+        solvent_model = "alpb" if final_method in stjames.XTB_METHODS else "cpcm"
+
+    opt_settings = stjames.Settings(
+        method=final_method,
+        tasks=["optimize"],
+        mode=stjames.Mode.AUTO,
+        solvent_settings={"solvent": solvent, "model": solvent_model} if solvent else None,
+        opt_settings={"transition_state": transition_state, "constraints": []},
+    )
+
+    msos = stjames.MultiStageOptSettings(
+        mode=stjames.Mode.MANUAL,
+        xtb_preopt=True,
+        optimization_settings=[opt_settings],
+    )
 
     workflow = stjames.ConformerSearchWorkflow(
         initial_molecule=mol_dict,
-        multistage_opt_settings=multistage_opt_settings,
+        multistage_opt_settings=msos,
         conf_gen_settings=conf_gen_settings,
         solvent=solvent,
         transition_state=transition_state,
