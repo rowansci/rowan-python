@@ -7,11 +7,14 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
-from ..types import MoleculeInput, SolventInput
+from ..types import MoleculeInput
 from ..utils import api_client
 from .base import (
     Message,
-    Mode,
+    Method,
+    MultiStageOptSettings,
+    Settings,
+    Task,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
@@ -129,10 +132,7 @@ class SpinStatesResult(WorkflowResult):
 def submit_spin_states_workflow(
     initial_molecule: MoleculeInput,
     states: list[int],
-    mode: Mode = Mode.RAPID,
-    solvent: SolventInput = None,
-    xtb_preopt: bool = True,
-    frequencies: bool = False,
+    multistage_opt_settings: MultiStageOptSettings | None = None,
     name: str = "Spin States Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -143,13 +143,15 @@ def submit_spin_states_workflow(
     """
     Submits a spin-states workflow to the API.
 
+    Defaults to a `r2scan_3c//gfn2_xtb` stack (matching the cofolding submit
+    form's `Mode.RAPID` default). Pass an explicit `MultiStageOptSettings(...)`
+    to override.
+
     :param initial_molecule: Molecule to calculate spin states for.
     :param states: List of multiplicities to calculate
         (e.g., [1, 3, 5] for singlet, triplet, quintet).
-    :param mode: Mode to run the calculation in.
-    :param solvent: Solvent to use for the calculation.
-    :param xtb_preopt: Whether to pre-optimize with xTB.
-    :param frequencies: Whether to calculate frequencies.
+    :param multistage_opt_settings: Optimization stages and singlepoint settings
+        describing the method stack.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -170,13 +172,18 @@ def submit_spin_states_workflow(
     for mult in states:
         _validate_multiplicity(mol_dict, mult)
 
+    if multistage_opt_settings is None:
+        multistage_opt_settings = MultiStageOptSettings(
+            optimization_settings=[
+                Settings(method=Method.GFN2_XTB, tasks=[Task.OPTIMIZE]),
+            ],
+            singlepoint_settings=Settings(method=Method.R2SCAN3C, tasks=[Task.ENERGY]),
+        )
+
     workflow = stjames.SpinStatesWorkflow(
         initial_molecule=mol_dict,
         states=states,
-        mode=mode,
-        solvent=solvent,
-        xtb_preopt=xtb_preopt,
-        frequencies=frequencies,
+        multistage_opt_settings=multistage_opt_settings,
     )
 
     data = {

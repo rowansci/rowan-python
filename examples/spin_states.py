@@ -2,13 +2,9 @@
 Calculate spin state energies using the Rowan API.
 
 This workflow predicts the lowest energy spin state by running multistage
-optimizations at different spin multiplicities.
-
-Available modes:
-- "reckless": Fastest, least accurate
-- "rapid": Good balance of speed and accuracy (default)
-- "careful": More accurate, slower
-- "meticulous": Most accurate, slowest
+optimizations at different spin multiplicities. Defaults to a
+`r2scan_3c//gfn2_xtb` stack; pass an explicit `MultiStageOptSettings(...)`
+to customize.
 
 See documentation at: https://docs.rowansci.com/science/workflows/spin-states
 """
@@ -23,7 +19,6 @@ folder = rowan.get_folder("examples")
 workflow = rowan.submit_spin_states_workflow(
     initial_molecule=rowan.Molecule.from_smiles("[CH2]"),
     states=[1, 3],  # singlet vs triplet
-    mode="rapid",
     name="Methylene spin states",
     folder=folder,
 )
