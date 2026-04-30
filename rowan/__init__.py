@@ -29,6 +29,7 @@ from stjames.optimization.freezing_string_method import (
 api_key: str | None = None
 project_uuid: str | None = None
 
+from .api_keys import *
 from .calculation import *
 from .folder import *
 from .molecule import *
