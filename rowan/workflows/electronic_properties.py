@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass
 
+import httpx
 import stjames
+from pydantic import ValidationError
 from stjames import ENGINE_METHODS, Engine, Method
 
 from ..folder import Folder
@@ -30,6 +32,22 @@ class ElectronicPropertiesResult(WorkflowResult):
     """Result from an electronic-properties workflow."""
 
     _stjames_class = stjames.ElectronicPropertiesWorkflow
+
+    def __post_init__(self) -> None:
+        # Computed results (dipole, charges, cubes, orbitals, ...) live only in
+        # the gzipped S3 blob, not in the workflow's object_data row. Fetch and
+        # parse it once on construction so accessors below see populated data.
+        super().__post_init__()
+        if not self.complete:
+            return
+        try:
+            with api_client() as client:
+                response = client.get(f"/orbitals/{self.workflow_uuid}/compressed_json")
+                response.raise_for_status()
+                populated = stjames.ElectronicPropertiesWorkflow.model_validate(response.json())
+            object.__setattr__(self, "_workflow", populated)
+        except (httpx.HTTPError, ValidationError):
+            pass
 
     def __repr__(self) -> str:
         return f"<ElectronicPropertiesResult dipole={self.dipole} D>"

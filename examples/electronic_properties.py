@@ -16,17 +16,17 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_electronic_properties_workflow(
-    initial_molecule=rowan.Molecule.from_smiles("c1ccccc1"),  # benzene
+    initial_molecule=rowan.Molecule.from_smiles("C=O"),  # formaldehyde
     method="b97_3c",  # default: lightweight DFT
     compute_density_cube=True,
     compute_electrostatic_potential_cube=True,
     compute_num_occupied_orbitals=3,  # HOMO, HOMO-1, HOMO-2
     compute_num_virtual_orbitals=3,  # LUMO, LUMO+1, LUMO+2
-    name="Benzene electronic properties",
+    name="Formaldehyde electronic properties",
     folder=folder,
 )
 
 print(f"View workflow privately at: https://labs.rowansci.com/orbitals/{workflow.uuid}")
 result = workflow.result()
 print(result)
-# e.g. <ElectronicPropertiesResult dipole=1.85 D>
+# e.g. <ElectronicPropertiesResult dipole=(0.0, 0.0, -2.33) D>
