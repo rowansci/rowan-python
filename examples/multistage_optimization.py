@@ -1,8 +1,11 @@
 """
 Perform a multistage geometry optimization using the Rowan API.
 
-Each entry of `optimization_settings` runs in order; `singlepoint_settings`
-runs last on the final geometry.
+Available modes:
+- "reckless": Fastest, least accurate
+- "rapid": Good balance of speed and accuracy (default)
+- "careful": More accurate, slower
+- "meticulous": Most accurate, slowest
 
 See documentation at: https://docs.rowansci.com/science/workflows/multistage-optimization
 """
@@ -13,17 +16,9 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
-# r2scan_3c//gfn2_xtb//gfn_ff stack: GFN-FF pre-opt, GFN2-xTB opt, R²SCAN-3c singlepoint.
-optimization_settings = [
-    rowan.Settings(method=rowan.Method.GFN_FF, tasks=[rowan.Task.OPTIMIZE]),
-    rowan.Settings(method=rowan.Method.GFN2_XTB, tasks=[rowan.Task.OPTIMIZE]),
-]
-singlepoint_settings = rowan.Settings(method=rowan.Method.R2SCAN3C, tasks=[rowan.Task.ENERGY])
-
 workflow = rowan.submit_multistage_optimization_workflow(
     initial_molecule=rowan.Molecule.from_smiles("C1CCC1"),  # cyclobutane
-    optimization_settings=optimization_settings,
-    singlepoint_settings=singlepoint_settings,
+    mode="rapid",
     name="Multistage optimization cyclobutane",
     folder=folder,
 )
