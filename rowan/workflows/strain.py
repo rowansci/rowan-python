@@ -129,10 +129,11 @@ def submit_strain_workflow(
     :param harmonic_constraint_spring_constant: Spring constant for harmonic
         constraints (kcal/mol/A). Default 5.0.
     :param constrain_hydrogens: Whether to constrain hydrogen positions. Default False.
-    :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
-        max 200 conformers.
+    :param conf_gen_settings: Conformer generation settings. Defaults to RDKit
+        ETKDG with max 200 conformers (no solvent).
     :param multistage_opt_settings: Optimization settings for conformer ranking.
-        Defaults to AIMNet2/wB97M-D3 optimization with CPCMx singlepoint.
+        Defaults to GFN2-xTB optimization in water (ALPB) with a g-xTB singlepoint
+        in water (CPCMx).
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
     :param folder: Folder object to store the workflow in.

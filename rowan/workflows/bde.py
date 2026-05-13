@@ -90,12 +90,14 @@ def submit_bde_workflow(
         folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    workflow = stjames.BDEWorkflow(
-        initial_molecule=initial_molecule,
-        mode=mode,
-        atoms=atoms or [],
-        all_CH=all_CH,
-        all_CX=all_CX,
+    workflow = stjames.BDEWorkflow.model_validate(
+        {
+            "initial_molecule": initial_molecule,
+            "mode": mode,
+            "atoms": atoms or [],
+            "all_CH": all_CH,
+            "all_CX": all_CX,
+        }
     )
 
     data = {

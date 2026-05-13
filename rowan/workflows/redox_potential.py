@@ -122,11 +122,13 @@ def submit_redox_potential_workflow(
         folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    workflow = stjames.RedoxPotentialWorkflow(
-        initial_molecule=initial_molecule,
-        oxidation=oxidation,
-        reduction=reduction,
-        mode=mode,
+    workflow = stjames.RedoxPotentialWorkflow.model_validate(
+        {
+            "initial_molecule": initial_molecule,
+            "oxidation": oxidation,
+            "reduction": reduction,
+            "mode": mode,
+        }
     )
 
     data = {
