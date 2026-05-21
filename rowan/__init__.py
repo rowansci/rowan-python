@@ -12,6 +12,7 @@ from stjames import (
     Method,
     Mode,
     MultiStageOptSettings,
+    OpenConfSettings,
     OptimizationSettings,
     PBCDFTSettings,
     PeriodicCell,

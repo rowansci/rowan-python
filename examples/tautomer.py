@@ -4,9 +4,12 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
+# Defaults applied (override via `conf_gen_settings=` / `multistage_opt_settings=`):
+#   conf_gen: ETKDG, num_initial_confs=250, max_confs=20, max_mmff_energy=15
+#   opt: AIMNet2/wB97M-D3 (gas phase)
+#   singlepoint: AIMNet2/wB97M-D3 / CPCMx(water)
 workflow = rowan.submit_tautomer_search_workflow(
     initial_molecule=rowan.Molecule.from_smiles("O=C1C=CC=CN1"),
-    mode="reckless",
     name="2-Pyridone Tautomers",
     folder=folder,
 )

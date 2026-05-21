@@ -101,7 +101,8 @@ class ProteinBinderDesignResult(WorkflowResult):
         """Generated protein binder designs, sorted by quality score."""
         binders: list[ProteinBinder] = []
         for b in self._workflow.generated_binders:
-            scores_dict = getattr(b, "scores", None) or {}
+            raw_scores = getattr(b, "scores", None)
+            scores_dict = raw_scores.model_dump() if raw_scores is not None else {}
             scores = BinderScores(
                 iptm=scores_dict.get("iptm"),
                 design_ptm=scores_dict.get("design_ptm"),
