@@ -151,7 +151,7 @@ def submit_docking_workflow(
     Submits a docking workflow to the API.
 
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
-    :param pocket: Binding pocket coordinates [[x,y,z], [x,y,z]].
+    :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
     :param initial_molecule: Initial molecule to be docked.
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.

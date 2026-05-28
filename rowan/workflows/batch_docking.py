@@ -52,7 +52,7 @@ def submit_batch_docking_workflow(
 
     :param smiles_list: SMILES strings to dock.
     :param protein: Protein to dock (UUID or Protein object).
-    :param pocket: Binding pocket coordinates [[x,y,z], [x,y,z]].
+    :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Docking exhaustiveness parameter.
