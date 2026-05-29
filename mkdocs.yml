@@ -28,7 +28,6 @@ plugins:
             unwrap_annotated: true
 nav:
   - Core API: index.md
-  - Rowan RDKit: rowan_rdkit.md
   - "← docs.rowansci.com": https://docs.rowansci.com
 
 extra:
