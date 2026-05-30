@@ -13,6 +13,7 @@ from stjames import (
     Settings,
     SolventSettings,
 )
+from stjames.excited_state_settings import TDDFTSettings
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
@@ -161,6 +162,7 @@ def submit_basic_calculation_workflow(
     solvent_settings: SolventSettings | dict[str, Any] | None = None,
     opt_settings: OptimizationSettings | dict[str, Any] | None = None,
     pbc_dft_settings: PBCDFTSettings | dict[str, Any] | None = None,
+    excited_state_settings: TDDFTSettings | None = None,
     preset: PresetName | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
@@ -185,6 +187,7 @@ def submit_basic_calculation_workflow(
         `PBCDFTSettings`. Specifies the plane-wave cutoff (Hartree), Monkhorst–Pack
         k-point grid, and optional smearing. When set, the engine is automatically
         set to Quantum ESPRESSO unless ``engine`` is explicitly provided.
+    :param excited_state_settings: Excited-state settings for TDDFT calculations.
     :param preset: Named preset, mutually exclusive with method/engine/basis_set/corrections.
         - `general_nnp` — omol25_conserving_s on omol25
         - `organic_nnp` — aimnet2_wb97md3 on aimnet2
@@ -256,6 +259,8 @@ def submit_basic_calculation_workflow(
             settings_kwargs["opt_settings"] = opt_settings
         if pbc_dft_settings is not None:
             settings_kwargs["pbc_dft_settings"] = pbc_dft_settings
+        if excited_state_settings is not None:
+            settings_kwargs["excited_state_settings"] = excited_state_settings
         settings = stjames.Settings(**settings_kwargs)
 
     initial_molecule = molecule_to_dict(initial_molecule)

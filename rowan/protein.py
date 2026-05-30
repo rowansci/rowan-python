@@ -36,7 +36,7 @@ class Protein(BaseModel):
     public: bool | None = None
     pocket: list[list[float]] | None = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Protein name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
     def refresh(self, in_place: bool = True) -> Self:
@@ -67,7 +67,6 @@ class Protein(BaseModel):
         public: bool | None = None,
         pocket: list[list[float]] | None = None,
     ) -> Self:
-        # Use current values unless new ones are passed in
         """
         Updates protein data
 
@@ -77,6 +76,7 @@ class Protein(BaseModel):
         :param pocket: New pocket of the protein
         :returns: Updated protein object
         """
+        # Use current values unless new ones are passed in
         updated_payload = {
             "name": name if name is not None else self.name,
             "data": data if data is not None else self.data,
@@ -312,6 +312,7 @@ def upload_protein(
 
     :param name: Name of the protein to create
     :param file_path: Path to the PDB file to upload
+    :param project_uuid: UUID of the project to create the protein in
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
