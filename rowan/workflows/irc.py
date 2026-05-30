@@ -1,5 +1,7 @@
 """IRC workflow - Intrinsic Reaction Coordinate calculations."""
 
+import warnings
+
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
@@ -38,18 +40,33 @@ class IRCResult(WorkflowResult):
         """UUID of the transition state calculation."""
         return self._workflow.starting_TS
 
-    @property
-    def forward_uuids(self) -> list[str]:
-        """UUIDs of the forward IRC path calculations."""
-        return [u for u in (self._workflow.irc_forward or []) if u]
+    @staticmethod
+    def _retrieve_path(raw: str | list[str] | None) -> list[Calculation]:
+        """Retrieve the calculation(s) holding an IRC path.
+
+        Supports both the current single-calculation storage and the deprecated
+        per-step list storage (see :meth:`forward_molecules`).
+
+        :param raw: Single calculation UUID (current) or list of per-step UUIDs
+            (deprecated).
+        :returns: Calculations holding the path, in path order.
+        """
+        if not raw:
+            return []
+        if isinstance(raw, list):
+            warnings.warn(
+                "Reading an IRC path stored as a list of per-step calculation UUIDs is "
+                "deprecated; this workflow predates single-calculation path storage.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            uuids = [u for u in raw if u]
+        else:
+            uuids = [raw]
+        return [retrieve_calculation(u) for u in uuids]
 
     @property
-    def backward_uuids(self) -> list[str]:
-        """UUIDs of the backward IRC path calculations."""
-        return [u for u in (self._workflow.irc_backward or []) if u]
-
-    @property
-    def ts_calculation(self) -> "Calculation | None":
+    def ts_calculation(self) -> Calculation | None:
         """The transition state Calculation (lazily fetched)."""
         if "ts_calc" not in self._cache:
             if ts_uuid := self.ts_uuid:
@@ -68,45 +85,51 @@ class IRCResult(WorkflowResult):
         mol = self.ts_molecule
         return mol.energy if mol else None
 
-    def get_forward_calculations(self) -> list["Calculation"]:
-        """
-        Fetch all forward IRC path calculations.
-
-        :returns: List of Calculation objects along the forward path.
-
-        .. note::
-            Makes one API call per step. Results are cached.
-        """
+    def _get_forward_calculations(self) -> list[Calculation]:
+        """Fetch the calculation(s) holding the forward IRC path (cached)."""
         if "forward_calcs" not in self._cache:
-            calcs = [retrieve_calculation(uuid) for uuid in self.forward_uuids]
-            self._cache["forward_calcs"] = calcs
+            self._cache["forward_calcs"] = self._retrieve_path(self._workflow.irc_forward)  # type: ignore[arg-type]
         return self._cache["forward_calcs"]
 
-    def get_backward_calculations(self) -> list["Calculation"]:
-        """
-        Fetch all backward IRC path calculations.
-
-        :returns: List of Calculation objects along the backward path.
-
-        .. note::
-            Makes one API call per step. Results are cached.
-        """
+    def _get_backward_calculations(self) -> list[Calculation]:
+        """Fetch the calculation(s) holding the backward IRC path (cached)."""
         if "backward_calcs" not in self._cache:
-            calcs = [retrieve_calculation(uuid) for uuid in self.backward_uuids]
-            self._cache["backward_calcs"] = calcs
+            self._cache["backward_calcs"] = self._retrieve_path(self._workflow.irc_backward)  # type: ignore[arg-type]
         return self._cache["backward_calcs"]
+
+    @staticmethod
+    def _path_molecules(raw: str | list[str] | None, calcs: list[Calculation]) -> list[Molecule]:
+        """Extract the molecules along an IRC path from its calculation(s).
+
+        Current storage keeps every molecule in a single calculation. The
+        deprecated storage kept one molecule (the final geometry) per per-step
+        calculation.
+        """
+        if not isinstance(raw, list):
+            # Current: a single calculation holds every molecule along the path.
+            return calcs[0].molecules if calcs else []
+        # Deprecated: one calculation per step; take each final geometry.
+        return [c.molecule for c in calcs if c.molecule]
 
     @property
     def forward_molecules(self) -> list[Molecule]:
-        """Molecules along the forward IRC path (lazily fetched)."""
-        calcs = self.get_forward_calculations()
-        return [c.molecule for c in calcs if c.molecule]
+        """Molecules along the forward IRC path (lazily fetched).
+
+        .. note::
+            Legacy workflows stored the path as one calculation per step; these
+            are still read transparently for back-compatibility.
+        """
+        return self._path_molecules(self._workflow.irc_forward, self._get_forward_calculations())  # type: ignore[arg-type]
 
     @property
     def backward_molecules(self) -> list[Molecule]:
-        """Molecules along the backward IRC path (lazily fetched)."""
-        calcs = self.get_backward_calculations()
-        return [c.molecule for c in calcs if c.molecule]
+        """Molecules along the backward IRC path (lazily fetched).
+
+        .. note::
+            Legacy workflows stored the path as one calculation per step; these
+            are still read transparently for back-compatibility.
+        """
+        return self._path_molecules(self._workflow.irc_backward, self._get_backward_calculations())  # type: ignore[arg-type]
 
     def get_forward_energies(self, relative: bool = False) -> list[float]:
         """
