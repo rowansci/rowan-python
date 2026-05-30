@@ -11,13 +11,13 @@ class Folder(BaseModel):
     """
     A class representing a folder in the Rowan API.
 
-    :ivar uuid: The UUID of the folder.
-    :ivar name: The name of the folder.
-    :ivar parent_uuid: The UUID of the parent folder.
+    :ivar uuid: UUID of the folder.
+    :ivar name: Name of the folder.
+    :ivar parent_uuid: UUID of the parent folder.
     :ivar notes: Folder notes.
     :ivar starred: Whether the folder is starred.
     :ivar public: Whether the folder is public.
-    :ivar created_at: The date and time the folder was created.
+    :ivar created_at: Date and time the folder was created.
     """
 
     uuid: str
@@ -225,7 +225,7 @@ def get_folder(path: str, create: bool = True) -> Folder:
     :param path: Folder name or ``/``-separated path, e.g. ``"project/subdir/run1"``.
     :param create: If True (default), create missing folders. If False, raise ValueError if any
         segment is not found.
-    :returns: The deepest :class:`Folder` in the path.
+    :returns: Deepest :class:`Folder` in the path.
     :raises ValueError: If the path is empty, or ``create=False`` and a folder is not found.
     """
     segments = [s for s in path.split("/") if s]

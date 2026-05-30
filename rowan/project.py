@@ -12,9 +12,9 @@ class Project(BaseModel):
     """
     A class representing a project in the Rowan API.
 
-    :ivar uuid: The UUID of the project.
-    :ivar name: The name of the project.
-    :ivar created_at: The date and time the project was created.
+    :ivar uuid: UUID of the project.
+    :ivar name: Name of the project.
+    :ivar created_at: Date and time the project was created.
     """
 
     uuid: str
@@ -139,7 +139,7 @@ def set_project(name: str) -> Project:
         folder = rowan.get_folder("docking/batch_1")
 
     :param name: Exact name of the project to activate.
-    :returns: The matched Project.
+    :returns: Matched project.
     :raises ValueError: If no project with that name is found.
     """
     matches = list_projects(name_contains=name, size=100)

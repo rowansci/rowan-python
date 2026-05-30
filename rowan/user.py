@@ -11,9 +11,9 @@ class Organization(BaseModel):
     """
     A Rowan organization
 
-    :ivar name: The name of the organization.
-    :ivar weekly_credits: The weekly credits of the organization.
-    :ivar credits: The credits of the organization.
+    :ivar name: Name of the organization.
+    :ivar weekly_credits: Weekly credits of the organization.
+    :ivar credits: Credits of the organization.
     """
 
     name: str
@@ -25,7 +25,7 @@ class OrganizationRole(BaseModel):
     """
     A Rowan organization role
 
-    :ivar name: The name of the organization role.
+    :ivar name: Name of the organization role.
     """
 
     name: str
@@ -35,7 +35,7 @@ class SubscriptionPlan(BaseModel):
     """
     A Rowan subscription plan
 
-    :ivar name: The name of the subscription plan.
+    :ivar name: Name of the subscription plan.
     """
 
     name: str
@@ -45,7 +45,7 @@ class IndividualSubscription(BaseModel):
     """
     A Rowan individual subscription
 
-    :ivar subscription_plan: The subscription plan of the individual subscription.
+    :ivar subscription_plan: Subscription plan of the individual subscription.
     """
 
     subscription_plan: SubscriptionPlan
@@ -55,19 +55,19 @@ class User(BaseModel):
     """
     A Rowan user
 
-    :ivar uuid: The UUID of the user.
-    :ivar username: The username of the user.
-    :ivar email: The email of the user.
-    :ivar firstname: The first name of the user.
-    :ivar lastname: The last name of the user.
-    :ivar weekly_credits: The weekly credits of the user.
-    :ivar credits: The credits of the user.
-    :ivar billing_name: The billing name of the user.
-    :ivar billing_address: The billing address of the user.
-    :ivar credit_balance_warning: The credit balance warning of the user.
-    :ivar organization: The organization of the user.
-    :ivar organization_role: The organization role of the user.
-    :ivar individual_subscription: The individual subscription of the user.
+    :ivar uuid: UUID of the user.
+    :ivar username: Username of the user.
+    :ivar email: Email of the user.
+    :ivar firstname: First name of the user.
+    :ivar lastname: Last name of the user.
+    :ivar weekly_credits: Weekly credits of the user.
+    :ivar credits: Credits of the user.
+    :ivar billing_name: Billing name of the user.
+    :ivar billing_address: Billing address of the user.
+    :ivar credit_balance_warning: Credit balance warning of the user.
+    :ivar organization: Organization of the user.
+    :ivar organization_role: Organization role of the user.
+    :ivar individual_subscription: Individual subscription of the user.
     """
 
     uuid: str
@@ -173,7 +173,7 @@ def verify_webhook_secret(
 ) -> bool:
     """Verify an incoming webhook request from Rowan.
 
-    :param raw_body: The raw (unparsed) request body bytes.
+    :param raw_body: Raw (unparsed) request body bytes.
     :param signature_header: Value of the X-Rowan-Signature header.
     :param secret: Your webhook secret (from :func:`create_webhook_secret` or
         :func:`rotate_webhook_secret`).

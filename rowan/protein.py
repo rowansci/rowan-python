@@ -16,13 +16,13 @@ class Protein(BaseModel):
     Data is not loaded by default to avoid unnecessary downloads that could impact performance.
     Call `load_data()` to fetch and attach the protein data to this `Protein` object.
 
-    :ivar uuid: The UUID of the protein
-    :ivar created_at: The creation date of the protein
+    :ivar uuid: UUID of the protein
+    :ivar created_at: Creation date of the protein
     :ivar used_in_workflow: Whether the protein is used in a workflow
-    :ivar ancestor_uuid: The UUID of the ancestor protein
+    :ivar ancestor_uuid: UUID of the ancestor protein
     :ivar sanitized: Whether the protein is sanitized
-    :ivar name: The name of the protein
-    :ivar data: The data of the protein
+    :ivar name: Name of the protein
+    :ivar data: Data of the protein
     :ivar public: Whether the protein is public
     """
 
