@@ -160,8 +160,8 @@ def submit_double_ended_ts_search_workflow(
 
     :param reactant: reactant Molecule.
     :param product: product Molecule.
-    :param calculation_settings: Settings to use for calculations.
-    :param search_settings: settings to use for the transition state search.
+    :param calculation_settings: Settings to use for calculations. Defaults to omol25_conserving_s.
+    :param search_settings: Settings for the transition state search. Defaults to FSMSettings().
     :param optimize_inputs: Whether to optimize the reactant and product before the search.
     :param optimize_ts: Whether to optimize the found transition state.
     :param name: name of the workflow.
@@ -180,17 +180,20 @@ def submit_double_ended_ts_search_workflow(
     reactant_dict = molecule_to_dict(reactant)
     product_dict = molecule_to_dict(product)
 
+    if calculation_settings is None:
+        calculation_settings = stjames.Settings(method="omol25_conserving_s")
+
     workflow = stjames.DoubleEndedTSSearchWorkflow(
         reactant=reactant_dict,
         product=product_dict,
         calculation_settings=calculation_settings,
-        search_settings=search_settings,
+        search_settings=search_settings or FSMSettings(),
         optimize_inputs=optimize_inputs,
         optimize_ts=optimize_ts,
     )
     data = {
         "workflow_type": "double_ended_ts_search",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": reactant_dict,
         "name": name,
         "folder_uuid": folder_uuid,

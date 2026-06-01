@@ -321,7 +321,7 @@ def submit_protein_cofolding_workflow(
         num_samples=num_samples,
         model=model_str,
         ligand_binding_affinity_index=ligand_binding_affinity_index,
-        initial_smiles_list=initial_smiles_list,
+        initial_smiles_list=initial_smiles_list or [],
         initial_protein_sequences=initial_protein_sequences or [],
         initial_dna_sequences=initial_dna_sequences or [],
         initial_rna_sequences=initial_rna_sequences or [],

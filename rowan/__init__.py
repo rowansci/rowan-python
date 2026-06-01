@@ -17,6 +17,7 @@ from stjames import (
     PBCDFTSettings,
     PeriodicCell,
     Settings,
+    Solvent,
     SolventSettings,
     Task,
 )

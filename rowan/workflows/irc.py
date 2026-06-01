@@ -135,7 +135,7 @@ class IRCResult(WorkflowResult):
 
 def submit_irc_workflow(
     initial_molecule: MoleculeInput,
-    method: stjames.Method | str = "uma_m_omol",
+    method: stjames.Method | str = "omol25_conserving_s",
     solvent: SolventInput = None,
     preopt: bool = True,
     step_size: float = 0.05,

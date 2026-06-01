@@ -6,6 +6,7 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
+from ..types import SolventInput
 from ..utils import api_client
 from .base import (
     Message,
@@ -92,9 +93,12 @@ class ScanResult(WorkflowResult):
 
 def submit_scan_workflow(
     initial_molecule: MoleculeInput,
-    scan_settings: stjames.ScanSettings | dict[str, Any] | None = None,
+    scan_settings: stjames.ScanSettings | dict[str, Any],
     calculation_engine: str | None = None,
-    calculation_method: stjames.Method | str = "uma_m_omol",
+    calculation_method: stjames.Method | str = "omol25_conserving_s",
+    basis_set: stjames.BasisSet | str | None = None,
+    corrections: list[str] | None = None,
+    solvent: SolventInput = None,
     wavefront_propagation: bool = True,
     name: str = "Scan Workflow",
     folder_uuid: str | None = None,
@@ -110,6 +114,9 @@ def submit_scan_workflow(
     :param scan_settings: Scan settings.
     :param calculation_engine: Engine to use for the calculation.
     :param calculation_method: Method to use for the calculation.
+    :param basis_set: Basis set, see `BasisSet`.
+    :param corrections: Dispersion corrections, see `Correction`.
+    :param solvent: Solvent to use for the calculation.
     :param wavefront_propagation: Whether to use wavefront propagation in the scan.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
@@ -129,11 +136,21 @@ def submit_scan_workflow(
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)
 
+    solvent_settings = (
+        {
+            "solvent": solvent,
+            "model": "alpb" if calculation_method in stjames.XTB_METHODS else "cpcm",
+        }
+        if solvent
+        else None
+    )
+
     calc_settings = stjames.Settings(
         method=calculation_method,
+        basis_set=basis_set,
         tasks=["optimize"],
-        corrections=[],
-        mode="auto",
+        corrections=corrections or [],
+        solvent_settings=solvent_settings,
         opt_settings={"constraints": []},
     )
 
