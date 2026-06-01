@@ -15,6 +15,7 @@ CofoldingModel = stjames.CofoldingModel
 ConstraintTarget = stjames.workflows.protein_cofolding.Token
 ContactConstraint = stjames.workflows.protein_cofolding.ContactConstraint
 PocketConstraint = stjames.workflows.protein_cofolding.PocketConstraint
+CofoldingTemplate = stjames.workflows.protein_cofolding.CofoldingTemplate
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,6 +251,7 @@ def submit_protein_cofolding_workflow(
     use_potentials: bool = False,
     contact_constraints: list[ContactConstraint] | None = None,
     pocket_constraints: list[PocketConstraint] | None = None,
+    templates: list[CofoldingTemplate] | None = None,
     num_samples: int | None = None,
     compute_strain: bool = False,
     do_pose_refinement: bool = False,
@@ -281,6 +283,7 @@ def submit_protein_cofolding_workflow(
     :param use_potentials: Whether to use potentials (inference-time steering) with Boltz.
     :param contact_constraints: Boltz contact constraints between two tokens.
     :param pocket_constraints: Boltz pocket constraints between a binder and contact tokens.
+    :param templates: Structural templates to guide prediction (Boltz-2 or OpenFold-3 only).
     :param num_samples: Number of diffusion samples to generate. If None, uses the model default.
     :param compute_strain: Whether to compute the strain of the pose
         (if `pose_refinement` is enabled).
@@ -318,6 +321,7 @@ def submit_protein_cofolding_workflow(
         use_potentials=use_potentials,
         contact_constraints=contact_constraints or [],
         pocket_constraints=pocket_constraints or [],
+        templates=templates or [],
         num_samples=num_samples,
         model=model_str,
         ligand_binding_affinity_index=ligand_binding_affinity_index,

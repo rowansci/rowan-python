@@ -94,6 +94,7 @@ from .protein_binder_design import (
 from .protein_cofolding import (
     CofoldingModel,
     CofoldingResult,
+    CofoldingTemplate,
     ConstraintTarget,
     ContactConstraint,
     PocketConstraint,
