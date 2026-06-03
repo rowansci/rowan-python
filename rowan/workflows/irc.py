@@ -1,11 +1,22 @@
 """IRC workflow - Intrinsic Reaction Coordinate calculations."""
 
-import stjames
+import warnings
+from typing import Any
+
+from stjames import (
+    BasisSet,
+    Engine,
+    IRCWorkflow,
+    Method,
+    PBCDFTSettings,
+    Settings,
+    SolventSettings,
+)
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput, SolventInput
+from ..types import MoleculeInput
 from ..utils import api_client
 from .base import (
     Workflow,
@@ -20,7 +31,7 @@ from .constants import to_relative_kcal
 class IRCResult(WorkflowResult):
     """Result from an Intrinsic Reaction Coordinate (IRC) workflow."""
 
-    _stjames_class = stjames.IRCWorkflow
+    _stjames_class = IRCWorkflow
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -38,18 +49,33 @@ class IRCResult(WorkflowResult):
         """UUID of the transition state calculation."""
         return self._workflow.starting_TS
 
-    @property
-    def forward_uuids(self) -> list[str]:
-        """UUIDs of the forward IRC path calculations."""
-        return [u for u in (self._workflow.irc_forward or []) if u]
+    @staticmethod
+    def _retrieve_path(raw: str | list[str] | None) -> list[Calculation]:
+        """Retrieve the calculation(s) holding an IRC path.
+
+        Supports both the current single-calculation storage and the deprecated
+        per-step list storage (see :meth:`forward_molecules`).
+
+        :param raw: Single calculation UUID (current) or list of per-step UUIDs
+            (deprecated).
+        :returns: Calculations holding the path, in path order.
+        """
+        if not raw:
+            return []
+        if isinstance(raw, list):
+            warnings.warn(
+                "Reading an IRC path stored as a list of per-step calculation UUIDs is "
+                "deprecated; this workflow predates single-calculation path storage.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            uuids = [u for u in raw if u]
+        else:
+            uuids = [raw]
+        return [retrieve_calculation(u) for u in uuids]
 
     @property
-    def backward_uuids(self) -> list[str]:
-        """UUIDs of the backward IRC path calculations."""
-        return [u for u in (self._workflow.irc_backward or []) if u]
-
-    @property
-    def ts_calculation(self) -> "Calculation | None":
+    def ts_calculation(self) -> Calculation | None:
         """The transition state Calculation (lazily fetched)."""
         if "ts_calc" not in self._cache:
             if ts_uuid := self.ts_uuid:
@@ -68,45 +94,51 @@ class IRCResult(WorkflowResult):
         mol = self.ts_molecule
         return mol.energy if mol else None
 
-    def get_forward_calculations(self) -> list["Calculation"]:
-        """
-        Fetch all forward IRC path calculations.
-
-        :returns: List of Calculation objects along the forward path.
-
-        .. note::
-            Makes one API call per step. Results are cached.
-        """
+    def _get_forward_calculations(self) -> list[Calculation]:
+        """Fetch the calculation(s) holding the forward IRC path (cached)."""
         if "forward_calcs" not in self._cache:
-            calcs = [retrieve_calculation(uuid) for uuid in self.forward_uuids]
-            self._cache["forward_calcs"] = calcs
+            self._cache["forward_calcs"] = self._retrieve_path(self._workflow.irc_forward)  # type: ignore[arg-type]
         return self._cache["forward_calcs"]
 
-    def get_backward_calculations(self) -> list["Calculation"]:
-        """
-        Fetch all backward IRC path calculations.
-
-        :returns: List of Calculation objects along the backward path.
-
-        .. note::
-            Makes one API call per step. Results are cached.
-        """
+    def _get_backward_calculations(self) -> list[Calculation]:
+        """Fetch the calculation(s) holding the backward IRC path (cached)."""
         if "backward_calcs" not in self._cache:
-            calcs = [retrieve_calculation(uuid) for uuid in self.backward_uuids]
-            self._cache["backward_calcs"] = calcs
+            self._cache["backward_calcs"] = self._retrieve_path(self._workflow.irc_backward)  # type: ignore[arg-type]
         return self._cache["backward_calcs"]
+
+    @staticmethod
+    def _path_molecules(raw: str | list[str] | None, calcs: list[Calculation]) -> list[Molecule]:
+        """Extract the molecules along an IRC path from its calculation(s).
+
+        Current storage keeps every molecule in a single calculation. The
+        deprecated storage kept one molecule (the final geometry) per per-step
+        calculation.
+        """
+        if not isinstance(raw, list):
+            # Current: a single calculation holds every molecule along the path.
+            return calcs[0].molecules if calcs else []
+        # Deprecated: one calculation per step; take each final geometry.
+        return [c.molecule for c in calcs if c.molecule]
 
     @property
     def forward_molecules(self) -> list[Molecule]:
-        """Molecules along the forward IRC path (lazily fetched)."""
-        calcs = self.get_forward_calculations()
-        return [c.molecule for c in calcs if c.molecule]
+        """Molecules along the forward IRC path (lazily fetched).
+
+        .. note::
+            Legacy workflows stored the path as one calculation per step; these
+            are still read transparently for back-compatibility.
+        """
+        return self._path_molecules(self._workflow.irc_forward, self._get_forward_calculations())  # type: ignore[arg-type]
 
     @property
     def backward_molecules(self) -> list[Molecule]:
-        """Molecules along the backward IRC path (lazily fetched)."""
-        calcs = self.get_backward_calculations()
-        return [c.molecule for c in calcs if c.molecule]
+        """Molecules along the backward IRC path (lazily fetched).
+
+        .. note::
+            Legacy workflows stored the path as one calculation per step; these
+            are still read transparently for back-compatibility.
+        """
+        return self._path_molecules(self._workflow.irc_backward, self._get_backward_calculations())  # type: ignore[arg-type]
 
     def get_forward_energies(self, relative: bool = False) -> list[float]:
         """
@@ -135,8 +167,12 @@ class IRCResult(WorkflowResult):
 
 def submit_irc_workflow(
     initial_molecule: MoleculeInput,
-    method: stjames.Method | str = "omol25_conserving_s",
-    solvent: SolventInput = None,
+    method: Method | str,
+    basis_set: BasisSet | str | None = None,
+    corrections: list[str] | None = None,
+    solvent_settings: SolventSettings | dict[str, Any] | None = None,
+    engine: Engine | str | None = None,
+    pbc_dft_settings: PBCDFTSettings | dict[str, Any] | None = None,
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
@@ -150,43 +186,62 @@ def submit_irc_workflow(
     """
     Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
-    :param initial_molecule: Transition state molecule to start IRC from.
-    :param method: Computational method to use for the IRC calculation.
-    :param solvent: Solvent to use for the calculation.
-    :param preopt: Whether to perform a pre-optimization of the TS.
-    :param step_size: Step size to use for the IRC calculation.
-    :param max_irc_steps: Maximum number of IRC steps to perform.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted IRC workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    :param initial_molecule: Transition state (TS) guess to start from
+    :param method: Method for the IRC (and optional preopt)
+    :param basis_set: Basis set for the IRC (and optional preopt)
+    :param corrections: Corrections for the IRC (and optional preopt)
+    :param solvent_settings: Solvent settings for the IRC (and optional preopt)
+    :param engine: Engine for the calculation (and optional preopt)
+    :param pbc_dft_settings: PBC DFT settings for the IRC (and optional preopt)
+    :param preopt: Whether to perform a pre-optimization of the TS guess
+    :param step_size: Step size for the IRC calculation
+    :param max_irc_steps: Maximum number of IRC steps to perform
+    :param name: Name for the workflow
+    :param folder_uuid: UUID of the folder to place the workflow in
+    :param folder: Folder object to store the workflow in
+    :param max_credits: Maximum number of credits to use for the workflow
+    :param webhook_url: URL that Rowan will POST to when the workflow completes
+    :param is_draft: Submit the workflow as a draft without starting execution
+    :returns: Workflow object representing the submitted IRC workflow
+    :raises requests.HTTPError: if the request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
-        method = stjames.Method(method)
+        method = Method(method)
 
-    workflow = stjames.IRCWorkflow(
+    if isinstance(solvent_settings, dict):
+        solvent_settings = SolventSettings(**solvent_settings)
+
+    if isinstance(pbc_dft_settings, dict):
+        pbc_dft_settings = PBCDFTSettings(**pbc_dft_settings)
+
+    # pbc_dft_settings implies Quantum ESPRESSO; override engine unless explicitly set
+    if pbc_dft_settings is not None and engine is None:
+        engine = Engine.QUANTUM_ESPRESSO
+
+    settings_kwargs: dict[str, Any] = {
+        "method": method,
+        "basis_set": basis_set,
+        "corrections": corrections or [],
+        "solvent_settings": solvent_settings,
+        "pbc_dft_settings": pbc_dft_settings,
+    }
+    if engine:
+        settings_kwargs["engine"] = engine
+    settings = Settings(**settings_kwargs)
+
+    mol_dict = molecule_to_dict(initial_molecule)
+
+    workflow = IRCWorkflow(
         initial_molecule=mol_dict,
-        settings=stjames.Settings(
-            method=method,
-            tasks=[],
-            corrections=[],
-            mode="auto",
-        ),
-        solvent=solvent,
+        settings=settings,
         preopt=preopt,
         step_size=step_size,
         max_irc_steps=max_irc_steps,
-        mode="manual",
     )
 
     data = {
