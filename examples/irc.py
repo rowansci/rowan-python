@@ -17,7 +17,7 @@ H     1.26740151   0.88347299   0.53620841"""
     ),
     method="uma_s_omol",
     name="HNCO + H₂O - IRC",
-    preopt=False,
+    preopt=True,
     folder=folder,
 )
 

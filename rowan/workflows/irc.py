@@ -228,9 +228,10 @@ def submit_irc_workflow(
         "basis_set": basis_set,
         "corrections": corrections or [],
         "solvent_settings": solvent_settings,
-        "engine": engine,
         "pbc_dft_settings": pbc_dft_settings,
     }
+    if engine:
+        settings_kwargs["engine"] = engine
     settings = Settings(**settings_kwargs)
 
     mol_dict = molecule_to_dict(initial_molecule)
