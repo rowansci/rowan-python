@@ -1,13 +1,22 @@
 """IRC workflow - Intrinsic Reaction Coordinate calculations."""
 
 import warnings
+from typing import Any
 
-import stjames
+from stjames import (
+    BasisSet,
+    Engine,
+    IRCWorkflow,
+    Method,
+    PBCDFTSettings,
+    Settings,
+    SolventSettings,
+)
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput, SolventInput
+from ..types import MoleculeInput
 from ..utils import api_client
 from .base import (
     Workflow,
@@ -22,7 +31,7 @@ from .constants import to_relative_kcal
 class IRCResult(WorkflowResult):
     """Result from an Intrinsic Reaction Coordinate (IRC) workflow."""
 
-    _stjames_class = stjames.IRCWorkflow
+    _stjames_class = IRCWorkflow
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -158,8 +167,12 @@ class IRCResult(WorkflowResult):
 
 def submit_irc_workflow(
     initial_molecule: MoleculeInput,
-    method: stjames.Method | str = "omol25_conserving_s",
-    solvent: SolventInput = None,
+    method: Method | str,
+    basis_set: BasisSet | str | None = None,
+    corrections: list[str] | None = None,
+    solvent_settings: SolventSettings | dict[str, Any] | None = None,
+    engine: Engine | str | None = None,
+    pbc_dft_settings: PBCDFTSettings | dict[str, Any] | None = None,
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
@@ -173,43 +186,61 @@ def submit_irc_workflow(
     """
     Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
-    :param initial_molecule: Transition state molecule to start IRC from.
-    :param method: Computational method to use for the IRC calculation.
-    :param solvent: Solvent to use for the calculation.
-    :param preopt: Whether to perform a pre-optimization of the TS.
-    :param step_size: Step size to use for the IRC calculation.
-    :param max_irc_steps: Maximum number of IRC steps to perform.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted IRC workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    :param initial_molecule: Transition state (TS) guess to start from
+    :param method: Method for the IRC (and optional preopt)
+    :param basis_set: Basis set for the IRC (and optional preopt)
+    :param corrections: Corrections for the IRC (and optional preopt)
+    :param solvent_settings: Solvent settings for the IRC (and optional preopt)
+    :param engine: Engine for the calculation (and optional preopt)
+    :param pbc_dft_settings: PBC DFT settings for the IRC (and optional preopt)
+    :param preopt: Whether to perform a pre-optimization of the TS guess
+    :param step_size: Step size for the IRC calculation
+    :param max_irc_steps: Maximum number of IRC steps to perform
+    :param name: Name for the workflow
+    :param folder_uuid: UUID of the folder to place the workflow in
+    :param folder: Folder object to store the workflow in
+    :param max_credits: Maximum number of credits to use for the workflow
+    :param webhook_url: URL that Rowan will POST to when the workflow completes
+    :param is_draft: Submit the workflow as a draft without starting execution
+    :returns: Workflow object representing the submitted IRC workflow
+    :raises requests.HTTPError: if the request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
-        method = stjames.Method(method)
+        method = Method(method)
 
-    workflow = stjames.IRCWorkflow(
+    if isinstance(solvent_settings, dict):
+        solvent_settings = SolventSettings(**solvent_settings)
+
+    if isinstance(pbc_dft_settings, dict):
+        pbc_dft_settings = PBCDFTSettings(**pbc_dft_settings)
+
+    # pbc_dft_settings implies Quantum ESPRESSO; override engine unless explicitly set
+    if pbc_dft_settings is not None and engine is None:
+        engine = Engine.QUANTUM_ESPRESSO
+
+    settings_kwargs: dict[str, Any] = {
+        "method": method,
+        "basis_set": basis_set,
+        "corrections": corrections or [],
+        "solvent_settings": solvent_settings,
+        "engine": engine,
+        "pbc_dft_settings": pbc_dft_settings,
+    }
+    settings = Settings(**settings_kwargs)
+
+    mol_dict = molecule_to_dict(initial_molecule)
+
+    workflow = IRCWorkflow(
         initial_molecule=mol_dict,
-        settings=stjames.Settings(
-            method=method,
-            tasks=[],
-            corrections=[],
-            mode="auto",
-        ),
-        solvent=solvent,
+        settings=settings,
         preopt=preopt,
         step_size=step_size,
         max_irc_steps=max_irc_steps,
-        mode="manual",
     )
 
     data = {
