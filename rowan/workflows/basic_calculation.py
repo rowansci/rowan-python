@@ -162,7 +162,7 @@ def submit_basic_calculation_workflow(
     solvent_settings: SolventSettings | dict[str, Any] | None = None,
     opt_settings: OptimizationSettings | dict[str, Any] | None = None,
     pbc_dft_settings: PBCDFTSettings | dict[str, Any] | None = None,
-    excited_state_settings: TDDFTSettings | None = None,
+    excited_state_settings: TDDFTSettings | dict[str, Any] | None = None,
     preset: PresetName | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
@@ -227,13 +227,13 @@ def submit_basic_calculation_workflow(
             solvent_settings=solvent_settings,
             **({"opt_settings": opt_settings} if opt_settings else {}),
             **({"pbc_dft_settings": pbc_dft_settings} if pbc_dft_settings else {}),
+            **(
+                {"excited_state_settings": excited_state_settings} if excited_state_settings else {}
+            ),
         )
     else:
         if method is None:
             method = "omol25_conserving_s"
-
-        if isinstance(method, str):
-            method = stjames.Method(method)
 
         if isinstance(solvent_settings, dict):
             solvent_settings = stjames.SolventSettings(**solvent_settings)
@@ -245,6 +245,9 @@ def submit_basic_calculation_workflow(
         if pbc_dft_settings is not None and engine is None:
             engine = Engine.QUANTUM_ESPRESSO
 
+        if isinstance(excited_state_settings, dict):
+            excited_state_settings = stjames.TDDFTSettings(**excited_state_settings)
+
         settings_kwargs: dict[str, Any] = {
             "method": method,
             "basis_set": basis_set,
@@ -252,15 +255,13 @@ def submit_basic_calculation_workflow(
             "mode": mode,
             "corrections": corrections or [],
             "solvent_settings": solvent_settings,
+            "pbc_dft_settings": pbc_dft_settings,
+            "excited_state_settings": excited_state_settings,
         }
         if engine is not None:
             settings_kwargs["engine"] = engine
         if opt_settings is not None:
             settings_kwargs["opt_settings"] = opt_settings
-        if pbc_dft_settings is not None:
-            settings_kwargs["pbc_dft_settings"] = pbc_dft_settings
-        if excited_state_settings is not None:
-            settings_kwargs["excited_state_settings"] = excited_state_settings
         settings = stjames.Settings(**settings_kwargs)
 
     initial_molecule = molecule_to_dict(initial_molecule)
