@@ -12,8 +12,8 @@ from stjames import (
     PBCDFTSettings,
     Settings,
     SolventSettings,
+    TDDFTSettings,
 )
-from stjames.excited_state_settings import TDDFTSettings
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
