@@ -246,7 +246,7 @@ def submit_conformer_search_workflow(
 
     data = {
         "workflow_type": "conformer_search",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,

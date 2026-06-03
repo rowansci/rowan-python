@@ -21,6 +21,7 @@ from stjames import (
     SolventSettings,
     Task,
 )
+from stjames.excited_state_settings import TDDFTSettings
 from stjames.pbc_dft_settings import PBCDFTSmearing
 from stjames.optimization.freezing_string_method import (
     FSMInterpolation,

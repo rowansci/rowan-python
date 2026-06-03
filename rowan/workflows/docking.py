@@ -195,7 +195,7 @@ def submit_docking_workflow(
 
     data = {
         "workflow_type": "docking",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "initial_molecule": initial_molecule,
         "name": name,
         "folder_uuid": folder_uuid,

@@ -16,13 +16,13 @@ class Protein(BaseModel):
     Data is not loaded by default to avoid unnecessary downloads that could impact performance.
     Call `load_data()` to fetch and attach the protein data to this `Protein` object.
 
-    :ivar uuid: The UUID of the protein
-    :ivar created_at: The creation date of the protein
+    :ivar uuid: UUID of the protein
+    :ivar created_at: Creation date of the protein
     :ivar used_in_workflow: Whether the protein is used in a workflow
-    :ivar ancestor_uuid: The UUID of the ancestor protein
+    :ivar ancestor_uuid: UUID of the ancestor protein
     :ivar sanitized: Whether the protein is sanitized
-    :ivar name: The name of the protein
-    :ivar data: The data of the protein
+    :ivar name: Name of the protein
+    :ivar data: Data of the protein
     :ivar public: Whether the protein is public
     """
 
@@ -36,7 +36,7 @@ class Protein(BaseModel):
     public: bool | None = None
     pocket: list[list[float]] | None = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Protein name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
     def refresh(self, in_place: bool = True) -> Self:
@@ -67,7 +67,6 @@ class Protein(BaseModel):
         public: bool | None = None,
         pocket: list[list[float]] | None = None,
     ) -> Self:
-        # Use current values unless new ones are passed in
         """
         Updates protein data
 
@@ -77,6 +76,7 @@ class Protein(BaseModel):
         :param pocket: New pocket of the protein
         :returns: Updated protein object
         """
+        # Use current values unless new ones are passed in
         updated_payload = {
             "name": name if name is not None else self.name,
             "data": data if data is not None else self.data,
@@ -312,6 +312,7 @@ def upload_protein(
 
     :param name: Name of the protein to create
     :param file_path: Path to the PDB file to upload
+    :param project_uuid: UUID of the project to create the protein in
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
     """
