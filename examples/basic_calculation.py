@@ -6,7 +6,7 @@ folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
     initial_molecule="CC(=C)C=C",
-    preset="semiempirical",
+    preset="rapid_semiempirical",
     tasks=["optimize"],
     name="Isoprene Optimization",
     folder=folder,

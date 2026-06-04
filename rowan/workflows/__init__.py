@@ -40,7 +40,14 @@ from .base import (
 )
 from .basic_calculation import BasicCalculationResult, submit_basic_calculation_workflow
 from .batch_docking import BatchDockingResult, submit_batch_docking_workflow
-from .bde import BDEEntry, BDEResult, submit_bde_workflow
+from .bde import (
+    BDEEntry,
+    BDEResult,
+    find_bonds,
+    find_ch_bonds,
+    find_cx_bonds,
+    submit_bde_workflow,
+)
 from .conformer_search import ConformerSearchResult, submit_conformer_search_workflow
 from .descriptors import DescriptorsResult, submit_descriptors_workflow
 from .docking import DockingResult, DockingScore, submit_docking_workflow

@@ -37,7 +37,7 @@ al_fcc = rowan.Molecule.from_atoms(
 pbc_settings = rowan.PBCDFTSettings(
     pw_cutoff=7.5,  # Hartree; SSSP efficiency recommends ~7–9 Ha for Al
     kpoints=(4, 4, 4),  # Monkhorst–Pack grid; increase for production runs
-    smearing=rowan.PBCDFTSmearing.MV,
+    smearing=rowan.PBCDFTSmearing.MARZARI_VANDERBILT,
     degauss=0.01,  # Hartree smearing width
 )
 

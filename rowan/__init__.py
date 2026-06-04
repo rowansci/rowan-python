@@ -23,6 +23,13 @@ from stjames import (
 )
 from stjames.excited_state_settings import TDDFTSettings
 from stjames.pbc_dft_settings import PBCDFTSmearing
+from stjames.engine_compatibility import (
+    ENGINE_METHODS,
+    ENGINE_SOLVENT_MODELS,
+    ENGINE_SUPPORTS_BASIS_SET,
+    METHOD_ENGINES,
+    get_supported_corrections,
+)
 from stjames.optimization.freezing_string_method import (
     FSMInterpolation,
     FSMOptimizationCoordinates,

@@ -1,8 +1,10 @@
 """BDE workflow - Bond Dissociation Energy calculations."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import stjames
+from stjames import MultiStageOptSettings
 from stjames.workflows.bde import find_AB_bonds as _find_AB_bonds
 from stjames.workflows.bde import find_CH_bonds as _find_CH_bonds
 from stjames.workflows.bde import find_CX_bonds as _find_CX_bonds
@@ -56,8 +58,9 @@ class BDEResult(WorkflowResult):
 
 def submit_bde_workflow(
     initial_molecule: MoleculeInput,
-    mode: str = "rapid",
-    atoms: list[int] | None = None,
+    mode: str = "omol25_conserving_s",
+    multistage_opt_settings: MultiStageOptSettings | None = None,
+    fragment_indices: list[list[int]] | None = None,
     all_CH: bool = False,
     all_CX: bool = False,
     name: str = "BDE Workflow",
@@ -71,8 +74,16 @@ def submit_bde_workflow(
     Submits a Bond-Dissociation Energy (BDE) workflow to the API.
 
     :param initial_molecule: Molecule to calculate BDEs for.
-    :param mode: Mode to run the calculation in.
-    :param atoms: Atom indices (1-indexed) to dissociate.
+    :param mode: Level of theory to run the calculation at, given as a method string:
+        - `omol25_conserving_s` — neural network potential (default)
+        - `g_xtb//gfn2_xtb` — semiempirical
+        - `r2scan3c//gfn2_xtb` — DFT single point on a semiempirical geometry
+    :param multistage_opt_settings: Explicit method sequence to use instead of the one `mode` would
+        pick — the optimization stage(s) followed by a final singlepoint, given as a
+        `MultiStageOptSettings`. When omitted, the sequence is built automatically from `mode`. When
+        supplied, it replaces that sequence.
+    :param fragment_indices: 1-indexed atoms of each fragment to dissociate. Each fragment must
+        connect to the rest of the molecule by a single bond.
     :param all_CH: Whether to dissociate all C-H bonds.
     :param all_CX: Whether to dissociate all C-X bonds (X = halogen).
     :param name: Name of the workflow.
@@ -90,19 +101,21 @@ def submit_bde_workflow(
         folder_uuid = folder.uuid
     initial_molecule = molecule_to_dict(initial_molecule)
 
-    workflow = stjames.BDEWorkflow.model_validate(
-        {
-            "initial_molecule": initial_molecule,
-            "mode": mode,
-            "atoms": atoms or [],
-            "all_CH": all_CH,
-            "all_CX": all_CX,
-        }
-    )
+    workflow_kwargs: dict[str, Any] = {
+        "initial_molecule": initial_molecule,
+        "mode": mode,
+        "fragment_indices": fragment_indices or [],
+        "all_CH": all_CH,
+        "all_CX": all_CX,
+    }
+    if multistage_opt_settings is not None:
+        workflow_kwargs["multistage_opt_settings"] = multistage_opt_settings
+
+    workflow = stjames.BDEWorkflow.model_validate(workflow_kwargs)
 
     data = {
         "workflow_type": "bde",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(mode="json", serialize_as_any=True),
         "initial_molecule": initial_molecule,
         "name": name,
         "folder_uuid": folder_uuid,

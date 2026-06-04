@@ -161,7 +161,6 @@ def submit_analogue_docking_workflow(
     protein: str | Protein,
     executable: str = "vina",
     scoring_function: str = "vinardo",
-    exhaustiveness: float = 8,
     num_conformers_per_analogue: int = 100,
     require_posebusters: bool = False,
     run_local_optimization: bool = False,
@@ -180,7 +179,6 @@ def submit_analogue_docking_workflow(
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
-    :param exhaustiveness: Which exhaustiveness to employ.
     :param num_conformers_per_analogue: Maximum number of conformers to generate per analogue.
     :param require_posebusters: Filter conformers based on PoseBusters validity before docking.
     :param run_local_optimization: Whether to run a local opt in docking pocket or just score.
@@ -199,7 +197,6 @@ def submit_analogue_docking_workflow(
         folder_uuid = folder.uuid
     docking_settings = {
         "executable": executable,
-        "exhaustiveness": exhaustiveness,
         "scoring_function": scoring_function,
     }
 
