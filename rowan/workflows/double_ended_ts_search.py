@@ -9,9 +9,15 @@ from stjames.optimization.freezing_string_method import FSMSettings
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 from .constants import to_relative_kcal
 
 
@@ -142,8 +148,8 @@ class DoubleEndedTSSearchResult(WorkflowResult):
 
 
 def submit_double_ended_ts_search_workflow(
-    reactant: MoleculeInput,
-    product: MoleculeInput,
+    reactant: StructureInput,
+    product: StructureInput,
     calculation_settings: stjames.Settings | dict[str, Any] | None = None,
     search_settings: FSMSettings | dict[str, Any] | None = None,
     optimize_inputs: bool = False,
@@ -172,6 +178,8 @@ def submit_double_ended_ts_search_workflow(
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
     """
+    require_coordinates(reactant)
+    require_coordinates(product)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

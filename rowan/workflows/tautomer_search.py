@@ -11,12 +11,13 @@ from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
     Message,
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     parse_messages,
     register_result,
+    require_coordinates,
 )
 
 
@@ -103,7 +104,7 @@ class TautomerResult(WorkflowResult):
 
 
 def submit_tautomer_search_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
     multistage_opt_settings: stjames.MultiStageOptSettings | None = None,
     name: str = "Tautomer Search Workflow",
@@ -131,13 +132,14 @@ def submit_tautomer_search_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
-    workflow_kwargs: dict[str, Any] = {"initial_molecule": initial_molecule}
+    workflow_kwargs: dict[str, Any] = {"initial_molecule": mol_dict}
     if conf_gen_settings is not None:
         workflow_kwargs["conf_gen_settings"] = conf_gen_settings
     if multistage_opt_settings is not None:
@@ -148,7 +150,7 @@ def submit_tautomer_search_workflow(
     data = {
         "workflow_type": "tautomers",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

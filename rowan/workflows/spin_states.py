@@ -7,19 +7,20 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
 from .base import (
     Message,
     Method,
     MultiStageOptSettings,
     Settings,
+    StructureInput,
     Task,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     parse_messages,
     register_result,
+    require_coordinates,
 )
 from .constants import to_relative_kcal
 
@@ -130,7 +131,7 @@ class SpinStatesResult(WorkflowResult):
 
 
 def submit_spin_states_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     states: list[int],
     multistage_opt_settings: MultiStageOptSettings | None = None,
     name: str = "Spin States Workflow",
@@ -161,6 +162,7 @@ def submit_spin_states_workflow(
     :raises ValueError: If any multiplicity is incompatible with the molecule.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

@@ -7,9 +7,15 @@ import stjames
 
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,7 +93,7 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
 
 
 def submit_relative_binding_free_energy_graph_workflow(
-    ligands: dict[str, MoleculeInput],
+    ligands: dict[str, StructureInput],
     mode: Literal["greedy", "star_map"] = "greedy",
     hub_compound_id: str | None = None,
     greedy_scoring: Literal["best", "jaccard", "dummy_atoms"] = "best",
@@ -128,6 +134,8 @@ def submit_relative_binding_free_energy_graph_workflow(
     if folder:
         folder_uuid = folder.uuid
 
+    for ligand in ligands.values():
+        require_coordinates(ligand)
     ligands_dict = {k: molecule_to_dict(v) for k, v in ligands.items()}
 
     workflow = stjames.RBFEGraphWorkflow(

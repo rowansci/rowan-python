@@ -7,16 +7,17 @@ import stjames
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput
 from ..utils import api_client
 from .base import (
     Method,
     Settings,
+    StructureInput,
     Task,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 
 
@@ -119,7 +120,7 @@ class MultiStageOptResult(WorkflowResult):
 
 
 def submit_multistage_optimization_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     optimization_settings: Sequence[Settings] | None = None,
     singlepoint_settings: Settings | None = None,
     frequencies: bool = False,
@@ -149,6 +150,7 @@ def submit_multistage_optimization_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

@@ -7,12 +7,19 @@ from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, molecule_to_stjames, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    molecule_to_stjames,
+    register_result,
+    require_coordinates,
+)
 
 
-def _validate_fragment_separation(molecule: MoleculeInput, fragment1_indices: list[int]) -> None:
+def _validate_fragment_separation(molecule: StructureInput, fragment1_indices: list[int]) -> None:
     """
     Validate that no atom in fragment 1 is covalently bonded to an atom outside fragment 1.
 
@@ -85,7 +92,7 @@ class InteractionEnergyDecompositionResult(WorkflowResult):
 
 
 def submit_interaction_energy_decomposition_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     fragment1_indices: list[int],
     method: Literal["sapt0"] = "sapt0",
     basis_set: str = "jun-cc-pVDZ",
@@ -118,6 +125,7 @@ def submit_interaction_energy_decomposition_workflow(
         contains atoms covalently bonded to atoms outside fragment 1.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
@@ -125,7 +133,7 @@ def submit_interaction_energy_decomposition_workflow(
 
     _validate_fragment_separation(initial_molecule, fragment1_indices)
 
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     energy_decomposition_settings = stjames.EnergyDecompositionSettings(
         method=method,
@@ -133,7 +141,7 @@ def submit_interaction_energy_decomposition_workflow(
     )
 
     workflow = stjames.InteractionEnergyDecompositionWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         fragment1_indices=fragment1_indices,
         energy_decomposition_settings=energy_decomposition_settings,
     )
@@ -141,7 +149,7 @@ def submit_interaction_energy_decomposition_workflow(
     data = {
         "workflow_type": "interaction_energy_decomposition",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

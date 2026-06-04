@@ -8,9 +8,15 @@ from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,7 +139,7 @@ class DockingResult(WorkflowResult):
 def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     executable: str = "vina",
     scoring_function: str = "vinardo",
     exhaustiveness: float = 8,
@@ -168,11 +174,12 @@ def submit_docking_workflow(
     :returns: Workflow object representing the submitted docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(protein, Protein):
         protein = protein.uuid
@@ -184,7 +191,7 @@ def submit_docking_workflow(
     }
 
     workflow = stjames.DockingWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         protein=protein,
         pocket=pocket,
         do_csearch=do_csearch,
@@ -196,7 +203,7 @@ def submit_docking_workflow(
     data = {
         "workflow_type": "docking",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

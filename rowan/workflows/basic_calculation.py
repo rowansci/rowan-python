@@ -20,11 +20,12 @@ from ..folder import Folder
 from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 from .constants import to_relative_kcal
 
@@ -152,7 +153,7 @@ def settings_from_preset(preset: PresetName, **overrides: Any) -> stjames.Settin
 
 
 def submit_basic_calculation_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     tasks: list[str],
     method: Method | str | None = None,
     basis_set: BasisSet | str | None = None,
@@ -207,6 +208,7 @@ def submit_basic_calculation_workflow(
     To resubmit with identical settings insulated from future preset changes, use
     `submit_workflow` directly with `workflow_data` from a previous result.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
@@ -264,10 +266,10 @@ def submit_basic_calculation_workflow(
             settings_kwargs["opt_settings"] = opt_settings
         settings = stjames.Settings(**settings_kwargs)
 
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.BasicCalculationWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         settings=settings,
         tasks=settings.tasks,
         engine=settings.engine,
@@ -276,7 +278,7 @@ def submit_basic_calculation_workflow(
     data = {
         "workflow_type": "basic_calculation",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

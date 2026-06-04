@@ -8,9 +8,15 @@ from pydantic import ValidationError
 from stjames import ENGINE_METHODS, Engine, Method
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,7 +148,7 @@ class ElectronicPropertiesResult(WorkflowResult):
 
 
 def submit_electronic_properties_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     method: stjames.Method | str = "b97_3c",
     basis_set: str | None = None,
     compute_density_cube: bool = True,
@@ -177,11 +183,12 @@ def submit_electronic_properties_workflow(
     :raises ValueError: If the method is not supported by the psi4 engine.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(method, str):
         method = Method(method)
@@ -197,7 +204,7 @@ def submit_electronic_properties_workflow(
     settings = stjames.Settings(method=method, basis_set=basis_set)
 
     workflow = stjames.ElectronicPropertiesWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         settings=settings,
         compute_density_cube=compute_density_cube,
         compute_electrostatic_potential_cube=compute_electrostatic_potential_cube,
@@ -208,7 +215,7 @@ def submit_electronic_properties_workflow(
     data = {
         "workflow_type": "electronic_properties",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

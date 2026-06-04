@@ -1,24 +1,30 @@
 """Conformer-search workflow - find low-energy molecular conformations."""
 
+from typing import Any
+
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
-from ..types import MoleculeInput, SolventInput
+from ..types import SolventInput
 from ..utils import api_client
 from .base import (
+    SMILES,
     ConformerGenSettings,
     ETKDGSettings,
     Method,
     Mode,
     MultiStageOptSettings,
+    OpenConfSettings,
     Settings,
+    StructureInput,
     Task,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 from .constants import to_relative_kcal
 
@@ -177,7 +183,7 @@ def _mso_for_final_method(
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput | SMILES,
     conf_gen_settings: ConformerGenSettings | None = None,
     final_method: Method | str = "aimnet2_wb97md3",
     solvent: SolventInput = None,
@@ -193,14 +199,16 @@ def submit_conformer_search_workflow(
     """
     Submits a conformer-search workflow to the API.
 
-    :param initial_molecule: Molecule to perform the conformer search on.
+    :param initial_molecule: Molecule to perform the conformer search on. A 3D structure
+        for any generator; a SMILES string is also accepted when `conf_gen_settings` is
+        ``ETKDGSettings`` or ``OpenConfSettings`` (which build geometry from topology).
     :param conf_gen_settings: Conformer generation method and settings. Defaults to
         ``ETKDGSettings()``. Available options (importable directly from ``rowan``):
 
-        - ``ETKDGSettings``  -- RDKit ETKDG, fast, good for most small molecules
-        - ``LyrebirdSettings``  -- Rowan ML model
-        - ``iMTDGCSettings``  -- CREST iMTD-GC metadynamics, more thorough
-        - ``MonteCarloMultipleMinimumSettings``  -- MCMM conformer search
+        - ``ETKDGSettings``  -- RDKit ETKDG, fast, good for most small molecules (SMILES ok)
+        - ``OpenConfSettings``  -- OpenConf generator (SMILES ok)
+        - ``iMTDGCSettings``  -- CREST iMTD-GC metadynamics, more thorough (3D structure only)
+        - ``MonteCarloMultipleMinimumSettings``  -- MCMM conformer search (3D structure only)
     :param final_method: Method to use for the final optimization. Ignored if
         `multistage_opt_settings` is provided.
     :param solvent: Solvent to use for the final optimization. Ignored if
@@ -227,7 +235,23 @@ def submit_conformer_search_workflow(
     if conf_gen_settings is None:
         conf_gen_settings = ETKDGSettings()
 
-    mol_dict = molecule_to_dict(initial_molecule)
+    # ETKDG and OpenConf build geometry from a bare SMILES; the other generators
+    # (CREST, MCMM, pre-generated conformers) need a real 3D structure.
+    generator_builds_geometry = isinstance(conf_gen_settings, (ETKDGSettings, OpenConfSettings))
+    initial_smiles = ""
+    mol_dict: dict[str, Any] | None = None
+    if isinstance(initial_molecule, str):
+        if not generator_builds_geometry:
+            raise ValueError(
+                "SMILES input is only supported with ETKDG or OpenConf conformer generation. "
+                "Provide a 3D structure (rowan.Molecule.from_smiles(...) or from_xyz(...)) for "
+                f"{type(conf_gen_settings).__name__}."
+            )
+        initial_smiles = initial_molecule
+    else:
+        if not generator_builds_geometry:
+            require_coordinates(initial_molecule)
+        mol_dict = molecule_to_dict(initial_molecule)
 
     if multistage_opt_settings is None:
         if isinstance(final_method, str):
@@ -238,6 +262,7 @@ def submit_conformer_search_workflow(
 
     workflow = stjames.ConformerSearchWorkflow(
         initial_molecule=mol_dict,
+        initial_smiles=initial_smiles,
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
         solvent=solvent,
@@ -247,13 +272,16 @@ def submit_conformer_search_workflow(
     data = {
         "workflow_type": "conformer_search",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
-        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
         "webhook_url": webhook_url,
         "is_draft": is_draft,
     }
+    if mol_dict is not None:
+        data["initial_molecule"] = mol_dict
+    else:
+        data["initial_smiles"] = initial_smiles
 
     with api_client() as client:
         response = client.post("/workflow", json=data)

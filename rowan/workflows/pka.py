@@ -7,7 +7,7 @@ import stjames
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
-from ..types import MoleculeInput, SolventInput
+from ..types import SMILES, SolventInput, StructureInput
 from ..utils import api_client
 from .base import (
     Mode,
@@ -15,6 +15,7 @@ from .base import (
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 
 
@@ -124,7 +125,7 @@ class pKaResult(WorkflowResult):
 
 
 def submit_pka_workflow(
-    initial_molecule: MoleculeInput | str,
+    initial_molecule: StructureInput | SMILES,
     pka_range: tuple[int, int] = (2, 12),
     method: Literal[
         "aimnet2_wagen2024", "gxtb_wagen2026", "chemprop_nevolianis2025", "starling"
@@ -175,6 +176,7 @@ def submit_pka_workflow(
     if isinstance(initial_molecule, str):
         initial_smiles = initial_molecule
     else:
+        require_coordinates(initial_molecule)
         mol_dict = molecule_to_dict(initial_molecule)
 
     if method in _PKA_3D_METHODS and not mol_dict:

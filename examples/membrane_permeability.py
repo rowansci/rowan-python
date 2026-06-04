@@ -1,5 +1,3 @@
-from rdkit import Chem
-
 import rowan
 
 # Set your API key or use the ROWAN_API_KEY environment variable
@@ -15,7 +13,7 @@ gnn_mtl_workflow = rowan.submit_membrane_permeability_workflow(
 )
 
 pypermm_workflow = rowan.submit_membrane_permeability_workflow(
-    Chem.MolFromSmiles(smiles),
+    rowan.Molecule.from_smiles(smiles),
     method="pypermm",
     name="Oseltamivir Membrane Permeability (PyPermm)",
     folder=folder,

@@ -3,9 +3,15 @@
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @register_result("fukui")
@@ -40,7 +46,7 @@ class FukuiResult(WorkflowResult):
 
 
 def submit_fukui_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     optimization_method: str = "gfn2_xtb",
     fukui_method: str = "gfn1_xtb",
     solvent_settings: dict[str, str] | None = None,
@@ -77,6 +83,7 @@ def submit_fukui_workflow(
     :raises ValueError: If the solvent model is incompatible with the chosen method.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
@@ -96,7 +103,7 @@ def submit_fukui_workflow(
                 f"solvation model, got '{model}'"
             )
 
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     optimization_settings = stjames.Settings(method=optimization_method)
     fukui_settings = stjames.Settings(method=fukui_method, solvent_settings=solvent_settings)
@@ -111,7 +118,7 @@ def submit_fukui_workflow(
     data = {
         "workflow_type": "fukui",
         "workflow_data": workflow_data,
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

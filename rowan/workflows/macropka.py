@@ -5,9 +5,8 @@ from dataclasses import dataclass
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, extract_smiles, register_result
+from .base import SMILES, Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +98,7 @@ class MacropKaResult(WorkflowResult):
 
 
 def submit_macropka_workflow(
-    initial_smiles: str | MoleculeInput,
+    initial_smiles: SMILES,
     min_pH: int = 0,
     max_pH: int = 14,
     min_charge: int = -2,

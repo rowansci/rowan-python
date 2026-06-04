@@ -11,12 +11,13 @@ from ..molecule import Molecule
 from ..utils import api_client
 from .base import (
     Message,
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     parse_messages,
     register_result,
+    require_coordinates,
 )
 from .constants import BOLTZMANN_HARTREE_PER_K
 
@@ -110,7 +111,7 @@ class StrainResult(WorkflowResult):
 
 
 def submit_strain_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     harmonic_constraint_spring_constant: float = 5.0,
     constrain_hydrogens: bool = False,
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
@@ -143,14 +144,15 @@ def submit_strain_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow_kwargs: dict[str, Any] = {
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "harmonic_constraint_spring_constant": harmonic_constraint_spring_constant,
         "constrain_hydrogens": constrain_hydrogens,
         "conf_gen_settings": conf_gen_settings or stjames.OpenConfSettings(max_confs=200),
@@ -163,7 +165,7 @@ def submit_strain_workflow(
     data = {
         "workflow_type": "strain",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

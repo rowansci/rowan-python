@@ -10,12 +10,13 @@ from ..types import SolventInput
 from ..utils import api_client
 from .base import (
     Message,
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     parse_messages,
     register_result,
+    require_coordinates,
 )
 from .constants import HARTREE_TO_KCAL
 
@@ -92,7 +93,7 @@ class ScanResult(WorkflowResult):
 
 
 def submit_scan_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     scan_settings: stjames.ScanSettings | dict[str, Any],
     calculation_engine: str | None = None,
     calculation_method: stjames.Method | str = "omol25_conserving_s",
@@ -127,11 +128,12 @@ def submit_scan_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(calculation_method, str):
         calculation_method = stjames.Method(calculation_method)
@@ -155,7 +157,7 @@ def submit_scan_workflow(
     )
 
     workflow = stjames.ScanWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         scan_settings=scan_settings,
         calc_settings=calc_settings,
         calc_engine=calculation_engine or calculation_method.default_engine(),
@@ -165,7 +167,7 @@ def submit_scan_workflow(
     data = {
         "workflow_type": "scan",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

@@ -12,12 +12,13 @@ from stjames.workflows.bde import find_CX_bonds as _find_CX_bonds
 from ..folder import Folder
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     molecule_to_stjames,
     register_result,
+    require_coordinates,
 )
 
 
@@ -57,7 +58,7 @@ class BDEResult(WorkflowResult):
 
 
 def submit_bde_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     mode: str = "omol25_conserving_s",
     multistage_opt_settings: MultiStageOptSettings | None = None,
     fragment_indices: list[list[int]] | None = None,
@@ -95,14 +96,15 @@ def submit_bde_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow_kwargs: dict[str, Any] = {
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "mode": mode,
         "fragment_indices": fragment_indices or [],
         "all_CH": all_CH,
@@ -116,7 +118,7 @@ def submit_bde_workflow(
     data = {
         "workflow_type": "bde",
         "workflow_data": workflow.model_dump(mode="json", serialize_as_any=True),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
@@ -130,7 +132,7 @@ def submit_bde_workflow(
         return Workflow(**response.json())
 
 
-def find_ch_bonds(molecule: MoleculeInput, distance_max: float = 1.2) -> list[tuple[int, int]]:
+def find_ch_bonds(molecule: StructureInput, distance_max: float = 1.2) -> list[tuple[int, int]]:
     """
     Find all C-H bonds in a molecule.
 
@@ -148,7 +150,7 @@ def find_ch_bonds(molecule: MoleculeInput, distance_max: float = 1.2) -> list[tu
     return list(_find_CH_bonds(stj, distance_max))
 
 
-def find_cx_bonds(molecule: MoleculeInput) -> list[tuple[int, int]]:
+def find_cx_bonds(molecule: StructureInput) -> list[tuple[int, int]]:
     """
     Find all C-X bonds in a molecule (X = F, Cl, Br, I, At, Ts).
 
@@ -166,7 +168,7 @@ def find_cx_bonds(molecule: MoleculeInput) -> list[tuple[int, int]]:
 
 
 def find_bonds(
-    molecule: MoleculeInput,
+    molecule: StructureInput,
     element_a: int,
     element_b: int,
     distance_max: float,

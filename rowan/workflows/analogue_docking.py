@@ -6,9 +6,15 @@ from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 from .docking import DockingScore
 
 
@@ -157,7 +163,7 @@ class AnalogueDockingResult(WorkflowResult):
 
 def submit_analogue_docking_workflow(
     analogues: list[str],
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     protein: str | Protein,
     executable: str = "vina",
     scoring_function: str = "vinardo",
@@ -191,6 +197,7 @@ def submit_analogue_docking_workflow(
     :returns: Workflow object representing the submitted analogue-docking workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
@@ -200,14 +207,14 @@ def submit_analogue_docking_workflow(
         "scoring_function": scoring_function,
     }
 
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     if isinstance(protein, Protein):
         protein = protein.uuid
 
     workflow = stjames.AnalogueDockingWorkflow(
         analogues=analogues,
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         protein=protein,
         docking_settings=docking_settings,
         num_conformers_per_analogue=num_conformers_per_analogue,
@@ -216,7 +223,7 @@ def submit_analogue_docking_workflow(
     )
 
     data = {
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "workflow_type": "analogue_docking",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "name": name,

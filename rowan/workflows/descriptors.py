@@ -5,9 +5,16 @@ from typing import Any
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput, SolventInput
+from ..types import SolventInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @register_result("descriptors")
@@ -27,7 +34,7 @@ class DescriptorsResult(WorkflowResult):
 
 
 def submit_descriptors_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     solvent: SolventInput = "water",
     do_optimization: bool = True,
     name: str = "Descriptors Workflow",
@@ -54,6 +61,7 @@ def submit_descriptors_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

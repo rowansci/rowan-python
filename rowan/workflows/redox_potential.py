@@ -8,12 +8,13 @@ from ..utils import api_client
 from .base import (
     Message,
     Mode,
-    MoleculeInput,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     parse_messages,
     register_result,
+    require_coordinates,
 )
 
 
@@ -89,7 +90,7 @@ class RedoxPotentialResult(WorkflowResult):
 
 
 def submit_redox_potential_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     reduction: bool = False,
     oxidation: bool = True,
     mode: Mode = Mode.RAPID,
@@ -116,15 +117,16 @@ def submit_redox_potential_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.RedoxPotentialWorkflow.model_validate(
         {
-            "initial_molecule": initial_molecule,
+            "initial_molecule": mol_dict,
             "oxidation": oxidation,
             "reduction": reduction,
             "mode": mode,
@@ -134,7 +136,7 @@ def submit_redox_potential_workflow(
     data = {
         "workflow_type": "redox_potential",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

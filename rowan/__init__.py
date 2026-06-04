@@ -43,7 +43,7 @@ from .api_keys import *
 from .calculation import *
 from .folder import *
 from .molecule import *
-from .types import RdkitMol, StJamesMolecule
+from .types import RdkitMol, StJamesMolecule, StructureInput
 from .workflows import *
 from .project import *
 from .protein import *

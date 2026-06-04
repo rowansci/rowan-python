@@ -6,9 +6,15 @@ from dataclasses import dataclass
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +90,7 @@ class HydrogenBondDonorAcceptorStrengthResult(WorkflowResult):
 
 
 def submit_hydrogen_bond_donor_acceptor_strength_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     do_csearch: bool = True,
     do_optimization: bool = True,
     name: str = "Hydrogen-Bond Acceptor/Donor Strength",
@@ -109,14 +115,15 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.HydrogenBondBasicityWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         do_csearch=do_csearch,
         do_optimization=do_optimization,
     )
@@ -124,7 +131,7 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     data = {
         "workflow_type": "hydrogen_bond_basicity",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

@@ -6,9 +6,16 @@ import stjames
 from stjames import ConformerGenSettingsUnion, iMTDSettings
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Solvent, Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    Solvent,
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 _DEFAULT_SOLVENTS: list[Solvent] = [
     Solvent.HEXANE,
@@ -104,7 +111,7 @@ class SolventDependentConformersResult(WorkflowResult):
 
 
 def submit_solvent_dependent_conformers_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     solvents: list[Solvent] | None = None,
     conf_gen_settings: ConformerGenSettingsUnion | None = None,
     energy_window: float = 30,
@@ -141,6 +148,7 @@ def submit_solvent_dependent_conformers_workflow(
     :raises ValueError: If both folder and folder_uuid are provided.
     :raises requests.HTTPError: If the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

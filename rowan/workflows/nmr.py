@@ -5,13 +5,15 @@ from dataclasses import dataclass
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput, SolventInput
+from ..types import SolventInput
 from ..utils import api_client
 from .base import (
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 
 
@@ -97,7 +99,7 @@ class NMRResult(WorkflowResult):
 
 
 def submit_nmr_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     solvent: SolventInput = "chloroform",
     do_csearch: bool = True,
     do_optimization: bool = True,
@@ -124,6 +126,7 @@ def submit_nmr_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

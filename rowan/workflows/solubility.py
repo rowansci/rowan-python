@@ -7,9 +7,8 @@ import stjames
 from rdkit import Chem
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, extract_smiles, register_result
+from .base import SMILES, Workflow, WorkflowResult, extract_smiles, register_result
 
 # Common solvents with human-readable names (from tinbergen)
 # Users can use these names or provide arbitrary SMILES for fastsolv
@@ -139,7 +138,7 @@ class SolubilityResult(WorkflowResult):
 
 
 def submit_solubility_workflow(
-    initial_smiles: str | MoleculeInput,
+    initial_smiles: SMILES,
     method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
     solvents: list[str] | None = None,
     temperatures: list[float] | None = None,

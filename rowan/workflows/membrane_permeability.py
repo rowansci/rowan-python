@@ -7,11 +7,13 @@ import stjames
 from ..folder import Folder
 from ..utils import api_client
 from .base import (
-    MoleculeInput,
+    SMILES,
+    StructureInput,
     Workflow,
     WorkflowResult,
     molecule_to_dict,
     register_result,
+    require_coordinates,
 )
 
 
@@ -63,7 +65,7 @@ class MembranePermeabilityResult(WorkflowResult):
 
 
 def submit_membrane_permeability_workflow(
-    initial_molecule: MoleculeInput | str,
+    initial_molecule: StructureInput | SMILES,
     method: Literal["gnn-mtl", "pypermm"] = "gnn-mtl",
     name: str = "Membrane Permeability Workflow",
     folder_uuid: str | None = None,
@@ -113,14 +115,15 @@ def submit_membrane_permeability_workflow(
         case "pypermm":
             if isinstance(initial_molecule, str):
                 raise ValueError("Cannot specify molecule as SMILES for PyPermm")
-            initial_molecule = molecule_to_dict(initial_molecule)
+            require_coordinates(initial_molecule)
+            mol_dict = molecule_to_dict(initial_molecule)
 
             workflow = stjames.MembranePermeabilityWorkflow(
-                initial_molecule=initial_molecule,
+                initial_molecule=mol_dict,
                 membrane_permeability_method="pypermm",
             )
 
-            data["initial_molecule"] = initial_molecule
+            data["initial_molecule"] = mol_dict
 
         case _:
             raise ValueError(f"Unexpected {method=}")

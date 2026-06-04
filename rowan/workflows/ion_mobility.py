@@ -3,9 +3,15 @@
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
+from .base import (
+    StructureInput,
+    Workflow,
+    WorkflowResult,
+    molecule_to_dict,
+    register_result,
+    require_coordinates,
+)
 
 
 @register_result("ion_mobility")
@@ -41,7 +47,7 @@ class IonMobilityResult(WorkflowResult):
 
 
 def submit_ion_mobility_workflow(
-    initial_molecule: MoleculeInput,
+    initial_molecule: StructureInput,
     temperature: float = 300,
     protonate: bool = False,
     do_csearch: bool = True,
@@ -71,14 +77,15 @@ def submit_ion_mobility_workflow(
     :returns: Workflow object representing the submitted workflow.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    require_coordinates(initial_molecule)
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_molecule = molecule_to_dict(initial_molecule)
+    mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.IonMobilityWorkflow(
-        initial_molecule=initial_molecule,
+        initial_molecule=mol_dict,
         temperature=temperature,
         protonate=protonate,
         do_csearch=do_csearch,
@@ -88,7 +95,7 @@ def submit_ion_mobility_workflow(
     data = {
         "workflow_type": "ion_mobility",
         "workflow_data": workflow.model_dump(mode="json"),
-        "initial_molecule": initial_molecule,
+        "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

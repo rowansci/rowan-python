@@ -5,7 +5,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule="CC(=C)C=C",
+    initial_molecule=rowan.Molecule.from_smiles("CC(=C)C=C"),
     preset="rapid_semiempirical",
     tasks=["optimize"],
     name="Isoprene Optimization",

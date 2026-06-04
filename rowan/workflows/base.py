@@ -15,7 +15,7 @@ from rdkit import Chem
 
 from ..folder import Folder
 from ..molecule import Molecule as RowanMolecule
-from ..types import SMILES, MoleculeInput
+from ..types import SMILES, StructureInput
 from ..utils import api_client
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ Task = stjames.Task
 Settings = stjames.Settings
 MultiStageOptSettings = stjames.MultiStageOptSettings
 ETKDGSettings = stjames.ETKDGSettings
+OpenConfSettings = stjames.OpenConfSettings
 ConformerGenSettings = stjames.conformers.ConformerGenSettings
 
 
@@ -106,8 +107,21 @@ class WorkflowResult:
             try:
                 obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
                 object.__setattr__(self, "_workflow", obj)
-            except ValidationError:
-                pass  # incomplete or invalid data; _workflow stays None
+            except ValidationError as e:
+                if not self.complete:
+                    # Still-running workflow: partial data is expected; leave `_workflow`
+                    # None and fall back to `.data` until the workflow finishes.
+                    return
+                # A completed workflow whose data won't validate is a real mismatch between
+                # the installed stjames model and the server response. Fail clearly here
+                # rather than as a downstream AttributeError on a None `_workflow`.
+                raise ValueError(
+                    f"""\
+Could not parse the completed '{self.workflow_type}' workflow into \
+{self._stjames_class.__name__}. The installed stjames version is likely out of sync with \
+the server (a field is missing, extra, or the wrong type). Underlying validation error:
+{e}"""
+                ) from e
 
     @property
     def data(self) -> dict[str, Any]:
@@ -546,7 +560,7 @@ Workflow:  {self.name}
             f.write(response.content)
 
 
-def extract_smiles(mol: SMILES | MoleculeInput) -> SMILES:
+def extract_smiles(mol: SMILES | StructureInput | dict[str, Any]) -> SMILES:
     """
     Extract a SMILES string from a molecule input or return the string directly.
 
@@ -575,7 +589,7 @@ def extract_smiles(mol: SMILES | MoleculeInput) -> SMILES:
     return smiles
 
 
-def molecule_to_stjames(mol: MoleculeInput) -> stjames.Molecule:
+def molecule_to_stjames(mol: StructureInput | dict[str, Any]) -> stjames.Molecule:
     """Convert any molecule input type to a stjames.Molecule."""
     match mol:
         case RowanMolecule():
@@ -590,16 +604,37 @@ def molecule_to_stjames(mol: MoleculeInput) -> stjames.Molecule:
             raise TypeError(f"Cannot convert {type(mol)} to stjames.Molecule")
 
 
-def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
+def require_coordinates(mol: StructureInput) -> None:
     """
-    Convert any molecule input type to a dict for API submission.
+    Validate that a molecule input carries real 3D coordinates.
+
+    Geometry-based workflows operate on 3D structure, so reject inputs that have no
+    geometry rather than silently embedding an arbitrary conformer: a SMILES string
+    (no coordinates) or an RDKit molecule with no conformer.
+
+    :param mol: molecule input to check
+    :raises ValueError: if the input has no 3D coordinates
+    """
+    if isinstance(mol, str):
+        raise ValueError(
+            "This workflow requires a 3D structure, not a SMILES string. Build one "
+            'explicitly, e.g. rowan.Molecule.from_smiles("CCO") or rowan.Molecule.from_xyz(...).'
+        )
+    if isinstance(mol, Chem.Mol) and mol.GetNumConformers() == 0:
+        raise ValueError(
+            "RDKit molecule has no 3D conformer. Embed one first (e.g. "
+            "rdkit.Chem.AllChem.EmbedMolecule) or use rowan.Molecule.from_smiles(...)."
+        )
+
+
+def molecule_to_dict(mol: StructureInput | dict[str, Any]) -> dict[str, Any]:
+    """
+    Convert a 3D molecule input to a dict for API submission.
 
     :param mol: Molecule as Molecule, stjames.Molecule, RDKit Mol, or dict.
     :returns: Dict representation suitable for API submission.
     """
     match mol:
-        case str():
-            return RowanMolecule.from_smiles(mol).to_stjames().model_dump(mode="json")
         case RowanMolecule():
             return mol.to_stjames().model_dump(mode="json")
         case stjames.Molecule():
@@ -615,8 +650,8 @@ def molecule_to_dict(mol: MoleculeInput) -> dict[str, Any]:
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
-    initial_molecule: MoleculeInput | None = None,
-    initial_smiles: str | None = None,
+    initial_molecule: StructureInput | dict[str, Any] | None = None,
+    initial_smiles: SMILES | None = None,
     name: str | None = None,
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
@@ -785,8 +820,8 @@ def list_workflows(
 def batch_submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
-    initial_molecules: list[MoleculeInput] | None = None,
-    initial_smileses: list[str] | None = None,
+    initial_molecules: list[StructureInput | dict[str, Any]] | None = None,
+    initial_smileses: list[SMILES] | None = None,
     names: list[str] | None = None,
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,

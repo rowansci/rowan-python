@@ -3,9 +3,8 @@
 import stjames
 
 from ..folder import Folder
-from ..types import MoleculeInput
 from ..utils import api_client
-from .base import Workflow, WorkflowResult, extract_smiles, register_result
+from .base import SMILES, Workflow, WorkflowResult, extract_smiles, register_result
 
 
 @register_result("admet")
@@ -26,7 +25,7 @@ class ADMETResult(WorkflowResult):
 
 
 def submit_admet_workflow(
-    initial_smiles: str | MoleculeInput,
+    initial_smiles: SMILES,
     name: str = "ADMET Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
