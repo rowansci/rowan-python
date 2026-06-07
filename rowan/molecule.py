@@ -14,12 +14,6 @@ class Molecule(BaseModel):
 
     Can be created from SMILES, XYZ, or directly from atoms. Wraps stjames.Molecule
     internally but provides a cleaner interface.
-
-    :param charge: Molecular charge.
-    :param multiplicity: Spin multiplicity.
-    :param atoms: List of atoms with positions.
-    :param energy: Electronic energy (Hartree).
-    :param smiles: SMILES string representation.
     """
 
     _stjames: stjames.Molecule = PrivateAttr()
@@ -84,6 +78,19 @@ class Molecule(BaseModel):
         :returns: Molecule
         """
         return cls.from_xyz(Path(path).read_text(), charge=charge, multiplicity=multiplicity)
+
+    @classmethod
+    def molecules_from_sdf(cls, path: str | Path) -> list[Self]:
+        """
+        Read all records from an SDF file as a list of molecules.
+
+        Each record becomes one Molecule, in file order, with atom ordering preserved
+        across records -- so a multi-conformer SDF reads as a consistent ensemble.
+
+        :param path: path to the SDF file
+        :returns: one Molecule per record
+        """
+        return [cls.from_stjames(mol) for mol in stjames.Molecule.molecules_from_sdf(path)]
 
     @classmethod
     def from_stjames(cls, stj: stjames.Molecule) -> Self:

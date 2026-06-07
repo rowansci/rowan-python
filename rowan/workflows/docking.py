@@ -42,6 +42,12 @@ class DockingResult(WorkflowResult):
         best = min((s.score for s in scores), default=None)
         return f"<DockingResult poses={len(scores)} best_score={best}>"
 
+    def __post_init__(self) -> None:
+        """Default `complex_pdb` to None on scores (server omits it when no complex), then parse."""
+        for score in self.workflow_data.get("scores") or []:
+            score.setdefault("complex_pdb", None)
+        super().__post_init__()
+
     @property
     def scores(self) -> list[DockingScore]:
         """List of docking scores with poses."""

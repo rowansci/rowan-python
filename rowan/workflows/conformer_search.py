@@ -39,6 +39,11 @@ class ConformerSearchResult(WorkflowResult):
         n = self.num_conformers
         return f"<ConformerSearchResult conformers={n}>"
 
+    def __post_init__(self) -> None:
+        """Default `conf_gen_settings` to None (omitted by the server in skip mode), then parse."""
+        self.workflow_data.setdefault("conf_gen_settings", None)
+        super().__post_init__()
+
     @property
     def num_conformers(self) -> int:
         """Number of conformers found."""
@@ -183,12 +188,13 @@ def _mso_for_final_method(
 
 
 def submit_conformer_search_workflow(
-    initial_molecule: StructureInput | SMILES,
+    initial_molecule: StructureInput | SMILES | None = None,
     conf_gen_settings: ConformerGenSettings | None = None,
     final_method: Method | str = "aimnet2_wb97md3",
     solvent: SolventInput = None,
     transition_state: bool = False,
     multistage_opt_settings: MultiStageOptSettings | None = None,
+    initial_conformers: list[StructureInput] | None = None,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -199,9 +205,20 @@ def submit_conformer_search_workflow(
     """
     Submits a conformer-search workflow to the API.
 
-    :param initial_molecule: Molecule to perform the conformer search on. A 3D structure
-        for any generator; a SMILES string is also accepted when `conf_gen_settings` is
-        ``ETKDGSettings`` or ``OpenConfSettings`` (which build geometry from topology).
+    Runs in one of two modes:
+
+    - **Generate** (default): build conformers from `initial_molecule` using
+      `conf_gen_settings`, then optimize, deduplicate, and rank them.
+    - **Screen-only**: pass `initial_conformers` (and leave `conf_gen_settings` as
+      ``None``) to skip generation and run only optimize / deduplicate / rank on
+      conformers you already have. Useful when geometries come from another tool
+      (RDKit, CREST, OMEGA), a crystal or MD ensemble, or a previous workflow, and
+      you want consistent optimized energies and a deduplicated ranked ensemble.
+
+    :param initial_molecule: Molecule to perform the conformer search on (omit when using
+        `initial_conformers`). A 3D structure for any generator; a SMILES string is also
+        accepted when `conf_gen_settings` is ``ETKDGSettings`` or ``OpenConfSettings``
+        (which build geometry from topology).
     :param conf_gen_settings: Conformer generation method and settings. Defaults to
         ``ETKDGSettings()``. Available options (importable directly from ``rowan``):
 
@@ -219,6 +236,17 @@ def submit_conformer_search_workflow(
         for ranking conformers. When provided, takes precedence over
         `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
         built from those three params.
+    :param initial_conformers: Pre-generated 3D conformers to optimize, deduplicate, and
+        rank directly, skipping conformer generation (screen-only mode). Requirements
+        (all enforced):
+
+        - mutually exclusive with `initial_molecule`
+        - `conf_gen_settings` must be ``None``
+        - every conformer must be a real 3D structure (no SMILES)
+        - every conformer must be the same molecule with **identical atom ordering** --
+          conformers are compared atom-by-atom during deduplication, so atom *i* must be
+          the same atom in every conformer. Read them from one multi-conformer source
+          (one RDKit mol, an SDF, an MD trajectory) rather than assembling them separately.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -232,26 +260,54 @@ def submit_conformer_search_workflow(
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    if conf_gen_settings is None:
-        conf_gen_settings = ETKDGSettings()
 
-    # ETKDG and OpenConf build geometry from a bare SMILES; the other generators
-    # (CREST, MCMM, pre-generated conformers) need a real 3D structure.
-    generator_builds_geometry = isinstance(conf_gen_settings, (ETKDGSettings, OpenConfSettings))
     initial_smiles = ""
     mol_dict: dict[str, Any] | None = None
-    if isinstance(initial_molecule, str):
-        if not generator_builds_geometry:
+    conformer_dicts: list[dict[str, Any]] = []
+
+    if initial_conformers:
+        # Screen-only mode: rank the supplied conformers directly, no generation.
+        if initial_molecule is not None:
+            raise ValueError("Provide either `initial_molecule` or `initial_conformers`, not both.")
+        if conf_gen_settings is not None:
             raise ValueError(
-                "SMILES input is only supported with ETKDG or OpenConf conformer generation. "
-                "Provide a 3D structure (rowan.Molecule.from_smiles(...) or from_xyz(...)) for "
-                f"{type(conf_gen_settings).__name__}."
+                "`conf_gen_settings` must be None when using `initial_conformers`; "
+                "screen-only mode does not generate conformers."
             )
-        initial_smiles = initial_molecule
+        reference_atoms: list[int] | None = None
+        for conformer in initial_conformers:
+            require_coordinates(conformer)
+            conformer_dict = molecule_to_dict(conformer)
+            atoms = [atom["atomic_number"] for atom in conformer_dict["atoms"]]
+            if reference_atoms is None:
+                reference_atoms = atoms
+            elif atoms != reference_atoms:
+                raise ValueError(
+                    "All `initial_conformers` must be the same molecule with identical atom "
+                    "ordering; conformers are compared atom-by-atom, so every conformer must "
+                    "list the same atoms in the same order."
+                )
+            conformer_dicts.append(conformer_dict)
     else:
-        if not generator_builds_geometry:
-            require_coordinates(initial_molecule)
-        mol_dict = molecule_to_dict(initial_molecule)
+        if initial_molecule is None:
+            raise ValueError("Provide `initial_molecule` or `initial_conformers`.")
+        if conf_gen_settings is None:
+            conf_gen_settings = ETKDGSettings()
+        # ETKDG and OpenConf build geometry from a bare SMILES; the other generators
+        # (CREST, MCMM) need a real 3D structure.
+        generator_builds_geometry = isinstance(conf_gen_settings, (ETKDGSettings, OpenConfSettings))
+        if isinstance(initial_molecule, str):
+            if not generator_builds_geometry:
+                raise ValueError(
+                    "SMILES input is only supported with ETKDG or OpenConf conformer generation. "
+                    "Provide a 3D structure (rowan.Molecule.from_smiles(...) or from_xyz(...)) for "
+                    f"{type(conf_gen_settings).__name__}."
+                )
+            initial_smiles = initial_molecule
+        else:
+            if not generator_builds_geometry:
+                require_coordinates(initial_molecule)
+            mol_dict = molecule_to_dict(initial_molecule)
 
     if multistage_opt_settings is None:
         if isinstance(final_method, str):
@@ -263,15 +319,20 @@ def submit_conformer_search_workflow(
     workflow = stjames.ConformerSearchWorkflow(
         initial_molecule=mol_dict,
         initial_smiles=initial_smiles,
+        initial_conformers=conformer_dicts,
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
         solvent=solvent,
         transition_state=transition_state,
     )
 
+    workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
+    # model_dump drops `conf_gen_settings` when it is None (skip-generation mode), but the
+    # server requires the key to be present; re-add it as null.
+    workflow_data.setdefault("conf_gen_settings", None)
     data = {
         "workflow_type": "conformer_search",
-        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
+        "workflow_data": workflow_data,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
@@ -280,6 +341,8 @@ def submit_conformer_search_workflow(
     }
     if mol_dict is not None:
         data["initial_molecule"] = mol_dict
+    elif conformer_dicts:
+        data["initial_molecule"] = conformer_dicts[0]
     else:
         data["initial_smiles"] = initial_smiles
 

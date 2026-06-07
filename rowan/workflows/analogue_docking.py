@@ -1,5 +1,7 @@
 """Analogue docking workflow - dock analogues using a template ligand."""
 
+from typing import Literal
+
 import stjames
 
 from ..calculation import Calculation, retrieve_calculation
@@ -37,6 +39,13 @@ class AnalogueDockingResult(WorkflowResult):
                     best_score = min_score
                     best_smiles = smiles
         return f"<AnalogueDockingResult analogues={n} best=({best_score:.2f}, {best_smiles!r})>"
+
+    def __post_init__(self) -> None:
+        """Default `complex_pdb` to None on each analogue's scores, then parse."""
+        for scores in (self.workflow_data.get("analogue_scores") or {}).values():
+            for score in scores:
+                score.setdefault("complex_pdb", None)
+        super().__post_init__()
 
     @property
     def analogue_scores(self) -> dict[str, list[DockingScore]]:
@@ -165,8 +174,7 @@ def submit_analogue_docking_workflow(
     analogues: list[str],
     initial_molecule: StructureInput,
     protein: str | Protein,
-    executable: str = "vina",
-    scoring_function: str = "vinardo",
+    scoring_function: Literal["vina", "vinardo"] = "vinardo",
     num_conformers_per_analogue: int = 100,
     require_posebusters: bool = False,
     run_local_optimization: bool = False,
@@ -183,8 +191,7 @@ def submit_analogue_docking_workflow(
     :param analogues: SMILES strings to dock.
     :param initial_molecule: Template to which to align molecules to.
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
-    :param executable: Which docking implementation to use.
-    :param scoring_function: Which docking scoring function to use.
+    :param scoring_function: Docking scoring function: "vina" or "vinardo".
     :param num_conformers_per_analogue: Maximum number of conformers to generate per analogue.
     :param require_posebusters: Filter conformers based on PoseBusters validity before docking.
     :param run_local_optimization: Whether to run a local opt in docking pocket or just score.
@@ -203,7 +210,7 @@ def submit_analogue_docking_workflow(
     if folder:
         folder_uuid = folder.uuid
     docking_settings = {
-        "executable": executable,
+        "executable": "vina",
         "scoring_function": scoring_function,
     }
 

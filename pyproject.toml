@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "httpx",
-    "stjames>=0.0.192",
+    "stjames>=0.0.195",
     "setuptools",
     "rdkit",
     "nest-asyncio",
@@ -38,7 +38,6 @@ ruff = ">=0.5"
 mypy = ">=1.10"
 pre-commit = ">=3.7"
 ipython = "*"
-rdkit-stubs = ">=0.7"
 mkdocs-material = "*"
 mkdocstrings-python = "*"
 griffe-pydantic = "*"
@@ -124,6 +123,13 @@ convention = "numpy"
 exclude = ["examples"]
 plugins = ["pydantic.mypy"]
 warn_unused_ignores = false
+
+# The rdkit wheel ships its own .pyi stubs with invalid syntax; skip them and treat rdkit
+# as untyped rather than let the broken stubs abort the type check.
+[[tool.mypy.overrides]]
+module = ["rdkit", "rdkit.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
 
 [tool.pytest.ini_options]
 testpaths = ["rowan"]
