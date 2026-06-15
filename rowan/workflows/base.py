@@ -32,6 +32,7 @@ MultiStageOptSettings = stjames.MultiStageOptSettings
 ETKDGSettings = stjames.ETKDGSettings
 OpenConfSettings = stjames.OpenConfSettings
 ConformerGenSettings = stjames.conformers.ConformerGenSettings
+ConformerClusteringSettings = stjames.ConformerClusteringSettings
 
 
 @dataclass(frozen=True, slots=True)

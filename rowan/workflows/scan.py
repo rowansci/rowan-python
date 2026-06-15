@@ -20,6 +20,8 @@ from .base import (
 )
 from .constants import HARTREE_TO_KCAL
 
+ScanSettingsInput = stjames.ScanSettings | dict[str, Any]
+
 
 @register_result("scan")
 class ScanResult(WorkflowResult):
@@ -61,10 +63,11 @@ class ScanResult(WorkflowResult):
             value (e.g., bond distance in Angstrom, angle in degrees).
         """
         scan_settings = self._workflow.scan_settings
+        scan_settings_2d = getattr(self._workflow, "scan_settings_2d", None) or []
         calculations = self.scan_points
 
         # Compute coordinate values
-        if not scan_settings or len(scan_settings) == 0:
+        if scan_settings_2d or not scan_settings or len(scan_settings) == 0:
             coords = [float(i) for i in range(len(calculations))]
         else:
             settings = scan_settings[0]
@@ -94,12 +97,15 @@ class ScanResult(WorkflowResult):
 
 def submit_scan_workflow(
     initial_molecule: StructureInput,
-    scan_settings: stjames.ScanSettings | dict[str, Any],
+    scan_settings: ScanSettingsInput | list[ScanSettingsInput],
+    scan_settings_2d: ScanSettingsInput | list[ScanSettingsInput] | None = None,
     calculation_engine: str | None = None,
     calculation_method: stjames.Method | str = "omol25_conserving_s",
     basis_set: stjames.BasisSet | str | None = None,
     corrections: list[str] | None = None,
     solvent: SolventInput = None,
+    mode: stjames.Mode | str = "auto",
+    constraints: list[stjames.Constraint] | None = None,
     wavefront_propagation: bool = True,
     name: str = "Scan Workflow",
     folder_uuid: str | None = None,
@@ -112,12 +118,20 @@ def submit_scan_workflow(
     Submits a scan workflow to the API.
 
     :param initial_molecule: Molecule to scan.
-    :param scan_settings: Scan settings.
+    :param scan_settings: coordinate(s) to scan. Pass one ScanSettings (or dict) for a 1D
+        scan, or a list to scan several coordinates simultaneously (concerted); concerted
+        coordinates must all use the same number of points.
+    :param scan_settings_2d: optional additional coordinate(s) scanned as a second dimension,
+        forming a 2D grid with scan_settings. Same single-or-list form as scan_settings.
     :param calculation_engine: Engine to use for the calculation.
     :param calculation_method: Method to use for the calculation.
     :param basis_set: Basis set, see `BasisSet`.
     :param corrections: Dispersion corrections, see `Correction`.
     :param solvent: Solvent to use for the calculation.
+    :param mode: geometry-optimization mode controlling convergence thresholds for each
+        constrained optimization, see `Mode`. Defaults to auto (normally rapid).
+    :param constraints: additional geometric constraints held fixed during every scan-point
+        optimization, beyond the scanned coordinate, see `Constraint`.
     :param wavefront_propagation: Whether to use wavefront propagation in the scan.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
@@ -150,15 +164,17 @@ def submit_scan_workflow(
     calc_settings = stjames.Settings(
         method=calculation_method,
         basis_set=basis_set,
+        mode=mode,
         tasks=["optimize"],
         corrections=corrections or [],
         solvent_settings=solvent_settings,
-        opt_settings={"constraints": []},
+        opt_settings={"constraints": constraints or []},
     )
 
     workflow = stjames.ScanWorkflow(
         initial_molecule=mol_dict,
         scan_settings=scan_settings,
+        scan_settings_2d=scan_settings_2d if scan_settings_2d is not None else [],
         calc_settings=calc_settings,
         calc_engine=calculation_engine or calculation_method.default_engine(),
         wavefront_propagation=wavefront_propagation,

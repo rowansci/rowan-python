@@ -149,6 +149,7 @@ def submit_docking_workflow(
     executable: str = "vina",
     scoring_function: str = "vinardo",
     exhaustiveness: float = 8,
+    max_poses: int = 4,
     do_csearch: bool = False,
     do_optimization: bool = False,
     do_pose_refinement: bool = True,
@@ -168,6 +169,7 @@ def submit_docking_workflow(
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Which exhaustiveness to employ.
+    :param max_poses: Maximum number of poses generated per input conformer.
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param do_pose_refinement: Whether or not to optimize output poses.
@@ -193,6 +195,7 @@ def submit_docking_workflow(
     docking_settings = {
         "executable": executable,
         "exhaustiveness": exhaustiveness,
+        "max_poses": max_poses,
         "scoring_function": scoring_function,
     }
 

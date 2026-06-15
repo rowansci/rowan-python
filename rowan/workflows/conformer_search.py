@@ -11,6 +11,7 @@ from ..types import SolventInput
 from ..utils import api_client
 from .base import (
     SMILES,
+    ConformerClusteringSettings,
     ConformerGenSettings,
     ETKDGSettings,
     Method,
@@ -194,6 +195,7 @@ def submit_conformer_search_workflow(
     solvent: SolventInput = None,
     transition_state: bool = False,
     multistage_opt_settings: MultiStageOptSettings | None = None,
+    conformer_clustering_settings: ConformerClusteringSettings | None = None,
     initial_conformers: list[StructureInput] | None = None,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
@@ -220,7 +222,7 @@ def submit_conformer_search_workflow(
         accepted when `conf_gen_settings` is ``ETKDGSettings`` or ``OpenConfSettings``
         (which build geometry from topology).
     :param conf_gen_settings: Conformer generation method and settings. Defaults to
-        ``ETKDGSettings()``. Available options (importable directly from ``rowan``):
+        ``OpenConfSettings()``. Available options (importable directly from ``rowan``):
 
         - ``ETKDGSettings``  -- RDKit ETKDG, fast, good for most small molecules (SMILES ok)
         - ``OpenConfSettings``  -- OpenConf generator (SMILES ok)
@@ -236,6 +238,9 @@ def submit_conformer_search_workflow(
         for ranking conformers. When provided, takes precedence over
         `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
         built from those three params.
+    :param conformer_clustering_settings: Cluster the generated ensemble (ReSCoSS k-means on
+        3D-shape descriptors) and keep only representative conformers for downstream
+        optimization. Not supported with `initial_conformers`.
     :param initial_conformers: Pre-generated 3D conformers to optimize, deduplicate, and
         rank directly, skipping conformer generation (screen-only mode). Requirements
         (all enforced):
@@ -274,6 +279,12 @@ def submit_conformer_search_workflow(
                 "`conf_gen_settings` must be None when using `initial_conformers`; "
                 "screen-only mode does not generate conformers."
             )
+        if conformer_clustering_settings is not None:
+            raise ValueError(
+                "`conformer_clustering_settings` is not supported with `initial_conformers`; "
+                "clustering selects conformers from a generated ensemble, which screen-only "
+                "mode does not produce."
+            )
         reference_atoms: list[int] | None = None
         for conformer in initial_conformers:
             require_coordinates(conformer)
@@ -292,7 +303,7 @@ def submit_conformer_search_workflow(
         if initial_molecule is None:
             raise ValueError("Provide `initial_molecule` or `initial_conformers`.")
         if conf_gen_settings is None:
-            conf_gen_settings = ETKDGSettings()
+            conf_gen_settings = OpenConfSettings()
         # ETKDG and OpenConf build geometry from a bare SMILES; the other generators
         # (CREST, MCMM) need a real 3D structure.
         generator_builds_geometry = isinstance(conf_gen_settings, (ETKDGSettings, OpenConfSettings))
@@ -322,6 +333,7 @@ def submit_conformer_search_workflow(
         initial_conformers=conformer_dicts,
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
+        conformer_clustering_settings=conformer_clustering_settings,
         solvent=solvent,
         transition_state=transition_state,
     )

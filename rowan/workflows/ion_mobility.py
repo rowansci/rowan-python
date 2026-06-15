@@ -67,6 +67,7 @@ def submit_ion_mobility_workflow(
     :param protonate: Whether or not to automatically detect protonation site.
         If `True`, every basic site will be protonated and values returned for the most stable.
     :param do_csearch: Whether to perform a conformational search on the molecule.
+        Requires do_optimization.
     :param do_optimization: Whether to perform an optimization on the molecule.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
@@ -78,6 +79,11 @@ def submit_ion_mobility_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
+    if do_csearch and not do_optimization:
+        raise ValueError(
+            "`do_optimization` must be True when `do_csearch` is True; the conformers from "
+            "the search must be optimized before the CCS calculation."
+        )
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

@@ -129,7 +129,7 @@ def submit_pka_workflow(
     pka_range: tuple[int, int] = (2, 12),
     method: Literal[
         "aimnet2_wagen2024", "gxtb_wagen2026", "chemprop_nevolianis2025", "starling"
-    ] = "aimnet2_wagen2024",
+    ] = "gxtb_wagen2026",
     solvent: SolventInput = "water",
     deprotonate_elements: list[int] | None = None,
     protonate_elements: list[int] | None = None,

@@ -104,7 +104,7 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     Submits a hydrogen-bond donor/acceptor-strength workflow to the API.
 
     :param initial_molecule: Molecule to calculate HBA/HBD strength for.
-    :param do_csearch: Whether to perform a conformational search.
+    :param do_csearch: Whether to perform a conformational search. Requires do_optimization.
     :param do_optimization: Whether to perform an optimization.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
@@ -116,6 +116,11 @@ def submit_hydrogen_bond_donor_acceptor_strength_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
+    if do_csearch and not do_optimization:
+        raise ValueError(
+            "`do_optimization` must be True when `do_csearch` is True; the conformers from "
+            "the search must be optimized before hydrogen-bond strengths are predicted."
+        )
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

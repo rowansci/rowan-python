@@ -35,7 +35,7 @@ class DescriptorsResult(WorkflowResult):
 
 def submit_descriptors_workflow(
     initial_molecule: StructureInput,
-    solvent: SolventInput = "water",
+    solvent: SolventInput = None,
     do_optimization: bool = True,
     name: str = "Descriptors Workflow",
     folder_uuid: str | None = None,
@@ -49,7 +49,8 @@ def submit_descriptors_workflow(
 
     :param initial_molecule: Molecule to calculate the descriptors of.
     :param solvent: Solvent for COSMO descriptor calculation (e.g. "water").
-        When provided, additional COSMO descriptors are computed.
+        Defaults to None (gas phase). When provided, additional COSMO descriptors
+        are computed.
     :param do_optimization: Whether to run GFN2-xTB geometry optimization
         before computing descriptors.
     :param name: Name of the workflow.

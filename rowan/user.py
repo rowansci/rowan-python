@@ -68,6 +68,10 @@ class User(BaseModel):
     :ivar organization: Organization of the user.
     :ivar organization_role: Organization role of the user.
     :ivar individual_subscription: Individual subscription of the user.
+    :ivar enabled_workflows: Workflow types this account may submit, as backend slugs that
+        mostly match the ``submit_<slug>_workflow`` names (note ``molecular_dynamics`` is
+        protein MD).
+    :ivar feature_list: Feature flags enabled for this account.
     """
 
     uuid: str
@@ -83,6 +87,8 @@ class User(BaseModel):
     organization: Organization | None = None
     organization_role: OrganizationRole | None = None
     individual_subscription: IndividualSubscription | None = None
+    enabled_workflows: list[str] = []
+    feature_list: list[str] = []
 
     @property
     def name(self) -> str:

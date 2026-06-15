@@ -9,7 +9,6 @@ Basic pattern:
 
 from stjames import (
     ETKDGSettings,
-    LyrebirdSettings,
     MonteCarloMultipleMinimumSettings,
     SolventModel,
     iMTDGCSettings,

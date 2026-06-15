@@ -118,8 +118,8 @@ def submit_tautomer_search_workflow(
     Submits a tautomer-search workflow to the API.
 
     :param initial_molecule: Molecule to find tautomers for.
-    :param conf_gen_settings: Conformer generation settings. Defaults to ETKDG with
-        250 initial conformers, 20 max conformers, and 15 kcal/mol MMFF energy cutoff.
+    :param conf_gen_settings: Conformer generation settings. Defaults to OpenConf with
+        20 max conformers.
     :param multistage_opt_settings: Optimization stages and singlepoint settings
         describing the method stack. Defaults to AIMNet2/wB97M-D3 optimization with
         CPCMx(water) singlepoint.

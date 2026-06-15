@@ -132,8 +132,11 @@ class SpinStatesResult(WorkflowResult):
 
 def submit_spin_states_workflow(
     initial_molecule: StructureInput,
-    states: list[int],
+    states: list[int] | None = None,
     multistage_opt_settings: MultiStageOptSettings | None = None,
+    frequencies: bool = False,
+    transition_state: bool = False,
+    constraints: list[stjames.Constraint] | None = None,
     name: str = "Spin States Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -149,9 +152,14 @@ def submit_spin_states_workflow(
 
     :param initial_molecule: Molecule to calculate spin states for.
     :param states: List of multiplicities to calculate
-        (e.g., [1, 3, 5] for singlet, triplet, quintet).
+        (e.g., [1, 3, 5] for singlet, triplet, quintet). Defaults to [1, 3, 5]
+        for even-electron molecules and [2, 4, 6] for odd-electron molecules.
     :param multistage_opt_settings: Optimization stages and singlepoint settings
         describing the method stack.
+    :param frequencies: if True, compute frequencies on the final optimization of each state.
+    :param transition_state: if True, optimize each state to a transition state.
+    :param constraints: geometric constraints held fixed during every state's optimization,
+        see `Constraint`.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -169,6 +177,9 @@ def submit_spin_states_workflow(
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
+    if states is None:
+        states = [1, 3, 5] if mol_dict.get("multiplicity", 1) % 2 else [2, 4, 6]
+
     # Validate that all multiplicities are compatible with the molecule
     for mult in states:
         _validate_multiplicity(mol_dict, mult)
@@ -180,6 +191,41 @@ def submit_spin_states_workflow(
             ],
             singlepoint_settings=Settings(method=Method.R2SCAN3C, tasks=[Task.ENERGY]),
         )
+
+    if transition_state:
+        multistage_opt_settings = multistage_opt_settings.model_copy(
+            update={
+                "optimization_settings": [
+                    stage.model_copy(
+                        update={
+                            "opt_settings": stage.opt_settings.model_copy(
+                                update={"transition_state": True}
+                            )
+                        }
+                    )
+                    for stage in multistage_opt_settings.optimization_settings
+                ]
+            }
+        )
+
+    if constraints:
+        multistage_opt_settings = multistage_opt_settings.model_copy(
+            update={
+                "optimization_settings": [
+                    stage.model_copy(
+                        update={
+                            "opt_settings": stage.opt_settings.model_copy(
+                                update={"constraints": constraints}
+                            )
+                        }
+                    )
+                    for stage in multistage_opt_settings.optimization_settings
+                ]
+            }
+        )
+
+    if frequencies:
+        multistage_opt_settings = multistage_opt_settings.model_copy(update={"frequencies": True})
 
     workflow = stjames.SpinStatesWorkflow(
         initial_molecule=mol_dict,

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 import stjames
-from stjames import ConformerGenSettingsUnion, iMTDSettings
+from stjames import ConformerGenSettingsUnion
 
 from ..folder import Folder
 from ..utils import api_client
@@ -114,7 +114,6 @@ def submit_solvent_dependent_conformers_workflow(
     initial_molecule: StructureInput,
     solvents: list[Solvent] | None = None,
     conf_gen_settings: ConformerGenSettingsUnion | None = None,
-    energy_window: float = 30,
     name: str = "Solvent-Dependent Conformers",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -132,12 +131,11 @@ def submit_solvent_dependent_conformers_workflow(
     :param initial_molecule: Molecule with 3D coordinates to perform the conformer search on.
     :param solvents: Solvents to score conformers in (``rowan.Solvent`` enum).
         Defaults to hexane, octanol, chloroform, DMSO, and water.
-    :param conf_gen_settings: Conformer generation settings. Defaults to
-        ``rowan.iMTDSettings`` with GFN-FF and 30 kcal/mol energy window.
-        Other options: ``rowan.ETKDGSettings``, ``rowan.iMTDGCSettings``,
-        ``rowan.LyrebirdSettings``.
-    :param energy_window: Energy window for conformer generation (kcal/mol).
-        Only used when ``conf_gen_settings`` is None.
+    :param conf_gen_settings: Conformer generation settings. When omitted, inherits the
+        stjames default for this workflow (currently OpenConf). Other options:
+        ``rowan.ETKDGSettings``, ``rowan.iMTDSettings``, ``rowan.iMTDGCSettings``.
+        Set the energy window (and any other generator parameter) on this object;
+        each type carries its own stjames default.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -154,22 +152,12 @@ def submit_solvent_dependent_conformers_workflow(
     if folder:
         folder_uuid = folder.uuid
 
-    if conf_gen_settings is None:
-        conf_gen_settings = iMTDSettings(
-            max_confs=None,
-            speed="normal",
-            solvent_settings={"solvent": "water", "model": "alpb"},
-            reopt=False,
-            mtd_method="gfn_ff",
-            energy_window=energy_window,
-        )
-
     mol_dict = molecule_to_dict(initial_molecule)
 
     workflow = stjames.SolventDependentConformersWorkflow(
         initial_molecule=mol_dict,
-        conf_gen_settings=conf_gen_settings,
         solvents=solvents if solvents is not None else _DEFAULT_SOLVENTS,
+        **({"conf_gen_settings": conf_gen_settings} if conf_gen_settings is not None else {}),
     )
 
     data = {

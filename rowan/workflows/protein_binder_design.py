@@ -169,7 +169,8 @@ def submit_protein_binder_design_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If protocol is not a valid BinderProtocol.
+    :raises ValueError: If protocol is not a valid BinderProtocol, or if no protein_entities
+        sequence contains a designable region.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if folder and folder_uuid:
@@ -182,6 +183,18 @@ def submit_protein_binder_design_workflow(
         valid = [p.value for p in BinderProtocol]
         if protocol not in valid:
             raise ValueError(f"Invalid protocol '{protocol}'. Must be one of: {', '.join(valid)}")
+
+    protein_entities = binder_design_input.get("protein_entities") or []
+    if not any(
+        any(char.isdigit() for char in (entity.get("sequence") or ""))
+        for entity in protein_entities
+        if isinstance(entity, dict)
+    ):
+        raise ValueError(
+            "binder_design_input must include at least one `protein_entities` sequence with a "
+            "designable region (a numeric or patterned spec such as '140..180' or '9A9C'); "
+            "without one, BoltzGen has nothing to design."
+        )
 
     workflow = stjames.ProteinBinderDesignWorkflow(
         binder_design_input=binder_design_input,

@@ -373,7 +373,7 @@ class ConformerGeneratorSettings:
     solvent_warning: bool = False
 
 
-# Main group elements for ETKDG/Lyrebird
+# Main group elements for ETKDG
 _MAIN_GROUP = {1, 5, 6, 7, 8, 9, 14, 15, 16, 17, 35, 53}
 
 CONFORMER_GENERATOR_SETTINGS: dict[str, ConformerGeneratorSettings] = {
@@ -394,12 +394,6 @@ CONFORMER_GENERATOR_SETTINGS: dict[str, ConformerGeneratorSettings] = {
         disable_open_shell=True,
         disable_ts=True,
         allowed_engines=["aimnet2", "xtb"],  # MCMM only supports these for energy
-    ),
-    "lyrebird": ConformerGeneratorSettings(
-        disable_constraints=True,
-        disable_open_shell=True,
-        disable_ts=True,
-        atoms_supported=_MAIN_GROUP,
     ),
 }
 

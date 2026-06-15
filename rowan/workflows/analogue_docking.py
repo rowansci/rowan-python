@@ -175,6 +175,8 @@ def submit_analogue_docking_workflow(
     initial_molecule: StructureInput,
     protein: str | Protein,
     scoring_function: Literal["vina", "vinardo"] = "vinardo",
+    exhaustiveness: int = 8,
+    max_poses: int = 4,
     num_conformers_per_analogue: int = 100,
     require_posebusters: bool = False,
     run_local_optimization: bool = False,
@@ -192,6 +194,8 @@ def submit_analogue_docking_workflow(
     :param initial_molecule: Template to which to align molecules to.
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param scoring_function: Docking scoring function: "vina" or "vinardo".
+    :param exhaustiveness: How many times Vina attempts to find a pose for each conformer.
+    :param max_poses: Maximum number of poses generated per input conformer.
     :param num_conformers_per_analogue: Maximum number of conformers to generate per analogue.
     :param require_posebusters: Filter conformers based on PoseBusters validity before docking.
     :param run_local_optimization: Whether to run a local opt in docking pocket or just score.
@@ -212,6 +216,8 @@ def submit_analogue_docking_workflow(
     docking_settings = {
         "executable": "vina",
         "scoring_function": scoring_function,
+        "exhaustiveness": exhaustiveness,
+        "max_poses": max_poses,
     }
 
     mol_dict = molecule_to_dict(initial_molecule)

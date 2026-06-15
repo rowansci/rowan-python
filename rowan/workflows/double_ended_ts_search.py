@@ -152,7 +152,7 @@ def submit_double_ended_ts_search_workflow(
     product: StructureInput,
     calculation_settings: stjames.Settings | dict[str, Any] | None = None,
     search_settings: FSMSettings | dict[str, Any] | None = None,
-    optimize_inputs: bool = False,
+    optimize_inputs: bool = True,
     optimize_ts: bool = True,
     name: str = "Double-Ended TS Search Workflow",
     folder_uuid: str | None = None,

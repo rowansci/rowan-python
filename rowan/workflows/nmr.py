@@ -101,7 +101,7 @@ class NMRResult(WorkflowResult):
 def submit_nmr_workflow(
     initial_molecule: StructureInput,
     solvent: SolventInput = "chloroform",
-    do_csearch: bool = True,
+    do_csearch: bool = False,
     do_optimization: bool = True,
     name: str = "NMR Workflow",
     folder_uuid: str | None = None,
@@ -115,7 +115,7 @@ def submit_nmr_workflow(
 
     :param initial_molecule: Molecule to predict NMR spectra for.
     :param solvent: Solvent for NMR calculation (default: chloroform).
-    :param do_csearch: Whether to perform a conformational search.
+    :param do_csearch: Whether to perform a conformational search. Requires do_optimization.
     :param do_optimization: Whether to optimize conformer geometries.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to store the workflow in.
@@ -127,6 +127,11 @@ def submit_nmr_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
+    if do_csearch and not do_optimization:
+        raise ValueError(
+            "`do_optimization` must be True when `do_csearch` is True; the conformers from "
+            "the search must be optimized before NMR prediction."
+        )
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:

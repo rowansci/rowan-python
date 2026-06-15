@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import stjames
+from stjames import GreedyClusteringSettings, KMeansClusteringSettings
 
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
@@ -19,11 +20,25 @@ class TrajectoryResult:
     :param uuid: UUID of the trajectory calculation.
     :param ligand_rmsd: Ligand RMSD values over time (Angstrom).
     :param contacts: Ligand-protein contacts with occupancy over the trajectory.
+    :param sasa: Solvent-accessible surface area per analyzed frame (populated when
+        analysis_interval_ps is set).
+    :param polar_sasa: Polar solvent-accessible surface area per analyzed frame (populated when
+        analysis_interval_ps is set).
+    :param isotropic_radius_of_gyration: Radius of gyration per analyzed frame.
+    :param cluster_centroid_indices: Frame indices of the cluster centroids (populated when
+        clustering is set).
+    :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
+        is set).
     """
 
     uuid: str
     ligand_rmsd: list[float]
     contacts: list[stjames.BindingPoseContact]
+    sasa: list[float | None]
+    polar_sasa: list[float | None]
+    isotropic_radius_of_gyration: list[float]
+    cluster_centroid_indices: list[int]
+    cluster_indices_by_frame: list[int]
 
 
 @register_result("pose_analysis_md")
@@ -45,7 +60,16 @@ class PoseAnalysisMDResult(WorkflowResult):
         """
         raw = self._workflow.trajectories or []
         return [
-            TrajectoryResult(uuid=t.uuid, ligand_rmsd=t.ligand_rmsd, contacts=t.contacts)
+            TrajectoryResult(
+                uuid=t.uuid,
+                ligand_rmsd=t.ligand_rmsd,
+                contacts=t.contacts,
+                sasa=t.sasa,
+                polar_sasa=t.polar_sasa,
+                isotropic_radius_of_gyration=t.isotropic_radius_of_gyration,
+                cluster_centroid_indices=t.cluster_centroid_indices,
+                cluster_indices_by_frame=t.cluster_indices_by_frame,
+            )
             for t in raw
         ]
 
@@ -153,12 +177,15 @@ def submit_pose_analysis_md_workflow(
     timestep_fs: float = 2,
     constrain_hydrogens: bool = True,
     nonbonded_cutoff: float = 8.0,
-    ionic_strength_M: float = 0.10,
-    water_buffer: float = 6.0,
+    ionic_strength_M: float = 0.0,
+    water_buffer: float = 10.0,
     ligand_residue_name: str = "LIG",
-    protein_restraint_cutoff: float = 7.0,
+    protein_restraint_cutoff: float | None = 7.0,
     protein_restraint_constant: float = 100,
     save_solvent: bool = False,
+    num_solvent_to_save: int | None = None,
+    analysis_interval_ps: float | None = None,
+    clustering: KMeansClusteringSettings | GreedyClusteringSettings | None = None,
     validate_forcefield: bool = True,
     name: str = "Pose-Analysis MD Workflow",
     folder_uuid: str | None = None,
@@ -185,9 +212,16 @@ def submit_pose_analysis_md_workflow(
     :param nonbonded_cutoff: Nonbonded cutoff for particle-mesh Ewald, in Å.
     :param ionic_strength_M: Ionic strength of the solution, in M (molar).
     :param water_buffer: Amount of water to add around the protein, in Å.
-    :param protein_restraint_cutoff: Cutoff past which alpha-carbons will be constrained, in Å.
+    :param protein_restraint_cutoff: Cutoff past which alpha-carbons will be constrained, in Å,
+        measured from the ligand. None applies no restraints.
     :param protein_restraint_constant: Force constant for backbone restraints, in kcal/mol/Å².
     :param save_solvent: Whether to save solvent molecules.
+    :param num_solvent_to_save: Number of solvent molecules to save (the N nearest the ligand each
+        frame). None saves all solvent when save_solvent is True.
+    :param analysis_interval_ps: Interval at which to compute per-frame SASA and polar SASA, in ps.
+        None disables those analyses.
+    :param clustering: How to cluster trajectory frames. None disables clustering; pass a
+        KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom).
     :param validate_forcefield: if True (default), validate the protein forcefield
         compatibility before submitting. Raises an error early if the protein cannot
         be parameterized or has clashing residues.
@@ -228,6 +262,9 @@ def submit_pose_analysis_md_workflow(
         protein_restraint_cutoff=protein_restraint_cutoff,
         protein_restraint_constant=protein_restraint_constant,
         save_solvent=save_solvent,
+        num_solvent_to_save=num_solvent_to_save,
+        analysis_interval_ps=analysis_interval_ps,
+        clustering=clustering,
     )
 
     data = {

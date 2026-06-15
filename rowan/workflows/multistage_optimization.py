@@ -124,6 +124,7 @@ def submit_multistage_optimization_workflow(
     optimization_settings: Sequence[Settings] | None = None,
     singlepoint_settings: Settings | None = None,
     frequencies: bool = False,
+    transition_state: bool = False,
     name: str = "Multistage Optimization Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -134,13 +135,15 @@ def submit_multistage_optimization_workflow(
     """
     Submits a multistage-optimization workflow to the API.
 
-    Defaults to a 3-stage `r2scan_3c//gfn2_xtb//gfn_ff` stack.
+    Defaults to a `r2scan_3c//gfn2_xtb` stack (GFN2-xTB optimization, r2SCAN-3c single point).
 
     :param initial_molecule: Molecule to optimize.
     :param optimization_settings: Optimization stages to apply in order.
     :param singlepoint_settings: Final singlepoint settings, applied after the
         last optimization stage.
     :param frequencies: Whether to calculate frequencies on the last optimization step.
+    :param transition_state: Optimize to a transition state rather than a minimum. Applies to
+        every optimization stage, so a transition-state guess is not relaxed to a minimum.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -159,11 +162,20 @@ def submit_multistage_optimization_workflow(
 
     if optimization_settings is None:
         optimization_settings = [
-            Settings(method=Method.GFN_FF, tasks=[Task.OPTIMIZE]),
             Settings(method=Method.GFN2_XTB, tasks=[Task.OPTIMIZE]),
         ]
     if singlepoint_settings is None:
         singlepoint_settings = Settings(method=Method.R2SCAN3C, tasks=[Task.ENERGY])
+
+    if transition_state:
+        optimization_settings = [
+            stage.model_copy(
+                update={
+                    "opt_settings": stage.opt_settings.model_copy(update={"transition_state": True})
+                }
+            )
+            for stage in optimization_settings
+        ]
 
     workflow = stjames.MultiStageOptWorkflow(
         initial_molecule=mol_dict,

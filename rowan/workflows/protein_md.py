@@ -1,13 +1,40 @@
 """Protein MD workflow - molecular dynamics simulations for proteins."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import stjames
+from stjames import GreedyClusteringSettings, KMeansClusteringSettings
 
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
+
+
+@dataclass(frozen=True, slots=True)
+class ProteinMDTrajectory:
+    """
+    Results from a single protein-MD trajectory replicate.
+
+    :param uuid: UUID of the trajectory calculation.
+    :param sasa: Solvent-accessible surface area per analyzed frame (populated when
+        analysis_interval_ps is set).
+    :param polar_sasa: Polar solvent-accessible surface area per analyzed frame (populated when
+        analysis_interval_ps is set).
+    :param isotropic_radius_of_gyration: Radius of gyration per analyzed frame.
+    :param cluster_centroid_indices: Frame indices of the cluster centroids (populated when
+        clustering is set).
+    :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
+        is set).
+    """
+
+    uuid: str
+    sasa: list[float | None]
+    polar_sasa: list[float | None]
+    isotropic_radius_of_gyration: list[float]
+    cluster_centroid_indices: list[int]
+    cluster_indices_by_frame: list[int]
 
 
 @register_result("protein_md")
@@ -25,6 +52,22 @@ class ProteinMDResult(WorkflowResult):
         """UUIDs of all trajectory calculations."""
         raw = getattr(self._workflow, "trajectories", []) or []
         return [t.uuid for t in raw]
+
+    @property
+    def trajectories(self) -> list[ProteinMDTrajectory]:
+        """Per-replicate trajectory results (SASA, radius of gyration, cluster assignments)."""
+        raw = getattr(self._workflow, "trajectories", []) or []
+        return [
+            ProteinMDTrajectory(
+                uuid=t.uuid,
+                sasa=t.sasa,
+                polar_sasa=t.polar_sasa,
+                isotropic_radius_of_gyration=t.isotropic_radius_of_gyration,
+                cluster_centroid_indices=t.cluster_centroid_indices,
+                cluster_indices_by_frame=t.cluster_indices_by_frame,
+            )
+            for t in raw
+        ]
 
     @property
     def minimized_protein_uuid(self) -> str | None:
@@ -103,9 +146,11 @@ def submit_protein_md_workflow(
     timestep_fs: float = 2,
     constrain_hydrogens: bool = True,
     nonbonded_cutoff: float = 8.0,
-    ionic_strength_M: float = 0.10,
-    water_buffer: float = 6.0,
+    ionic_strength_M: float = 0.0,
+    water_buffer: float = 10.0,
     save_solvent: bool = False,
+    analysis_interval_ps: float | None = None,
+    clustering: KMeansClusteringSettings | GreedyClusteringSettings | None = None,
     validate_forcefield: bool = True,
     name: str = "Protein MD Workflow",
     folder_uuid: str | None = None,
@@ -131,6 +176,10 @@ def submit_protein_md_workflow(
     :param ionic_strength_M: ionic strength of the solution, in M (molar)
     :param water_buffer: amount of water to add around the protein, in A
     :param save_solvent: whether solvent should be saved
+    :param analysis_interval_ps: Interval at which to compute per-frame SASA and polar SASA, in ps.
+        None disables those analyses.
+    :param clustering: How to cluster trajectory frames. None disables clustering; pass a
+        KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom).
     :param validate_forcefield: if True (default), validate the protein forcefield
         compatibility before submitting. Raises an error early if the protein cannot
         be parameterized or has clashing residues.
@@ -167,6 +216,8 @@ def submit_protein_md_workflow(
         ionic_strength_M=ionic_strength_M,
         water_buffer=water_buffer,
         save_solvent=save_solvent,
+        analysis_interval_ps=analysis_interval_ps,
+        clustering=clustering,
     )
 
     data = {

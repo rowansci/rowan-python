@@ -285,7 +285,7 @@ def submit_protein_cofolding_workflow(
     :param pocket_constraints: Boltz pocket constraints between a binder and contact tokens.
     :param templates: Structural templates to guide prediction (Boltz-2 or OpenFold-3 only).
     :param num_samples: Number of diffusion samples to generate. If None, uses the model default.
-    :param compute_strain: Whether to compute the strain of the pose
+    :param compute_strain: Whether to compute the strain of the pose. Requires do_pose_refinement.
         (if `pose_refinement` is enabled).
     :param do_pose_refinement: Whether to optimize non-rotatable bonds in output poses.
     :param name: Name of the workflow.
@@ -306,6 +306,11 @@ def submit_protein_cofolding_workflow(
     # At least one sequence type is required
     if not (initial_protein_sequences or initial_dna_sequences or initial_rna_sequences):
         raise ValueError("At least one protein, DNA, or RNA sequence is required for cofolding")
+    if compute_strain and not do_pose_refinement:
+        raise ValueError(
+            "`do_pose_refinement` must be True when `compute_strain` is True; strain is "
+            "estimated against the refined pose."
+        )
 
     # Validate and convert model
     if isinstance(model, CofoldingModel):
