@@ -23,10 +23,10 @@ class CofoldingScores:
     """
     Confidence scores for a cofolding prediction.
 
-    :param ptm: Predicted TM-score (0-1, higher is better).
-    :param iptm: Interface predicted TM-score (0-1, higher is better).
-    :param avg_lddt: Average per-residue LDDT confidence (0-1).
-    :param confidence_score: Overall confidence score (0-1).
+    :param ptm: Predicted TM-score, overall structure confidence (0-1, higher is better).
+    :param iptm: Interface pTM, inter-chain packing confidence (0-1, higher is better).
+    :param avg_lddt: Mean per-residue pLDDT, local atomic accuracy (0-1, higher is better).
+    :param confidence_score: Overall aggregate confidence in the prediction (0-1, higher is better).
     """
 
     ptm: float | None = None
@@ -40,12 +40,26 @@ class AffinityScore:
     """
     Predicted binding affinity scores.
 
-    :param pred_value: Predicted binding affinity (ensemble average).
-    :param pred_value1: Predicted binding affinity (model 1).
-    :param pred_value2: Predicted binding affinity (model 2).
-    :param probability_binary: Probability of binding (ensemble average, 0-1).
-    :param probability_binary1: Probability of binding (model 1, 0-1).
-    :param probability_binary2: Probability of binding (model 2, 0-1).
+    Every field is optional; which ones a given run populates depends on the
+    cofolding model. In current runs Boltz-2 fills the pred_value and
+    probability_binary fields while Boltz-2.1 fills binding_confidence and
+    optimization_score, but the schema does not guarantee this split.
+
+    :param pred_value: Predicted pIC50, -log10(IC50 in M); higher means stronger
+        binding (ensemble average of the two affinity heads).
+    :param pred_value1: Predicted pIC50 from affinity head 1.
+    :param pred_value2: Predicted pIC50 from affinity head 2.
+    :param probability_binary: Predicted probability (0-1) that the ligand binds
+        its target; higher is better (ensemble average of the two affinity heads).
+    :param probability_binary1: Binding probability (0-1) from affinity head 1.
+    :param probability_binary2: Binding probability (0-1) from affinity head 2.
+    :param binding_confidence: Predicted probability (0-1, higher is better) that
+        the molecule or binder is a true binder rather than a decoy. Primary metric
+        for hit discovery (computed when binding is requested).
+    :param optimization_score: Binding-strength ranking derived from the model's
+        predicted log(IC50) affinity; higher means stronger predicted binding. Use
+        to rank-order likely binders during lead optimization (computed when binding
+        is requested).
     """
 
     pred_value: float | None = None
@@ -54,6 +68,8 @@ class AffinityScore:
     probability_binary: float | None = None
     probability_binary1: float | None = None
     probability_binary2: float | None = None
+    binding_confidence: float | None = None
+    optimization_score: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,6 +246,8 @@ class ProteinCofoldingResult(WorkflowResult):
                 probability_binary=a.get("probability_binary"),
                 probability_binary1=a.get("probability_binary1"),
                 probability_binary2=a.get("probability_binary2"),
+                binding_confidence=a.get("binding_confidence"),
+                optimization_score=a.get("optimization_score"),
             )
         return AffinityScore(
             pred_value=a.pred_value,
@@ -238,6 +256,8 @@ class ProteinCofoldingResult(WorkflowResult):
             probability_binary=a.probability_binary,
             probability_binary1=a.probability_binary1,
             probability_binary2=a.probability_binary2,
+            binding_confidence=getattr(a, "binding_confidence", None),
+            optimization_score=getattr(a, "optimization_score", None),
         )
 
 
@@ -271,7 +291,7 @@ def submit_protein_cofolding_workflow(
 
     See `examples/protein_cofolding_with_constraints.py` for a worked example
     of using `ConstraintTarget`, `ContactConstraint`, and `PocketConstraint`
-    (Boltz-2 only).
+    (Boltz models only).
 
     :param initial_protein_sequences: Protein sequences to be cofolded.
     :param initial_dna_sequences: DNA sequences to be cofolded.
@@ -283,13 +303,15 @@ def submit_protein_cofolding_workflow(
     :param use_potentials: Whether to use potentials (inference-time steering) with Boltz.
     :param contact_constraints: Boltz contact constraints between two tokens.
     :param pocket_constraints: Boltz pocket constraints between a binder and contact tokens.
-    :param templates: Structural templates to guide prediction (Boltz-2 or OpenFold-3 only).
+    :param templates: Structural templates to guide prediction (Boltz-2/2.1 or OpenFold-3 only).
     :param num_samples: Number of diffusion samples to generate. If None, uses the model default.
     :param compute_strain: Whether to compute the strain of the pose. Requires do_pose_refinement.
         (if `pose_refinement` is enabled).
     :param do_pose_refinement: Whether to optimize non-rotatable bonds in output poses.
     :param name: Name of the workflow.
-    :param model: Model to use for the computation.
+    :param model: Model to use for the computation. Boltz-2.1 runs via Boltz's
+        hosted API (slower than the locally-run models) and reports a different
+        set of affinity metrics than Boltz-2 (see `AffinityScore`).
     :param folder_uuid: UUID of the folder to store the workflow in.
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
