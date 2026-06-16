@@ -1,0 +1,27 @@
+name: Publish Skill Zip
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'skills/computational-chemistry-and-biology/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'rowansci/rowan-python'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip skill
+        run: cd skills && zip -r ../computational-chemistry-and-biology-skill.zip computational-chemistry-and-biology
+      - name: Publish/refresh release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: skill-latest
+          name: "Computational Chemistry & Biology Skill (latest)"
+          prerelease: true
+          files: computational-chemistry-and-biology-skill.zip
