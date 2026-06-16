@@ -16,6 +16,8 @@ The documentation is available [here](https://docs.rowansci.com/python-api).
 
 Ships with a [skill](skills/computational-chemistry-and-biology/) that makes it easy for coding agents to use Rowan's tools to power chemistry and biology tasks. To use it, copy the directory into your agent's skills folder.
 
+Download the latest skill as a zip [here](https://github.com/rowansci/rowan-python/releases/download/skill-latest/computational-chemistry-and-biology-skill.zip), then unzip it into your agent's skills folder.
+
 ## Running examples
 
 To run the examples, you will need to set your ROWAN_API_KEY environment variable or set it directly in the script.
