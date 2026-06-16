@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'skills/computational-chemistry-and-biology/**'
+      - '.github/workflows/publish-skill.yml'
   workflow_dispatch:
 
 permissions:
