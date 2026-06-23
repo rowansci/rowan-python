@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Literal
 
 import stjames
-from stjames.workflows.relative_binding_free_energy_perturbation import TMDRBFESettings
+from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, TMDRBFESettings
 
 from ..folder import Folder
 from ..molecule import Molecule
@@ -85,6 +85,16 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     def ligands(self) -> dict[str, Molecule]:
         """Ligand molecules keyed by identifier."""
         return {k: Molecule.from_stjames(v) for k, v in self._workflow.ligands.items()}
+
+    @property
+    def protein(self) -> Protein:
+        """Prepared protein structure used as the simulation target."""
+        return Protein(uuid=str(self._workflow.protein))
+
+    @property
+    def graph(self) -> RBFEGraph | None:
+        """The RBFE graph with per-edge results, or None if not constructed."""
+        return self._workflow.graph
 
     @property
     def edges(self) -> list[RelativeBindingFreeEnergyGraphEdge]:

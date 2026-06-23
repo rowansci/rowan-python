@@ -9,7 +9,7 @@ import rowan
 #   2. The last segment of the workflow URL in the Rowan UI:
 #      https://labs.rowansci.com/.../<uuid>
 #   3. Listed via rowan.list_workflows()
-workflow = rowan.retrieve_workflow("619fedc2-d8e9-4bbc-8780-170108d1f674")
+workflow = rowan.retrieve_workflow("your-workflow-uuid")
 
 result = workflow.result()
 print(result)

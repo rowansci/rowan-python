@@ -2,7 +2,7 @@
 
 ## Input
 
-A completed perturbation graph and a prepared protein.
+A completed RBFE graph and a prepared protein.
 
 - `graph_result`: a `RelativeBindingFreeEnergyGraphResult` from the RBFE graph workflow, which turns a congeneric ligand series into the graph of ligand pairs FEP transforms between.
 - `protein`: a `rowan.Protein` or its UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(name, pdb_code, project_uuid=...)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
@@ -12,9 +12,12 @@ This workflow runs FEP simulations along the graph edges to predict relative bin
 ## Practical notes
 
 - Accuracy depends heavily on the quality of the input poses. Start from a crystallographic protein–ligand complex when one is available; docked or co-folded poses also work, but only if they are physically valid and free of steric clashes.
-- Simulate each ligand in the protonation state and tautomer it actually adopts in solution. Modeling the wrong state can give completely wrong predictions, so check ionizable ligands with a pKa/tautomer tool (e.g. the macro-pKa workflow) before building the graph.
+- Pose preparation is a major error source, and the hard part is *selection*, not generation. The strain workflow is a cheap pre-screen: docked poses often carry high internal strain (>5 kcal/mol), while physical poses are systematically lower-energy — drop the high-strain ones before building the graph.
+- Simulate each ligand in the protonation state and tautomer it actually adopts in solution; the wrong state can give completely wrong predictions. Check ionizable ligands with a pKa/tautomer tool (e.g. the macro-pKa workflow) first.
+- Avoid net-charge-changing perturbations: they require co-alchemical handling of a compensating ion that mixes poorly and rarely converges, giving unreliable ddG. Run each charge state as its own graph (they share no edges, so anchor each to experimental data to compare across them). The graph workflow enforces this — all ligands in a graph must share one formal charge.
 - Expect roughly 10–20 minutes of compute per graph edge with the `recommended` profile. `rigorous` is much slower; `fast` is quicker, though less dramatically so.
 - Rowan's FEP engine (TMD) gets its speed largely from *local resampling* — concentrating MD effort on the region around the perturbed atoms rather than the whole system. This is the main lever behind the profiles: `recommended` uses it, while `rigorous` turns it off for an apples-to-apples comparison with conventional FEP.
+- To add ligands to a finished study, pass its `graph` back as `seed_graph` to the graph workflow and resubmit. Existing edges keep their ddG and only the new ligand's edges run. See the RBFE graph reference.
 
 ## Example
 
@@ -28,7 +31,7 @@ data_dir = Path("examples/data")
 protein = rowan.upload_protein("TYK2", data_dir / "tyk2_structure.pdb")
 protein.prepare()
 
-# Step 1: build the perturbation graph from ligands with 3D coordinates.
+# Step 1: build the RBFE graph from ligands with 3D coordinates.
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
 graph_wf = rowan.submit_relative_binding_free_energy_graph_workflow(
     ligands=ligands,
@@ -83,5 +86,7 @@ These are FEP internals that the `tmd_settings` profile already sets; override o
 
 - `ligand_dg_results`: per-ligand binding free energy results (`res.dg`, `res.dg_err`), as shown above.
 - `edges`: graph edges with per-edge FEP results.
+- `graph`: the RBFE graph with per-edge results; pass back as `seed_graph` to extend the study.
+- `protein`: the target `rowan.Protein`.
 - `diagnostics`: aggregate QC metrics from the FEP simulation.
 - `ligands`: the input ligand molecules, keyed by identifier.

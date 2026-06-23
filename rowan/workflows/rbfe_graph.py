@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import stjames
+from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph
 
 from ..folder import Folder
 from ..molecule import Molecule
@@ -57,13 +58,9 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
         return {k: Molecule.from_stjames(v) for k, v in self._workflow.ligands.items()}
 
     @property
-    def graph(self) -> dict | None:
-        """
-        The constructed RBFE perturbation graph as a dict, or None if not yet computed.
-
-        Pass directly to ``submit_rbfe_perturbation_workflow(graph=...)``.
-        """
-        return g.model_dump(mode="json") if (g := self._workflow.graph) else None
+    def graph(self) -> RBFEGraph | None:
+        """The constructed RBFE graph, or None if not yet computed."""
+        return self._workflow.graph
 
     @property
     def edges(self) -> list[RelativeBindingFreeEnergyGraphEdge]:
@@ -99,6 +96,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     greedy_scoring: Literal["best", "jaccard", "dummy_atoms"] = "best",
     greedy_k_min_cut: int = 3,
     refine_cutoff: float | None = None,
+    seed_graph: RBFEGraph | None = None,
     name: str = "RBFE Graph",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -119,6 +117,9 @@ def submit_relative_binding_free_energy_graph_workflow(
         ``"best"``, ``"jaccard"``, or ``"dummy_atoms"``.
     :param greedy_k_min_cut: Target edge-connectivity for greedy augmentation. Must be > 0.
     :param refine_cutoff: Optional MCS similarity cutoff for graph refinement.
+    :param seed_graph: RBFE graph from a prior run to extend, as returned by a
+        completed result's ``graph``. Its existing edges (and any computed results)
+        are preserved, and only edges for newly added ligands are built.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -126,7 +127,8 @@ def submit_relative_binding_free_energy_graph_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If both folder and folder_uuid are provided.
+    :raises ValueError: If both folder and folder_uuid are provided, if any ligand has
+        no defined charge, or if the ligands do not all share the same formal charge.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if folder and folder_uuid:
@@ -138,6 +140,27 @@ def submit_relative_binding_free_energy_graph_workflow(
         require_coordinates(ligand)
     ligands_dict = {k: molecule_to_dict(v) for k, v in ligands.items()}
 
+    charges = {name: mol.get("charge") for name, mol in ligands_dict.items()}
+    missing_charge = sorted(name for name, charge in charges.items() if charge is None)
+    if missing_charge:
+        raise ValueError(
+            "Cannot verify charge consistency: no charge found for ligand(s) "
+            f"{', '.join(missing_charge)}. Provide ligands with a defined formal charge."
+        )
+    distinct_charges = {charge for charge in charges.values() if charge is not None}
+    if len(distinct_charges) > 1:
+        groups = {
+            charge: sorted(name for name, c in charges.items() if c == charge)
+            for charge in sorted(distinct_charges)
+        }
+        summary = "; ".join(
+            f"charge {charge}: {', '.join(names)}" for charge, names in groups.items()
+        )
+        raise ValueError(
+            "All RBFE ligands must share the same formal charge - charge-changing "
+            f"perturbations are not supported. Found multiple charge states ({summary})."
+        )
+
     workflow = stjames.RBFEGraphWorkflow(
         ligands=ligands_dict,
         mode=mode,
@@ -145,6 +168,7 @@ def submit_relative_binding_free_energy_graph_workflow(
         greedy_scoring=greedy_scoring,
         greedy_k_min_cut=greedy_k_min_cut,
         refine_cutoff=refine_cutoff,
+        seed_graph=seed_graph,
     )
 
     data = {

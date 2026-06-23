@@ -44,7 +44,7 @@ result = wf.result()                              # blocks until done, returns a
 
 **Universal submit arguments.** On top of its scientific arguments, every `submit_*_workflow` accepts these, and they are not repeated in the per-workflow files:
 
-- `folder=` (or `folder_uuid=`) sets where the run lands. `rowan.get_folder("a/b/c")` returns the folder, creating the path if missing.
+- `folder=` (or `folder_uuid=`) sets where the run lands. `rowan.get_folder("a/b/c")` returns the folder, creating the path if missing. For a specific project or benchmark, make a dedicated folder (e.g. `get_folder("project-name")`, with subpaths like `"project-name/docking"` for sub-experiments) and route all its runs there, so results stay grouped and easy to retrieve later.
 - `name=` sets the label shown in the Rowan UI.
 - `max_credits=` caps the credits (≈ minutes of compute) a run may use — its runtime limit. Hitting it, or running out of credits, stops the run **permanently** (methods like DFT can't resume), so set it high enough to finish.
 - `webhook_url=` makes Rowan POST the result there on completion. See [reference/webhooks.md](reference/webhooks.md) if you're setting up webhooks.
