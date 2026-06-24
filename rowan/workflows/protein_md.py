@@ -101,6 +101,28 @@ class ProteinMDResult(WorkflowResult):
         """Any messages or warnings from the workflow."""
         return parse_messages(getattr(self._workflow, "messages", None))
 
+    def get_atom_distances(
+        self,
+        atom_pairs: list[tuple[int, int]],
+        replicate: int = 0,
+    ) -> list[list[float]]:
+        """
+        Fetch interatomic distances over the trajectory for specified atom pairs.
+
+        :param atom_pairs: List of (atom_i, atom_j) index pairs (0-indexed).
+        :param replicate: Trajectory replicate index (default 0).
+        :returns: List of distance arrays, one per pair, over all frames (Angstrom).
+        :raises HTTPError: If the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(
+                f"/trajectory/{self.workflow_uuid}/atom_trajectories",
+                params={"replicate": replicate},
+                json=atom_pairs,
+            )
+            response.raise_for_status()
+        return response.json()
+
     def download_trajectories(
         self,
         replicates: list[int],

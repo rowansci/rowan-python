@@ -61,3 +61,4 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `bonds`: bond list for the simulated system.
 - `messages`: messages emitted during the run.
 - `download_trajectories(replicates, path=...)`: download DCD trajectory files for the given replicate indices as a `.tar.gz`.
+- `get_atom_distances(atom_pairs, replicate=0)`: fetch per-frame interatomic distances (Angstrom) for a list of `(atom_i, atom_j)` index pairs over the trajectory. Returns one list of floats per pair.
