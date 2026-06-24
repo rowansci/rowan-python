@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Self
 
+import httpx
 import stjames
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rdkit import Chem
@@ -648,6 +649,20 @@ def molecule_to_dict(mol: StructureInput | dict[str, Any]) -> dict[str, Any]:
             raise TypeError(f"Cannot convert {type(mol)} to molecule dict")
 
 
+_FEATURE_GATE_DETAIL = "You do not have access to this feature."
+
+
+def _raise_for_feature_gate(response: httpx.Response) -> None:
+    if response.status_code == 400:
+        detail = response.json().get("detail", "")
+        if detail.startswith(_FEATURE_GATE_DETAIL):
+            raise PermissionError(
+                f"{detail} Visit https://labs.rowansci.com/account/settings to upgrade your account"
+                " or contact us for access. Call rowan.whoami() to see your current"
+                " .enabled_workflows and .feature_list."
+            )
+
+
 def submit_workflow(
     workflow_type: stjames.WORKFLOW_NAME,
     workflow_data: dict[str, Any] | None = None,
@@ -701,6 +716,7 @@ def submit_workflow(
 
     with api_client() as client:
         response = client.post("/workflow", json=data)
+        _raise_for_feature_gate(response)
         response.raise_for_status()
         return Workflow(**response.json())
 
