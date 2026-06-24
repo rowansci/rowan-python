@@ -280,7 +280,8 @@ def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
     Molecule names are read from the title field of each record. Use this when
     ligand identity needs to be preserved - for example, building a ligand dict
     for an RBFE workflow where names are used as keys throughout submission and
-    results.
+    results. Every record must therefore have a unique name; duplicates raise
+    rather than silently collapsing into one ligand.
 
     Supported formats (all carry per-molecule name fields):
     - SDF / MOL (``.sdf``, ``.mol``) - name from the title line
@@ -288,7 +289,8 @@ def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
 
     :param path: Path to an SDF, MOL, or MOL2 file.
     :returns: Dict mapping ligand name to Molecule, in file order.
-    :raises ValueError: If no valid molecules are found or the format is unsupported.
+    :raises ValueError: If no valid molecules are found, the format is
+        unsupported, or two records share a name.
     """
     path = Path(path)
     suffix = path.suffix.lower()
@@ -310,5 +312,14 @@ def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
 
     if not pairs:
         raise ValueError(f"No valid molecules found in {path}")
+
+    # require every record to have a unique name rather than dropping data
+    names = [name for name, _ in pairs]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise ValueError(
+            f"Ligand names must be unique, but {path} repeats: {', '.join(duplicates)}. "
+            "Rename the duplicate records before loading."
+        )
 
     return {name: Molecule(_stjames=stjames.Molecule.from_rdkit(rdkm)) for name, rdkm in pairs}
