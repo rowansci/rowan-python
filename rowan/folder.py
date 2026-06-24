@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel
 
 from .project import default_project, retrieve_project
 from .utils import api_client, get_project_uuid
+
+if TYPE_CHECKING:
+    from .workflows.base import Workflow
 
 
 class Folder(BaseModel):
@@ -121,6 +126,77 @@ class Folder(BaseModel):
         """
         print_folder_tree(self.uuid, max_depth, show_uuids)
 
+    def children(self, size: int = 100) -> list[Folder]:
+        """
+        List all child folders directly inside this folder.
+
+        :param size: Maximum number of child folders to return.
+        :returns: List of child Folder objects.
+        :raises HTTPError: If the API request fails.
+        """
+        return list_folders(parent_uuid=self.uuid, size=size)
+
+    def workflows(self, size: int = 100) -> list[Workflow]:
+        """
+        List all workflows directly inside this folder.
+
+        :param size: Maximum number of workflows to return.
+        :returns: List of Workflow objects.
+        :raises HTTPError: If the API request fails.
+        """
+        from .workflows.base import list_workflows
+
+        return list_workflows(parent_uuid=self.uuid, size=size)
+
+    def contents(self, size: int = 100) -> list[Folder | Workflow]:
+        """
+        List everything directly inside this folder, both child folders and workflows.
+
+        Folders come first, followed by workflows. For a single type, use :func:`children`
+        or :func:`workflows`.
+
+        :param size: Maximum number of items of each type to return.
+        :returns: List of Folder and Workflow objects.
+        :raises HTTPError: If the API request fails.
+        """
+        return [*self.children(size=size), *self.workflows(size=size)]
+
+    def parent(self) -> Folder | None:
+        """
+        Retrieve the parent folder, or None if this is a root folder.
+
+        :returns: Parent Folder, or None if there is no parent.
+        :raises HTTPError: If the API request fails.
+        """
+        if self.parent_uuid is None:
+            return None
+        return retrieve_folder(self.parent_uuid)
+
+    def __truediv__(self, name: str) -> Folder:
+        """
+        Traverse into a child folder by name using the ``/`` operator.
+
+        Example::
+
+            root = rowan.root_folder()
+            subfolder = root / "CDK2" / "docking"
+
+        :param name: Exact name of the child folder to navigate into.
+        :returns: Child Folder with the given name.
+        :raises ValueError: If no child with that name exists, or if multiple children share
+            the same name (use :func:`children` and select by UUID to disambiguate).
+        """
+        matches = [f for f in self.children(size=200) if f.name == name]
+        if not matches:
+            raise ValueError(f"No child folder named {name!r} in {self.name!r} ({self.uuid})")
+        if len(matches) > 1:
+            uuids = ", ".join(f.uuid for f in matches)
+            raise ValueError(
+                f"Multiple child folders named {name!r} in {self.name!r} ({self.uuid}). "
+                f"Use retrieve_folder() with one of these UUIDs to disambiguate: {uuids}"
+            )
+        return matches[0]
+
 
 def retrieve_folder(uuid: str) -> Folder:
     """
@@ -208,6 +284,32 @@ def create_folder(
         response.raise_for_status()
         folder_data = response.json()
     return Folder(**folder_data)
+
+
+def root_folder() -> Folder:
+    """
+    Get the root folder of the active project.
+
+    The root folder is the top of the folder tree you navigate and store workflows in. Use the
+    active project set via :func:`set_project` (or ``rowan.project_uuid``), falling back to the
+    default project.
+
+    Example::
+
+        root = rowan.root_folder()
+        for child in root.children():
+            print(child.name)
+        batch = root / "CDK2" / "docking"
+
+    :returns: Root Folder of the active or default project.
+    :raises HTTPError: If the API request fails.
+    """
+    if project_uuid := get_project_uuid():
+        root_uuid = retrieve_project(project_uuid).root_folder_uuid
+    else:
+        root_uuid = default_project().root_folder_uuid
+    assert root_uuid is not None
+    return retrieve_folder(root_uuid)
 
 
 def get_folder(path: str, create: bool = True) -> Folder:
