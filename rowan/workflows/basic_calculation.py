@@ -271,7 +271,7 @@ def submit_basic_calculation_workflow(
     workflow = stjames.BasicCalculationWorkflow(
         initial_molecule=mol_dict,
         settings=settings,
-        tasks=settings.tasks,
+        tasks=tasks,
         engine=settings.engine,
     )
 
