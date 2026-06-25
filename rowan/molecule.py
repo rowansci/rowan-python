@@ -1,5 +1,7 @@
 """Molecule class for representing molecular structures and computed properties."""
 
+import math
+import random
 from pathlib import Path
 from typing import Any, Self
 
@@ -271,6 +273,77 @@ class Molecule(BaseModel):
         :returns: Dihedral angle in degrees (0-360) or radians.
         """
         return self._stjames.dihedral(i, j, k, l, degrees=degrees)
+
+    def perturb(self, stddev: float = 0.005) -> "Molecule":
+        """
+        Return a copy with random Gaussian noise added to each atom position.
+
+        Useful for breaking symmetry before resubmitting an optimization (e.g. when
+        a calculation is stuck in a saddle point or converges to an unwanted geometry).
+
+        :param stddev: standard deviation of the Gaussian displacement (Angstroms)
+        :returns: new Molecule with perturbed coordinates
+        """
+
+        def _gauss() -> float:
+            u1 = random.random()
+            u2 = random.random()
+            return math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2) * stddev
+
+        new_atoms = [
+            stjames.Atom(
+                atomic_number=atom.atomic_number,
+                position=(
+                    atom.position[0] + _gauss(),
+                    atom.position[1] + _gauss(),
+                    atom.position[2] + _gauss(),
+                ),
+                mass=atom.mass,
+            )
+            for atom in self._stjames.atoms
+        ]
+        new_mol = self._stjames.model_copy(update={"atoms": new_atoms})
+        return Molecule(_stjames=new_mol)
+
+    def displace_along_mode(self, mode: stjames.VibrationalMode, displacement: float) -> "Molecule":
+        """
+        Return a copy with atom positions displaced along a vibrational normal mode.
+
+        Requires a prior frequency calculation. For a transition state, the imaginary
+        mode has a negative frequency and points toward the reactant or product.
+
+        :param mode: vibrational mode to displace along, from ``vibrational_modes``
+        :param displacement: displacement distance along the normalized mode (Angstroms)
+        :returns: new Molecule with displaced coordinates
+        :raises ValueError: if the mode has no displacements or zero-norm displacements
+        """
+        raw = mode.displacements
+        if not raw:
+            raise ValueError(
+                "Vibrational mode has no displacements. "
+                "Rerun the calculation with frequencies=True to displace along a mode."
+            )
+        norm = math.sqrt(sum(x**2 + y**2 + z**2 for x, y, z in raw))
+        if norm == 0:
+            raise ValueError(
+                "Vibrational mode has zero-norm displacements. "
+                "This indicates malformed frequency output, try displacing along a different mode."
+            )
+
+        new_atoms = [
+            stjames.Atom(
+                atomic_number=atom.atomic_number,
+                position=(
+                    atom.position[0] + (dx / norm) * displacement,
+                    atom.position[1] + (dy / norm) * displacement,
+                    atom.position[2] + (dz / norm) * displacement,
+                ),
+                mass=atom.mass,
+            )
+            for atom, (dx, dy, dz) in zip(self._stjames.atoms, raw, strict=True)
+        ]
+        new_mol = self._stjames.model_copy(update={"atoms": new_atoms})
+        return Molecule(_stjames=new_mol)
 
 
 def load_named_ligands(path: Path | str) -> dict[str, Molecule]:

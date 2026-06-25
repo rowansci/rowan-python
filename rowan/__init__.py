@@ -23,6 +23,7 @@ from stjames import (
     Solvent,
     SolventSettings,
     Task,
+    VibrationalMode,
 )
 from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, RBFEGraphEdge
 from stjames.excited_state_settings import TDDFTSettings

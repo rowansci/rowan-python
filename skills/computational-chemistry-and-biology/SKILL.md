@@ -70,6 +70,8 @@ draft.submit_draft()           # commit to running it  (or draft.delete() to dis
 
 **Resubmit and re-run.** Re-run from a settings dict with the generic `rowan.submit_workflow(workflow_type, workflow_data, initial_molecule=..., folder=folder)`. Pass a prior run's `result.data` unchanged for an identical re-run (insulated from later default or preset changes), edit the dict to change settings, or change `workflow_type` (with matching `workflow_data`) to submit as a different workflow.
 
+**Resubmit with a perturbed geometry.** `mol.perturb()` adds small Gaussian noise to break symmetry or escape a stuck optimization. `mol.displace_along_mode(mode, displacement)` shifts atoms along a vibrational normal mode — for a transition state, pick the imaginary mode (negative frequency) to slide toward reactant or product; requires `frequencies=True` in a prior calculation. See `examples/resubmit_with_perturbations.py`.
+
 ## Molecule inputs
 
 Structure-based workflows take a `rowan.Molecule`, not a bare SMILES string. Build one from a SMILES with `rowan.Molecule.from_smiles(...)` (RDKit embeds a 3D structure) or from coordinates with `rowan.Molecule.from_xyz(...)` / `from_xyz_file(...)`. A plain SMILES string is accepted only by the SMILES-based (2D) workflows. Each reference file states which case its workflow is:
