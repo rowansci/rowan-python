@@ -43,10 +43,9 @@ class pKaMicrostate:
     uncertainty: float | None = None
 
 
-# Methods grouped by input type and solvent support
+# Methods grouped by input type
 _PKA_3D_METHODS = {"aimnet2_wagen2024", "gxtb_wagen2026"}
 _PKA_SMILES_METHODS = {"chemprop_nevolianis2025", "starling"}
-_PKA_WATER_ONLY_METHODS = {"aimnet2_wagen2024", "gxtb_wagen2026", "starling"}
 
 
 @register_result("pka")
@@ -163,7 +162,7 @@ def submit_pka_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If method and input type don't match, or solvent is unsupported.
+    :raises ValueError: If method/input type mismatch, or chemprop used with protonate_elements.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if folder and folder_uuid:
@@ -187,9 +186,6 @@ def submit_pka_workflow(
         raise ValueError(
             f"{method} requires a SMILES string. Provide a SMILES string, not a 3D structure."
         )
-    if method in _PKA_WATER_ONLY_METHODS and solvent != "water":
-        raise ValueError(f"{method} only supports water as solvent.")
-
     if method == "chemprop_nevolianis2025" and protonate_elements:
         raise ValueError(
             "chemprop_nevolianis2025 was only trained on deprotonation data; "

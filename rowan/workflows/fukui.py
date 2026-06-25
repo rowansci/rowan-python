@@ -68,9 +68,8 @@ def submit_fukui_workflow(
 
         - ``"solvent"``: solvent name string (e.g. ``"water"``, ``"dichloromethane"``,
           ``"dmso"``). See ``rowan.Solvent`` for all valid values.
-        - ``"model"``: solvation model. Use ``"alpb"`` or ``"gbsa"`` for xTB methods
-          (the defaults ``gfn1_xtb`` / ``gfn2_xtb``); use ``"cpcm"`` or ``"smd"`` for
-          DFT methods.
+        - ``"model"``: solvation model (e.g. ``"alpb"``, ``"gbsa"``, ``"cpcmx"`` for xTB;
+          ``"cpcm"``, ``"pcm"`` for DFT). Must be compatible with the engine for the chosen method.
 
         Example: ``solvent_settings={"solvent": "water", "model": "alpb"}``
     :param name: Name of the workflow.
@@ -80,7 +79,6 @@ def submit_fukui_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If the solvent model is incompatible with the chosen method.
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
@@ -88,21 +86,6 @@ def submit_fukui_workflow(
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    if solvent_settings is not None:
-        model = solvent_settings.get("model")
-        is_xtb = stjames.Method(fukui_method) in stjames.XTB_METHODS
-        xtb_models = {"alpb", "gbsa"}
-        dft_models = {"pcm", "cpcm", "cosmo", "cpcmx", "smd"}
-        if is_xtb and model not in xtb_models:
-            raise ValueError(
-                f"xTB Fukui methods require 'alpb' or 'gbsa' solvation model, got '{model}'"
-            )
-        if not is_xtb and model not in dft_models:
-            raise ValueError(
-                f"DFT Fukui methods require 'cpcm', 'smd', 'pcm', 'cosmo', or 'cpcmx' "
-                f"solvation model, got '{model}'"
-            )
-
     mol_dict = molecule_to_dict(initial_molecule)
 
     optimization_settings = stjames.Settings(method=optimization_method)
