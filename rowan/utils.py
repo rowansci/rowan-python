@@ -52,6 +52,25 @@ def smiles_to_stjames(smiles: str) -> stjames.Molecule:
     return stjames.Molecule.from_smiles(smiles)
 
 
+def _raise_for_status(response: httpx.Response) -> None:
+    """Response hook that raises HTTPStatusError with the API's detail message if available."""
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        try:
+            response.read()
+            detail = response.json().get("detail")
+        except Exception:
+            detail = None
+        if detail:
+            raise httpx.HTTPStatusError(
+                f"{e.response.status_code} {detail}",
+                request=e.request,
+                response=e.response,
+            ) from None
+        raise
+
+
 @contextmanager
 def api_client() -> Generator[httpx.Client, None, None]:
     """Wraps `httpx.Client` with Rowan-specific kwargs."""
@@ -59,6 +78,7 @@ def api_client() -> Generator[httpx.Client, None, None]:
         base_url=API_URL,
         headers={"X-API-Key": get_api_key()},
         timeout=120,
+        event_hooks={"response": [_raise_for_status]},
     ) as client:
         yield client
 
