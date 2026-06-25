@@ -54,7 +54,7 @@ result = wf.result()                              # blocks until done, returns a
 
 - **Block (default):** `result = wf.result()` waits (polling every 5 s) and returns a typed result. It raises `rowan.WorkflowError` if the run **failed** or was **stopped**, so catch it to report failures.
 - **Partial or progress:** `wf.result(wait=False)` returns whatever is ready now. `for r in wf.stream_result():` yields partial results each poll, then the final one.
-- **Fire-and-forget:** keep `wf.uuid`, let the session end, and reconnect later with `rowan.retrieve_workflow(uuid).result()`. `rowan.list_workflows()` lists recent runs.
+- **Fire-and-forget:** keep `wf.uuid`, let the session end, and reconnect later with `rowan.retrieve_workflow(uuid).result()`. `rowan.list_workflows()` lists recent runs. The UUID from `labs.rowansci.com/calculation/<uuid>` is a workflow UUID — use `retrieve_workflow`, not `retrieve_calculation`.
 
 **Inline calls vs. scripts.** Quick questions or retrieving a single result are fine inline with submit-and-wait (`.result()`). For long-running or multi-step work like experiments or benchmarks, put the calls in a script for reproducibility, and prefer a fire-and-forget run plus `retrieve_workflow(uuid)` later or a `webhook_url=` callback rather than blocking the session.
 

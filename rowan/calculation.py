@@ -2,6 +2,7 @@
 
 from typing import Self
 
+import httpx
 import stjames
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -62,10 +63,13 @@ class Calculation(BaseModel):
         :param in_place: If True, update this instance in-place. If False, return new instance.
         :returns: Updated Calculation object.
         """
-        with api_client() as client:
-            response = client.get(f"/calculation/{self.uuid}/stjames")
-            response.raise_for_status()
-            data = response.json()
+        try:
+            with api_client() as client:
+                response = client.get(f"/calculation/{self.uuid}/stjames")
+                response.raise_for_status()
+                data = response.json()
+        except httpx.TimeoutException as e:
+            raise TimeoutError(f"Timed out fetching calculation {self.uuid}.") from e
 
         molecules = _parse_molecules(data.get("molecules", []))
 
@@ -94,11 +98,15 @@ def retrieve_calculation(uuid: str) -> Calculation:
     :param uuid: UUID of the calculation to retrieve.
     :returns: Calculation object with the fetched data.
     :raises requests.HTTPError: If the API request fails.
+    :raises TimeoutError: If the response times out.
     """
-    with api_client() as client:
-        response = client.get(f"/calculation/{uuid}/stjames")
-        response.raise_for_status()
-        data = response.json()
+    try:
+        with api_client() as client:
+            response = client.get(f"/calculation/{uuid}/stjames")
+            response.raise_for_status()
+            data = response.json()
+    except httpx.TimeoutException as e:
+        raise TimeoutError(f"Timed out fetching calculation {uuid}.") from e
 
     molecules = _parse_molecules(data.get("molecules", []))
 
