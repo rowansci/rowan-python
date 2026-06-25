@@ -2,6 +2,8 @@
 from . import constants
 from stjames import (
     Atom,
+    BindingPoseContact,
+    ConformerGenSettings,
     Constraint,
     ConstraintType,
     ConformerClusteringSettings,
@@ -14,11 +16,14 @@ from stjames import (
     KMeansClusteringSettings,
     Method,
     Mode,
+    MSAFormat,
     MultiStageOptSettings,
     OpenConfSettings,
     OptimizationSettings,
     PBCDFTSettings,
     PeriodicCell,
+    ProteinSequence,
+    ScanSettings,
     Settings,
     Solvent,
     SolventSettings,

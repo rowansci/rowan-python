@@ -13,13 +13,13 @@ folder = rowan.get_folder("examples")
 workflow = rowan.submit_scan_workflow(
     initial_molecule=rowan.Molecule.from_smiles("O"),
     name="Water Angle scan",
-    scan_settings={
-        "type": "angle",
-        "atoms": [2, 1, 3],  # 1-indexed
-        "start": 100,
-        "stop": 110,
-        "num": 5,
-    },
+    scan_settings=rowan.ScanSettings(
+        type="angle",
+        atoms=[2, 1, 3],  # 1-indexed
+        start=100,
+        stop=110,
+        num=5,
+    ),
     calculation_method="GFN2-xTB",
     calculation_engine="xtb",
     folder=folder,

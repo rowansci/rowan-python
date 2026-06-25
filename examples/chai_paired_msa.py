@@ -25,7 +25,7 @@ msa_workflow = rowan.submit_msa_workflow(
         "VLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR",
         "VHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH",
     ],
-    output_formats=["chai"],
+    output_formats=[rowan.MSAFormat.CHAI],
     name="CHAI Paired MSA Example",
     folder=folder,
 )
@@ -34,7 +34,7 @@ print(f"View workflow privately at: https://labs.rowansci.com/msa/{msa_workflow.
 
 msa_result = msa_workflow.result()
 
-msa_result.download_files("chai", path=msa_directory)
+msa_result.download_files(rowan.MSAFormat.CHAI, path=msa_directory)
 
 tar_path = next(msa_directory.glob("*.tar.gz"))
 with tarfile.open(tar_path, "r") as tar_ref:

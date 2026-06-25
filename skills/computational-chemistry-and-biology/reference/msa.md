@@ -15,17 +15,17 @@ wf = rowan.submit_msa_workflow(
     initial_protein_sequences=[
         "HPETLVKVKDAEDQLGARVGYIELDLNSGKILESFRPEERFPMMSTFKVLLCGAVLSRIDAGQEQLGRRIHYSQNDLVEYSPVTEKHLTDGMTVRELCSAAITMSDNTAANLLLTTIGGPKELTAFLHNMGDHVTRLDRWEPELNEAIPNDERDTTMPVAMATTLRKLLTGELLTLASRQQLIDWMEADKVAGPLLRSALPAGWFIADKSGAGERGSRGIIAALGPDGKPSRIVVIYTTGSQATMDERNRQIAEIGASLIKHW"
     ],
-    output_formats=["boltz"],   # defaults to {"colabfold"}
+    output_formats={rowan.MSAFormat.BOLTZ},   # defaults to {rowan.MSAFormat.COLABFOLD}
     folder=folder,
 )
 
 result = wf.result()
-result.download_files("boltz", path="msa_files")   # saves a .tar.gz archive
+result.download_files(rowan.MSAFormat.BOLTZ, path="msa_files")   # saves a .tar.gz archive
 ```
 
 ## Settings
 
-- `output_formats` (default `{"colabfold"}`): which co-folding MSA formats to generate. Any of `"boltz"` (for Boltz-1 / Boltz-2), `"chai"` (for Chai-1), or `"colabfold"` (raw MMSeqs2 output for AlphaFold-derived pipelines). Pass a list or set.
+- `output_formats` (default `{rowan.MSAFormat.COLABFOLD}`): which co-folding MSA formats to generate. Use `rowan.MSAFormat.BOLTZ` (for Boltz-1 / Boltz-2), `rowan.MSAFormat.CHAI` (for Chai-1), or `rowan.MSAFormat.COLABFOLD` (raw MMSeqs2 output for AlphaFold-derived pipelines). Pass a set.
 
 ## Retrieving output
 
