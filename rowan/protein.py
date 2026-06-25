@@ -1,4 +1,5 @@
 import time
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
@@ -38,6 +39,85 @@ class Protein(BaseModel):
 
     def __repr__(self) -> str:
         return f"<Protein name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
+
+    @property
+    def chains(self) -> list[str]:
+        """Polymer chain IDs present in this protein."""
+        if not self.data:
+            return []
+        model = self.data["models"][0]
+        chain_ids: set[str] = set(model["polymer"].keys())
+        for section in ("non_polymer", "water", "branched"):
+            for entity in model.get(section, {}).values():
+                if chain := entity.get("polymer"):
+                    chain_ids.add(chain)
+        return list(chain_ids)
+
+    def select_chains(self, chains: list[str]) -> "Protein":
+        """
+        Create a new protein record containing only the specified chains.
+
+        :param chains: Chain IDs to keep (e.g. ``["A"]``).
+        :returns: New Protein object with only the selected chains.
+        :raises ValueError: If any requested chain is not present.
+        :raises requests.HTTPError: If the API request fails.
+        """
+        if not self.data:
+            raise ValueError("Protein data not loaded — call refresh() first.")
+        available = self.chains
+        missing = [c for c in chains if c not in available]
+        if missing:
+            raise ValueError(f"Chain(s) {missing} not found. Available: {available}")
+
+        chain_set = set(chains)
+        model = self.data["models"][0]
+
+        filtered_polymer = {k: v for k, v in model["polymer"].items() if k in chain_set}
+        filtered_non_polymer = {
+            k: v for k, v in model["non_polymer"].items() if v.get("polymer") in chain_set
+        }
+        filtered_water = {k: v for k, v in model["water"].items() if v.get("polymer") in chain_set}
+        filtered_branched = {
+            k: v for k, v in model["branched"].items() if v.get("polymer") in chain_set
+        }
+
+        valid_atom_ids: set[int] = set()
+        for polymer in filtered_polymer.values():
+            for residue in polymer["residues"].values():
+                valid_atom_ids.update(int(a) for a in residue["atoms"])
+        for entity in filtered_non_polymer.values():
+            valid_atom_ids.update(int(a) for a in entity.get("atoms", {}))
+        for entity in filtered_water.values():
+            valid_atom_ids.update(int(a) for a in entity.get("atoms", {}))
+        for entity in filtered_branched.values():
+            valid_atom_ids.update(int(a) for a in entity.get("atoms", {}))
+
+        filtered_connections = []
+        for row in model.get("connections", []):
+            if row[0] not in valid_atom_ids:
+                continue
+            targets = [t for t in row[1:] if t in valid_atom_ids]
+            if targets:
+                filtered_connections.append([row[0], *targets])
+
+        filtered_model = {
+            "polymer": filtered_polymer,
+            "non_polymer": filtered_non_polymer,
+            "water": filtered_water,
+            "branched": filtered_branched,
+            "connections": filtered_connections,
+        }
+        filtered_data = {**self.data, "models": [filtered_model]}
+
+        with api_client() as client:
+            payload = {
+                "name": f"{self.name} (chains {','.join(chains)})",
+                "protein_data": filtered_data,
+                "ancestor_uuid": self.uuid,
+            }
+            response = client.post("/protein", json=payload)
+            response.raise_for_status()
+            return Protein(**response.json())
 
     def refresh(self, in_place: bool = True) -> Self:
         """
@@ -342,13 +422,13 @@ def upload_protein(
 
 
 def create_protein_from_pdb_id(
-    name: str, code: str, project_uuid: str | Project | None = None
+    code: str, name: str | None = None, project_uuid: str | Project | None = None
 ) -> Protein:
     """
     Creates a protein from a PDB ID.
 
-    :param name: Name of the protein to create
     :param code: PDB ID of the protein to create
+    :param name: Name of the protein. Defaults to the PDB ID.
     :param project_uuid: UUID of the project to create the protein in
     :returns: Protein object representing the created protein
     :raises requests.HTTPError: if the request to the API fails
@@ -356,21 +436,24 @@ def create_protein_from_pdb_id(
     if isinstance(project_uuid, Project):
         project_uuid = project_uuid.uuid
     with api_client() as client:
-        # Step 1: Read the file and post it to the conversion endpoint.
         conversion_response = client.post(f"/convert/pdb_id_to_protein?pdb_id={code}")
-        conversion_response.raise_for_status()  # Ensure the request was successful
-
-        # Extract the JSON data from the conversion response.
+        conversion_response.raise_for_status()
         protein_data = conversion_response.json()
 
-        # Step 2: Use the converted data to create the final protein object.
         creation_payload = {
-            "name": name,
+            "name": name or code,
             "protein_data": protein_data,
             "project_uuid": project_uuid,
         }
         final_response = client.post("/protein", json=creation_payload)
         final_response.raise_for_status()
 
-        # Deserialize the final JSON response into a Protein object and return it.
-        return Protein(**final_response.json())
+    protein = Protein(**final_response.json())
+    chains = protein.chains
+    if len(chains) > 1:
+        warnings.warn(
+            f"{code} has multiple chains {chains}. For docking, select one with "
+            f"protein.select_chains(['{chains[0]}']).",
+            stacklevel=2,
+        )
+    return protein

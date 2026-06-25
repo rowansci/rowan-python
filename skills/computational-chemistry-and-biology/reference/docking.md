@@ -4,7 +4,7 @@
 
 A protein, a binding pocket, and a single ligand.
 
-- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(name, pdb_code, project_uuid=...)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` to fix nonstandard residues, add missing atoms, and add hydrogens.
 - `pocket`: the search box as two `[x, y, z]` points, `[[center_x, center_y, center_z], [size_x, size_y, size_z]]`, the box center and its dimensions in angstroms.
 - `initial_molecule`: the ligand as a 3D structure (`StructureInput`): a `rowan.Molecule`, `stjames.Molecule`, or RDKit `Mol` carrying coordinates. Get one any way: embed from a SMILES with `rowan.Molecule.from_smiles(...)`, load coordinates with `rowan.Molecule.from_xyz_file(path)`, or reuse a prior result's `.molecule`. Vina re-poses the ligand in the box, so the input coordinates are only a starting point.
 
@@ -29,21 +29,26 @@ import rowan
 
 folder = rowan.get_folder("examples")
 
-protein = rowan.create_protein_from_pdb_id(
-    "CDK2", "1HCK", project_uuid=rowan.default_project().uuid
-)
+# Dasatinib redocked into its ABL1 co-crystal structure (PDB: 2GQG)
+dasatinib = rowan.Molecule.from_smiles("Cc1nc(Nc2ncc(C(=O)Nc3c(C)cccc3Cl)s2)cc(N2CCN(CCO)CC2)n1")
+
+protein = rowan.create_protein_from_pdb_id("2GQG")  # warns if multiple chains
+if len(protein.chains) > 1:
+    protein = protein.select_chains([protein.chains[0]])
 protein.prepare()
 
+center = [44.59, 79.75, 39.59]
+size = [24.15, 21.33, 19.88]
 wf = rowan.submit_docking_workflow(
-    protein.uuid,
-    pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],  # [center], [box size] in Angstrom
-    initial_molecule=rowan.Molecule.from_smiles("CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1"),
+    protein,
+    pocket=[center, size],
+    initial_molecule=dasatinib,
     folder=folder,
 )
 
 result = wf.result()
-for score in sorted(result.scores, key=lambda s: s.score):
-    print(score.score, score.posebusters_valid, score.strain)   # score, PoseBusters validity, strain
+for score in result.scores:
+    print(score.score, score.posebusters_valid)
 ```
 
 Each pose's `strain` is its energy above the ligand's lowest-energy conformer, populated only when `do_csearch=True` (otherwise `None`). The result also exposes `best_pose` (the top-scoring pose) and `conformers`. Poses come back with explicit hydrogens reconstructed (Vina strips them during docking), so `best_pose` is a complete 3D structure ready for downstream use such as MD.

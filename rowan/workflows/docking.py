@@ -192,12 +192,12 @@ def submit_docking_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    docking_settings = {
-        "executable": executable,
-        "exhaustiveness": exhaustiveness,
-        "max_poses": max_poses,
-        "scoring_function": scoring_function,
-    }
+    docking_settings = stjames.VinaSettings(
+        executable=executable,
+        exhaustiveness=exhaustiveness,
+        max_poses=max_poses,
+        scoring_function=scoring_function,
+    )
 
     workflow = stjames.DockingWorkflow(
         initial_molecule=mol_dict,

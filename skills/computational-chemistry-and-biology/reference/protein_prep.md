@@ -6,7 +6,7 @@ Preparation is recommended before protein workflows, especially for experimental
 
 Two ways to get a `rowan.Protein`:
 
-- From a PDB code: `rowan.create_protein_from_pdb_id(name, code, project_uuid=None)`
+- From a PDB code: `rowan.create_protein_from_pdb_id(code, name=None, project_uuid=None)` — name defaults to the PDB ID. Warns if the structure has multiple chains — crystal structures often have duplicate chains, so select the one you want with `protein.select_chains([...])` before running any workflow.
 - From a local PDB file: `rowan.upload_protein(name, file_path, project_uuid=None)`
 
 Both return a `rowan.Protein` you can then prepare.
@@ -16,7 +16,7 @@ Both return a `rowan.Protein` you can then prepare.
 The main entry point. Runs PDBFixer + OpenMM server-side and blocks until done.
 
 ```python
-protein = rowan.create_protein_from_pdb_id("1IEP", "1IEP")
+protein = rowan.create_protein_from_pdb_id("1IEP")
 
 protein.prepare(
     find_missing_residues=True,      # identify and model missing residues
