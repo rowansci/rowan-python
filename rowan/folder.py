@@ -223,6 +223,9 @@ def list_folders(
     """
     Retrieve a list of folders based on the specified criteria.
 
+    If no ``parent_uuid`` is given and a project is active (via :func:`set_project` or
+    ``rowan.project_uuid``), lists folders rooted at that project's root folder.
+
     :param parent_uuid: UUID of the parent folder to filter by.
     :param name_contains: Substring to search for in folder names.
     :param public: Filter folders by their public status.
@@ -232,6 +235,11 @@ def list_folders(
     :returns: List of Folder objects that match the search criteria.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if parent_uuid is None:
+        if project_uuid := get_project_uuid():
+            parent_uuid = retrieve_project(project_uuid).root_folder_uuid
+        else:
+            parent_uuid = default_project().root_folder_uuid
 
     params: dict[str, Any] = {
         "page": page,
@@ -265,6 +273,9 @@ def create_folder(
     """
     Create a new folder.
 
+    If no ``parent_uuid`` is given and a project is active (via :func:`set_project` or
+    ``rowan.project_uuid``), the folder is created inside that project's root folder.
+
     :param name: Name of the folder.
     :param parent_uuid: UUID of the parent folder.
     :param notes: Description of the folder.
@@ -272,6 +283,12 @@ def create_folder(
     :param public: Whether the folder is public.
     :returns: Newly created folder.
     """
+    if parent_uuid is None:
+        if project_uuid := get_project_uuid():
+            parent_uuid = retrieve_project(project_uuid).root_folder_uuid
+        else:
+            parent_uuid = default_project().root_folder_uuid
+
     data = {
         "name": name,
         "parent_uuid": parent_uuid,

@@ -16,8 +16,9 @@ from rdkit import Chem
 
 from ..folder import Folder
 from ..molecule import Molecule as RowanMolecule
+from ..project import default_project, retrieve_project
 from ..types import SMILES, StructureInput
-from ..utils import api_client
+from ..utils import api_client, get_project_uuid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -804,6 +805,12 @@ def list_workflows(
     :returns: List of Workflow objects that match the search criteria.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    if parent_uuid is None:
+        if project_uuid := get_project_uuid():
+            parent_uuid = retrieve_project(project_uuid).root_folder_uuid
+        else:
+            parent_uuid = default_project().root_folder_uuid
+
     params: dict[str, Any] = {"page": page, "size": size}
 
     if parent_uuid is not None:

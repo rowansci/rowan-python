@@ -1,6 +1,6 @@
 # Folders and projects
 
-Workflows live in a tree of folders, rooted in a project. Folders are how you keep runs grouped and findable. Most of the time `rowan.get_folder("path/to/folder")` is all you need (it creates the path if missing); the rest of this file covers browsing and navigating an existing tree.
+Workflows live in a tree of folders, rooted in a project. A project is a closed scope — once you call `set_project`, all folder and workflow operations (listing, creating, navigating) are confined to that project. Folders are how you keep runs grouped and findable within a project. Most of the time `rowan.get_folder("path/to/folder")` is all you need (it creates the path if missing); the rest of this file covers browsing and navigating an existing tree.
 
 ## Get a folder by path
 
@@ -34,7 +34,7 @@ parent = docking.parent()           # Folder, or None at the root
 ## Projects
 
 A project is the top-level container; its root folder is what `root_folder()` returns. The active
-project scopes `get_folder` and `root_folder` — set it once, then navigate folders within it.
+project is a closed scope — set it once and all folder/workflow operations stay within it:
 
 ```python
 # Find / list
@@ -46,7 +46,7 @@ default = rowan.default_project()           # the account's default project
 # Create
 proj = rowan.create_project("CDK2 campaign")
 
-# Switch the active project (scopes subsequent get_folder / root_folder)
+# Switch the active project (all subsequent folder/workflow operations scope to it)
 rowan.set_project("CDK2 campaign")          # by name; sets rowan.project_uuid
 rowan.project_uuid = proj.uuid              # or assign the UUID directly
 
