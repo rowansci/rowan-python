@@ -23,6 +23,16 @@
         - batch_submit_workflow
         - batch_poll_status
 
+::: rowan.calculation
+    handler: python
+    options:
+      show_source: false
+      show_root_heading: false
+      show_root_toc_entry: false
+      members_order: source
+      group_by_category: true
+      filters: ["!^_"]
+
 ## ADMET
 ::: rowan.workflows.admet
     handler: python
@@ -254,6 +264,17 @@
       group_by_category: true
       filters: ["!^__"]
 
+## Pocket Detection
+::: rowan.workflows.pocket_detection
+    handler: python
+    options:
+      show_source: false
+      show_root_heading: false
+      show_root_toc_entry: false
+      members_order: source
+      group_by_category: true
+      filters: ["!^__"]
+
 ## Pose Analysis MD
 ::: rowan.workflows.pose_analysis_md
     handler: python
@@ -388,6 +409,17 @@
 
 ## Tautomer Search
 ::: rowan.workflows.tautomer_search
+    handler: python
+    options:
+      show_source: false
+      show_root_heading: false
+      show_root_toc_entry: false
+      members_order: source
+      group_by_category: true
+      filters: ["!^__"]
+
+## API Keys
+::: rowan.api_keys
     handler: python
     options:
       show_source: false
