@@ -27,6 +27,7 @@ from stjames import (
     Settings,
     Solvent,
     SolventSettings,
+    SinglePointEnergySettings,
     Task,
     VibrationalMode,
 )

@@ -47,6 +47,11 @@ from .bde import (
     find_cx_bonds,
     submit_bde_workflow,
 )
+from .binding_affinity import (
+    BindingAffinityResult,
+    BindingAffinityScore,
+    submit_binding_affinity_workflow,
+)
 from .conformer_search import ConformerSearchResult, submit_conformer_search_workflow
 from .descriptors import DescriptorsResult, submit_descriptors_workflow
 from .docking import DockingResult, DockingScore, submit_docking_workflow
