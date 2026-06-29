@@ -209,9 +209,12 @@ def submit_docking_workflow(
         docking_settings=docking_settings,
     )
 
+    workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
+    workflow_data["docking_settings"].setdefault("settings_type", "vina")
+
     data = {
         "workflow_type": "docking",
-        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
+        "workflow_data": workflow_data,
         "initial_molecule": mol_dict,
         "name": name,
         "folder_uuid": folder_uuid,

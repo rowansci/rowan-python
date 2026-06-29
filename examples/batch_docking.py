@@ -13,7 +13,7 @@ ligands = [
 ]
 
 protein = rowan.create_protein_from_pdb_id(
-    "CDK2", "1HCK", project_uuid=rowan.default_project().uuid
+    "1HCK", name="CDK2", project_uuid=rowan.default_project().uuid
 )
 
 protein.prepare()

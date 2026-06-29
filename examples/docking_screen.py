@@ -19,7 +19,7 @@ workflows = []
 results = {}
 
 protein = rowan.create_protein_from_pdb_id(
-    "CDK2", "1HCK", project_uuid=rowan.default_project().uuid
+    "1HCK", name="CDK2", project_uuid=rowan.default_project().uuid
 )
 
 protein.prepare()
@@ -43,11 +43,14 @@ lowest_conformer_energy = 0
 for workflow, result in workflow_results:
     for conformer_uuid in result.conformers:
         energy = rowan.retrieve_calculation_molecules(conformer_uuid)[0]["energy"]
-        lowest_conformer_energy = min(lowest_conformer_energy, energy)
+        if energy is not None:
+            lowest_conformer_energy = min(lowest_conformer_energy, energy)
 
     sorted_scores = sorted(result.scores, key=lambda s: s.score)
     for score in sorted_scores:
         pose_energy = rowan.retrieve_calculation_molecules(score.pose)[0]["energy"]
+        if pose_energy is None:
+            continue
         strain = (pose_energy - lowest_conformer_energy) * HARTREE_TO_KCALMOL
         if score.posebusters_valid and strain < 4:
             results[workflow.name] = score

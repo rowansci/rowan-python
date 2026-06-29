@@ -448,7 +448,7 @@ def create_protein_from_pdb_id(
     chains = protein.chains
     if len(chains) > 1:
         warnings.warn(
-            f"{code} has multiple chains {chains}. For docking, select one with "
+            f"{code} has multiple chains {chains}. Select one with "
             f"protein.select_chains(['{chains[0]}']).",
             stacklevel=2,
         )

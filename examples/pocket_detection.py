@@ -5,7 +5,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 protein = rowan.create_protein_from_pdb_id(
-    "thymidine phosphorylase", "1OTP", project_uuid=rowan.default_project().uuid
+    "1OTP", name="thymidine phosphorylase", project_uuid=rowan.default_project().uuid
 )
 
 protein.prepare()
