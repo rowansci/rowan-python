@@ -97,6 +97,9 @@ def submit_relative_binding_free_energy_graph_workflow(
     greedy_k_min_cut: int = 3,
     refine_cutoff: float | None = None,
     seed_graph: RBFEGraph | None = None,
+    generate_intermediate_ligands: bool = False,
+    intermediate_max_dummy_atoms: int = 25,
+    intermediate_min_dummy_atom_improvement: int = 5,
     name: str = "RBFE Graph",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -120,6 +123,12 @@ def submit_relative_binding_free_energy_graph_workflow(
     :param seed_graph: RBFE graph from a prior run to extend, as returned by a
         completed result's ``graph``. Its existing edges (and any computed results)
         are preserved, and only edges for newly added ligands are built.
+    :param generate_intermediate_ligands: Generate virtual intermediate ligands to make
+        difficult edges easier.
+    :param intermediate_max_dummy_atoms: An edge with more dummy atoms than this is split
+        when a generated intermediate brings both resulting legs back to at most this value.
+    :param intermediate_min_dummy_atom_improvement: Minimum reduction in the worst leg's
+        dummy-atom count required for a generated intermediate to be accepted.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -169,6 +178,9 @@ def submit_relative_binding_free_energy_graph_workflow(
         greedy_k_min_cut=greedy_k_min_cut,
         refine_cutoff=refine_cutoff,
         seed_graph=seed_graph,
+        generate_intermediate_ligands=generate_intermediate_ligands,
+        intermediate_max_dummy_atoms=intermediate_max_dummy_atoms,
+        intermediate_min_dummy_atom_improvement=intermediate_min_dummy_atom_improvement,
     )
 
     data = {

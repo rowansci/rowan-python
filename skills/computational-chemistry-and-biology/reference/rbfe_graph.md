@@ -65,6 +65,12 @@ rowan.submit_relative_binding_free_energy_perturbation_workflow(
 
 `seed_graph` takes the RBFE graph from a completed result (`result.graph`). Every ligand referenced by a seed-graph edge must be present in `ligands`. See `examples/rbfe_resubmit.py` for the full flow.
 
+## R-group intermediates
+
+Use `generate_intermediate_ligands=True` on a congeneric series where some neighbors in the graph differ at multiple R-group positions at once, producing edges too large for FEP to perturb reliably. Skip it for series that only ever vary one substituent at a time — there's no recombination to generate (see below) — and weigh it against cost: every accepted split adds a synthetic ligand that runs full FEP legs like any real one, trading one large low-confidence edge for two smaller ones at extra compute.
+
+When enabled, an oversized edge `a -> b` is split `a -> I -> b`, where `I` recombines R-groups `a` and `b` already have on their shared MCS core (no novel substituents). This only helps when `a`/`b` differ at ≥2 R-group positions — at 1 position, any recombination is just `a` or `b` again. The split is kept only if it shrinks the worst leg's dummy-atom count below `intermediate_max_dummy_atoms` by at least `intermediate_min_dummy_atom_improvement`. Generated ligands are named `SYNTH__<hash>` and appear in `result.ligands`/`result.edges` like any other.
+
 ## Settings
 
 - `mode` (default `greedy`): graph construction strategy, `greedy` or `star_map`.
@@ -73,6 +79,9 @@ rowan.submit_relative_binding_free_energy_perturbation_workflow(
 - `greedy_k_min_cut` (default `3`): minimum number of edges per ligand node, i.e. how many edges can be cut before the graph disconnects. Higher gives a more redundant, robust graph at the cost of more FEP edges to run. Must be greater than 0.
 - `refine_cutoff` (default none): optional maximum-common-substructure similarity cutoff for graph refinement.
 - `seed_graph` (default none): the RBFE graph from a prior run (`result.graph`) to extend. Its edges (and their computed results) are preserved; only edges for newly added ligands are built. See "Extending a graph with new ligands" above.
+- `generate_intermediate_ligands` (default `False`): split oversized edges by generating synthetic R-group intermediates. See "R-group intermediates" above.
+- `intermediate_max_dummy_atoms` (default `25`): dummy-atom threshold above which an edge is considered for splitting, and the ceiling both resulting legs must fall under.
+- `intermediate_min_dummy_atom_improvement` (default `5`): minimum reduction in the worst leg's dummy-atom count required for a generated split to be accepted.
 
 ## Result fields
 
