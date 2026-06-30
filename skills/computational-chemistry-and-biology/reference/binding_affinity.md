@@ -12,7 +12,7 @@ Two submission modes — choose based on whether the ligand is already in the pr
 - `ligand_residue_name`: residue name of the bound ligand in a holo protein PDB (mode 1).
 - `ligand_structures`: list of `StructureInput` molecules with 3D coordinates, already aligned to the protein (mode 2). Load from an SDF with `rowan.load_named_ligands(path)`.
 
-Binding affinity is computed using SQM single-point energies (PM6-D3H4X/COSMO2 in water by default) on a truncated pocket around the ligand. When scoring multiple ligands, submitting them together in one workflow is preferred over separate workflows — all poses share the same pocket environment, making scores directly comparable.
+Binding affinity is computed using SQM energies (PM6-D3H4X: COSMO geometry optimization followed by COSMO2 single-point, in water by default) on a truncated pocket around the ligand. When scoring multiple ligands, submitting them together in one workflow is preferred over separate workflows — all poses share the same pocket environment, making scores directly comparable.
 
 ## Example
 
@@ -42,8 +42,7 @@ for name, score in zip(ligands.keys(), result.scores):
 
 `binding_affinity_settings` accepts a `rowan.SinglePointEnergySettings` object:
 
-- `settings` (default `PM6-D3H4X/COSMO2` in water): SQM settings for the single-point energy calculation.
-- `optimization_settings` (default `PM6-D3H4X/COSMO` in water): SQM settings for ligand geometry optimization before scoring. Set to `None` to skip optimization.
+- `multistage_opt_settings` (default PM6-D3H4X/COSMO optimization + PM6-D3H4X/COSMO2 single-point in water): a `rowan.MultiStageOptSettings` controlling ligand geometry optimization and energy evaluation.
 - `truncation_radius` (default `6.0` Å): protein residues beyond this distance from the ligand are excluded from the calculation.
 
 ```python
@@ -59,4 +58,4 @@ rowan.submit_binding_affinity_workflow(
 `result.scores` is a list of `BindingAffinityScore` objects in the same order as the input ligands:
 
 - `binding_affinity`: binding affinity in kcal/mol (ΔE = E(complex) − E(protein_region) − E(ligand)).
-- `strain`: energy difference between the input pose and the SQM-optimized pose, in kcal/mol. Populated when `optimization_settings` is set (the default); `None` if optimization is skipped.
+- `strain`: energy difference between the input pose and the SQM-optimized pose, in kcal/mol.

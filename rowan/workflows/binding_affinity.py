@@ -75,7 +75,7 @@ def submit_binding_affinity_workflow(
     """
     Submits a binding affinity workflow to the API.
 
-    Scores ligand poses using SQM-based single-point energies. Two submission modes:
+    Scores ligand poses using SQM-based energies. Two submission modes:
 
     **Mode 1 — holo protein:** protein already contains the bound ligand. Pass
     ``ligand_residue_name`` to identify which residue is the ligand vs. the receptor.
@@ -91,8 +91,9 @@ def submit_binding_affinity_workflow(
         (mode 1 only).
     :param ligand_structures: external ligand poses to score, already in the protein's
         coordinate frame. Must have 3D coordinates (mode 2 only).
-    :param binding_affinity_settings: SQM settings controlling how energies are computed.
-        Defaults to PM6-D3H4X/COSMO2 in water.
+    :param binding_affinity_settings: SQM settings controlling geometry optimization and
+        energy evaluation. Defaults to PM6-D3H4X/COSMO optimization followed by
+        PM6-D3H4X/COSMO2 single-point in water.
     :param name: name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
