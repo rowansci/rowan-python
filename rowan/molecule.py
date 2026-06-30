@@ -237,6 +237,50 @@ class Molecule(BaseModel):
         """Nuclear gradient (Hartree/Bohr)."""
         return self._stjames.gradient
 
+    @property
+    def symmetry(self) -> str | int | None:
+        """Space group number (1–230) or point group symbol."""
+        return self._stjames.symmetry
+
+    @property
+    def xrd_peaks(self) -> list[tuple[int, int, int, float]] | None:
+        """XRD reflections as (h, k, l, intensity) tuples."""
+        return self._stjames.x_ray_diffraction_peaks
+
+    @property
+    def band_structure(self) -> "stjames.BandStructure | None":
+        """Electronic band structure and DOS (periodic systems only)."""
+        return self._stjames.band_structure
+
+    @property
+    def band_gap(self) -> float | None:
+        """Band gap (Hartree)."""
+        bs = self._stjames.band_structure
+        return bs.band_gap if bs is not None else None
+
+    @property
+    def density_of_states(self) -> list[tuple[float, float]] | None:
+        """Total DOS as (energy in Hartree, k-weighted count) pairs (Fermi level = 0)."""
+        bs = self._stjames.band_structure
+        return bs.total_density_of_states if bs is not None else None
+
+    @property
+    def elastic_tensor(
+        self,
+    ) -> (
+        tuple[
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+        ]
+        | None
+    ):
+        """Elastic stiffness matrix in GPa (Voigt order: xx yy zz yz xz xy)."""
+        return self._stjames.elastic_tensor
+
     # -- Geometric utilities --
 
     def distance(self, i: int, j: int) -> float:

@@ -16,6 +16,8 @@ Request one or more in a list, for example `["optimize", "frequencies"]`:
 - `optimize`: relax to a nearby minimum
 - `optimize_ts`: optimize to a transition state. Start from a guess TS structure, not an equilibrium geometry.
 - `frequencies`: vibrational frequencies and thermochemistry
+- `band_structure`: electronic band structure, DOS, and band gap (periodic systems only)
+- `elastic_tensor`: elastic stiffness matrix in GPa (periodic systems only)
 - also available: `gradient`, `hessian`, `dipole`, `charge`, `spin_density`, `stress`
 
 Running `frequencies` after an `optimize` or `optimize_ts` is recommended: it confirms whether a local minimum (no imaginary frequencies) or a saddle point (one imaginary frequency) was found, and it computes thermochemical properties. It does increase compute time.
@@ -152,4 +154,26 @@ wf = rowan.submit_basic_calculation_workflow(
 )
 ```
 
-Run `help(rowan.PBCDFTSettings)` for its fields (plane-wave and charge-density cutoffs, k-point grid, smearing, DFT+U); all are auto-derived from the structure when omitted.
+`PBCDFTSettings` fields (all optional — auto-derived from pseudopotentials when omitted):
+- `plane_wave_cutoff`: kinetic-energy cutoff in Hartree
+- `kpoints`: Monkhorst–Pack grid as `(nx, ny, nz)`
+- `smearing_type`: `rowan.PBCDFTSmearing.MARZARI_VANDERBILT` (recommended for metals)
+- `smearing_width`: smearing width in Hartree (default 0.005)
+- `hubbard_u`: DFT+U per element, e.g. `{"Fe": 4.0}`, or `"auto"`
+
+## PBC result properties
+
+Every completed PBC calculation populates these on the result:
+
+- `result.symmetry`: space group number (1–230)
+- `result.xrd_peaks`: powder XRD reflections as `(h, k, l, intensity)` tuples
+
+With `tasks=["band_structure"]`:
+
+- `result.band_gap`: band gap in Hartree
+- `result.band_structure`: full `BandStructure` object with `eigenvalues`, `kpoint_distances`, `high_symmetry_points`, `valence_band_maximum`, `conduction_band_minimum`
+- `result.density_of_states`: total DOS as `(energy, count)` pairs (Fermi level = 0)
+
+With `tasks=["elastic_tensor"]`:
+
+- `result.elastic_tensor`: 6×6 stiffness matrix in GPa (Voigt order: xx yy zz yz xz xy)

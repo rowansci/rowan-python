@@ -136,6 +136,54 @@ class BasicCalculationResult(WorkflowResult):
         mol = self.molecule
         return mol.frequencies if mol else None
 
+    @property
+    def symmetry(self) -> str | int | None:
+        """Space group number (1–230) or point group symbol."""
+        mol = self.molecule
+        return mol.symmetry if mol else None
+
+    @property
+    def xrd_peaks(self) -> list[tuple[int, int, int, float]] | None:
+        """XRD reflections as (h, k, l, intensity) tuples."""
+        mol = self.molecule
+        return mol.xrd_peaks if mol else None
+
+    @property
+    def band_structure(self) -> stjames.BandStructure | None:
+        """Electronic band structure and DOS (periodic systems only)."""
+        mol = self.molecule
+        return mol.band_structure if mol else None
+
+    @property
+    def band_gap(self) -> float | None:
+        """Band gap (Hartree)."""
+        mol = self.molecule
+        return mol.band_gap if mol else None
+
+    @property
+    def density_of_states(self) -> list[tuple[float, float]] | None:
+        """Total DOS as (energy in Hartree, k-weighted count) pairs (Fermi level = 0)."""
+        mol = self.molecule
+        return mol.density_of_states if mol else None
+
+    @property
+    def elastic_tensor(
+        self,
+    ) -> (
+        tuple[
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+            tuple[float, float, float, float, float, float],
+        ]
+        | None
+    ):
+        """Elastic stiffness matrix in GPa (Voigt order: xx yy zz yz xz xy)."""
+        mol = self.molecule
+        return mol.elastic_tensor if mol else None
+
 
 def settings_from_preset(preset: PresetName, **overrides: Any) -> stjames.Settings:
     """

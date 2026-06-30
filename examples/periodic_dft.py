@@ -1,58 +1,38 @@
-"""
-Run a periodic DFT energy calculation on bulk aluminium using Quantum ESPRESSO.
-
-Key settings for PBC calculations:
-- ``pw_cutoff``: plane-wave kinetic-energy cutoff in Hartree (higher = more accurate/slower)
-- ``kpoints``: Monkhorst–Pack k-point grid (denser = more accurate/slower)
-- ``smearing``: occupation smearing type — recommended for metals to aid SCF convergence
-- ``degauss``: smearing width in Hartree (typical range: 0.005–0.02)
-
-Periodic molecules are constructed from atomic positions + lattice vectors.
-See documentation at: https://docs.rowansci.com/science/workflows/basic-calculation
-"""
+"""Band structure of bulk silicon using periodic DFT (Quantum ESPRESSO)."""
 
 import rowan
 
-# Set your API key or use the ROWAN_API_KEY environment variable
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
-# Build bulk Al FCC primitive cell.
-# Lattice vectors in Angstrom; Al has 13 electrons so multiplicity=2.
-cell = rowan.PeriodicCell(
-    lattice_vectors=(
-        (0.0, 2.0230, 2.0230),
-        (2.0230, 0.0, 2.0230),
-        (2.0230, 2.0230, 0.0),
-    )
-)
-al_fcc = rowan.Molecule.from_atoms(
-    atoms=[rowan.Atom(atomic_number=13, position=(0.0, 0.0, 0.0))],
+a = 5.431  # Å
+si = rowan.Molecule.from_atoms(
+    atoms=[
+        rowan.Atom(atomic_number=14, position=(0.0, 0.0, 0.0)),
+        rowan.Atom(atomic_number=14, position=(a / 4, a / 4, a / 4)),
+    ],
     charge=0,
-    multiplicity=2,
-    cell=cell,
-)
-
-# Marzari–Vanderbilt cold smearing is recommended for metals.
-pbc_settings = rowan.PBCDFTSettings(
-    pw_cutoff=7.5,  # Hartree; SSSP efficiency recommends ~7–9 Ha for Al
-    kpoints=(4, 4, 4),  # Monkhorst–Pack grid; increase for production runs
-    smearing=rowan.PBCDFTSmearing.MARZARI_VANDERBILT,
-    degauss=0.01,  # Hartree smearing width
+    multiplicity=1,
+    cell=rowan.PeriodicCell(
+        lattice_vectors=((0.0, a / 2, a / 2), (a / 2, 0.0, a / 2), (a / 2, a / 2, 0.0))
+    ),
 )
 
 workflow = rowan.submit_basic_calculation_workflow(
-    initial_molecule=al_fcc,
-    tasks=["energy"],
+    initial_molecule=si,
+    tasks=["band_structure"],
     method="PBE",
-    basis_set="SSSP_efficiency",
-    pbc_dft_settings=pbc_settings,
-    name="Al FCC bulk energy",
+    basis_set="SSSP_PBE_efficiency",
+    pbc_dft_settings=rowan.PBCDFTSettings(kpoints=(2, 2, 2)),
+    name="Si band structure",
     folder=folder,
 )
-
-print(f"View workflow privately at: https://labs.rowansci.com/calculation/{workflow.uuid}")
+print(f"https://labs.rowansci.com/calculation/{workflow.uuid}")
 result = workflow.result()
-print(result)
-# e.g. <BasicCalculationResult energy=-19.725 H>
-print(f"Al FCC energy: {result.energy:.6f} Hartree")
+
+print(f"Symmetry:  space group {result.symmetry}")
+print(f"XRD peaks: {len(result.xrd_peaks)} reflections")
+print(f"Band gap:  {result.band_gap:.4f} Ha")  # ~0.020 Ha (PBE underestimates Si's 1.12 eV gap)
+print(f"VBM:       {result.band_structure.valence_band_maximum:.4f} Ha")
+print(f"CBM:       {result.band_structure.conduction_band_minimum:.4f} Ha")
+print(f"DOS:       {len(result.density_of_states)} points")
