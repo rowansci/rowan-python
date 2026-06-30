@@ -4,6 +4,8 @@ from stjames import (
     Atom,
     BandStructure,
     BindingPoseContact,
+    HydrationBridgeResidue,
+    HydrationSite,
     ConformerGenSettings,
     Constraint,
     ConstraintType,

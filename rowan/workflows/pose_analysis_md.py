@@ -74,6 +74,11 @@ class PoseAnalysisMDResult(WorkflowResult):
         ]
 
     @property
+    def hydration_sites(self) -> list[stjames.HydrationSite]:
+        """Hydration sites identified across all trajectories."""
+        return self._workflow.hydration_sites or []
+
+    @property
     def average_rmsds(self) -> list[float | None]:
         """Average ligand RMSD per trajectory (Angstrom)."""
         return [

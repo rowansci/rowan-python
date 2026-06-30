@@ -61,6 +61,7 @@ print(result.trajectories[0].ligand_rmsd)   # ligand RMSD by frame
 ## Result fields
 
 - `trajectories`: per-replicate results. Each exposes the ligand RMSD by frame (`ligand_rmsd`), the persistent protein-ligand contacts with their occupancy (`contacts`), and the radius of gyration per frame (`isotropic_radius_of_gyration`). When `analysis_interval_ps` is set, `sasa` and `polar_sasa` are populated; when `clustering` is set, `cluster_centroid_indices` and `cluster_indices_by_frame` are populated.
+- `hydration_sites`: list of `rowan.HydrationSite` objects identified across all trajectories. Each site has a `centroid` (x, y, z tuple in Å), `abs_occ` (absolute occupancy 0–1), `prot_only_abs_occ`, `lig_only_abs_occ`, `bridge_abs_occ`, `num_unique_waters`, and `bridge_residues` (list of `rowan.HydrationBridgeResidue` with `residue_index` and `bridge_occ`).
 - `average_rmsds`: average ligand RMSD per trajectory, in angstrom (a low value means the pose held).
 - `minimized_protein_uuid` / `get_minimized_protein()`: UUID and fetched `Protein` object of the energy-minimized structure.
 - `messages`: messages or warnings emitted during the run.
