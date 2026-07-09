@@ -12,6 +12,7 @@ from stjames import (
     ConformerClusteringSettings,
     ConformerGenSettingsUnion,
     Correction,
+    CovalentInhibitorScanSettings,
     Engine,
     ETKDGSettings,
     GreedyClusteringSettings,

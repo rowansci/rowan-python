@@ -53,6 +53,11 @@ from .binding_affinity import (
     submit_binding_affinity_workflow,
 )
 from .conformer_search import ConformerSearchResult, submit_conformer_search_workflow
+from .covalent_inhibitor_scan import (
+    CovalentInhibitorScanPoint,
+    CovalentInhibitorScanResult,
+    submit_covalent_inhibitor_scan_workflow,
+)
 from .descriptors import DescriptorsResult, submit_descriptors_workflow
 from .docking import DockingResult, DockingScore, submit_docking_workflow
 from .double_ended_ts_search import (
