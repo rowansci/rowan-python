@@ -13,8 +13,10 @@ from stjames import (
     ConformerGenSettingsUnion,
     Correction,
     CovalentInhibitorScanSettings,
+    DockingSettings,
     Engine,
     ETKDGSettings,
+    GninaSettings,
     GreedyClusteringSettings,
     iMTDSettings,
     KMeansClusteringSettings,
@@ -34,6 +36,7 @@ from stjames import (
     SinglePointEnergySettings,
     Task,
     VibrationalMode,
+    VinaSettings,
 )
 from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, RBFEGraphEdge
 from stjames.excited_state_settings import TDDFTSettings

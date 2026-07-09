@@ -55,10 +55,34 @@ Each pose's `strain` is its energy above the ligand's lowest-energy conformer, p
 
 ## Settings
 
-- `executable` (default `vina`): docking implementation, one of `vina`, `qvina2`, `qvina-w`.
-- `scoring_function` (default `vinardo`): scoring function, `vinardo` or `vina`. Vinardo is more accurate; Vina is faster. QVina implementations (`qvina2`, `qvina-w`) do not support `vinardo`, so switch to `vina` scoring if you select one.
+- `docking_settings`: a `rowan.VinaSettings` or `rowan.GninaSettings` object controlling the docking engine. If provided, it overrides `executable`, `scoring_function`, `exhaustiveness`, and `max_poses` below.
+- `executable` (default `vina`): Vina docking implementation, one of `vina`, `qvina2`, `qvina-w`.
+- `scoring_function` (default `vinardo`): Vina scoring function, `vinardo` or `vina`. Vinardo is more accurate; Vina is faster. QVina implementations (`qvina2`, `qvina-w`) do not support `vinardo`, so switch to `vina` scoring if you select one.
 - `exhaustiveness` (default `8`): how many times Vina attempts to find a pose for each conformer. 8 is typical; 32 is relatively careful.
 - `max_poses` (default `4`): maximum number of poses generated per input conformer. The total can exceed this when `do_csearch` is on, since each conformer contributes poses.
 - `do_csearch` (default `False`): run an OpenConf conformer search on the input before docking, generating an ensemble of starting poses rather than one arbitrary geometry. This is what enables the per-pose `strain` estimate, but it can significantly increase runtime for large systems.
 - `do_optimization` (default `False`): run an AIMNet2 optimization on the input ligand before docking. Skip it if the input is already optimized, to save time.
 - `do_pose_refinement` (default `True`): run a constrained AIMNet2 optimization on the output poses (gently relieves clashes without erasing the binding mode).
+
+## gnina (noncovalent and covalent docking)
+
+Use covalent docking for ligands that bind to a specific residue (e.g. cysteine-targeting acrylamides)
+instead of binding noncovalently — standard docking can't form or break bonds at all.
+
+Pass a `rowan.GninaSettings` object as `docking_settings` to dock with gnina instead of Vina:
+
+```python
+gnina_settings = rowan.GninaSettings(scoring_function="gnina_cnn", exhaustiveness=8, max_poses=4)
+wf = rowan.submit_docking_workflow(
+    protein,
+    pocket=[center, size],
+    initial_molecule=dasatinib,
+    docking_settings=gnina_settings,
+    folder=folder,
+)
+```
+
+- `scoring_function` (default `gnina_cnn`): `gnina_cnn` rescores poses with gnina's convolutional neural network; `vina` disables the CNN and uses standard Vina scoring.
+- `exhaustiveness` (default `8`): how many times gnina attempts to find a pose.
+- `max_poses` (default `4`): maximum number of poses generated per input conformer.
+- `covalent_ligand_atom_index` / `covalent_protein_atom_index`: 0-based, all-atom indices (including hydrogens) of the reacting ligand and protein atoms. Set both together to run covalent docking; leave both unset (the default) for standard noncovalent docking.

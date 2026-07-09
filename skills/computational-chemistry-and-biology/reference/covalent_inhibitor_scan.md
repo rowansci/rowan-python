@@ -9,6 +9,8 @@ A `rowan.Protein` (or its UUID string) with the protein and ligand as separate e
 
 The ligand must be classified as non-polymer in the protein's data — `protein.prepare()` can misclassify a covalently-bonded ligand as part of the polymer chain, in which case the workflow fails at compute time with "Complex PDB has no non-polymer atoms to use as the ligand".
 
+If you don't already have a covalently-bonded complex (e.g. from a crystal structure), covalent docking (see `docking.md`, "gnina (noncovalent and covalent docking)") is a good way to generate one: it forms the bond between the specified reactive atoms and returns a complex whose `protein_reactive_atom_index`/`ligand_reactive_atom_index` (there, `covalent_protein_atom_index`/`covalent_ligand_atom_index`) can feed directly into this scan.
+
 ## Example
 
 ```python

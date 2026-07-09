@@ -1,5 +1,6 @@
 """Docking workflow - molecular docking to protein targets."""
 
+import warnings
 from dataclasses import dataclass
 
 import stjames
@@ -146,10 +147,11 @@ def submit_docking_workflow(
     protein: str | Protein,
     pocket: list[list[float]],
     initial_molecule: StructureInput,
-    executable: str = "vina",
-    scoring_function: str = "vinardo",
-    exhaustiveness: float = 8,
-    max_poses: int = 4,
+    docking_settings: stjames.VinaSettings | stjames.GninaSettings | None = None,
+    executable: str | None = None,
+    scoring_function: str | None = None,
+    exhaustiveness: float | None = None,
+    max_poses: int | None = None,
     do_csearch: bool = False,
     do_optimization: bool = False,
     do_pose_refinement: bool = True,
@@ -166,10 +168,17 @@ def submit_docking_workflow(
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
     :param initial_molecule: Initial molecule to be docked.
-    :param executable: Which docking implementation to use.
-    :param scoring_function: Which docking scoring function to use.
-    :param exhaustiveness: Which exhaustiveness to employ.
-    :param max_poses: Maximum number of poses generated per input conformer.
+    :param docking_settings: Settings controlling the docking engine, e.g. ``VinaSettings`` or
+        ``GninaSettings`` (for noncovalent or covalent gnina docking). If provided, the deprecated
+        ``executable``, ``scoring_function``, ``exhaustiveness``, and ``max_poses`` are ignored.
+    :param executable: Deprecated, use `docking_settings=VinaSettings(executable=...)` instead.
+        Which Vina docking implementation to use.
+    :param scoring_function: Deprecated, use `docking_settings=VinaSettings(scoring_function=...)`
+        instead. Which Vina docking scoring function to use.
+    :param exhaustiveness: Deprecated, use `docking_settings=VinaSettings(exhaustiveness=...)`
+        instead. Which exhaustiveness to employ.
+    :param max_poses: Deprecated, use `docking_settings=VinaSettings(max_poses=...)` instead.
+        Maximum number of poses generated per input conformer.
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param do_pose_refinement: Whether or not to optimize output poses.
@@ -192,12 +201,26 @@ def submit_docking_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    docking_settings = stjames.VinaSettings(
-        executable=executable,
-        exhaustiveness=exhaustiveness,
-        max_poses=max_poses,
-        scoring_function=scoring_function,
-    )
+    legacy_vina_kwargs = {
+        k: v
+        for k, v in {
+            "executable": executable,
+            "exhaustiveness": exhaustiveness,
+            "max_poses": max_poses,
+            "scoring_function": scoring_function,
+        }.items()
+        if v is not None
+    }
+    if legacy_vina_kwargs:
+        warnings.warn(
+            "executable, scoring_function, exhaustiveness, and max_poses are deprecated; "
+            "pass docking_settings=VinaSettings(...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    if docking_settings is None:
+        docking_settings = stjames.VinaSettings(**legacy_vina_kwargs)
 
     workflow = stjames.DockingWorkflow(
         initial_molecule=mol_dict,
@@ -210,7 +233,6 @@ def submit_docking_workflow(
     )
 
     workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
-    workflow_data["docking_settings"].setdefault("settings_type", "vina")
 
     data = {
         "workflow_type": "docking",
