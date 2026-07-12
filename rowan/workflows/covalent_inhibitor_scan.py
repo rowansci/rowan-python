@@ -66,6 +66,7 @@ def submit_covalent_inhibitor_scan_workflow(
     protein: str | Protein,
     protein_reactive_atom_index: int,
     ligand_reactive_atom_index: int,
+    ligand_smiles: str,
     settings: stjames.CovalentInhibitorScanSettings | None = None,
     name: str = "Covalent Inhibitor Scan Workflow",
     folder_uuid: str | None = None,
@@ -83,6 +84,8 @@ def submit_covalent_inhibitor_scan_workflow(
         record order.
     :param ligand_reactive_atom_index: 0-based index of the reacting ligand atom, in PDB
         record order.
+    :param ligand_smiles: SMILES of the ligand, whose net charge sets the ligand charge of the QM
+        cluster.
     :param settings: settings controlling the scan. Defaults to
         `stjames.CovalentInhibitorScanSettings()`.
     :param name: name of the workflow.
@@ -105,6 +108,7 @@ def submit_covalent_inhibitor_scan_workflow(
         protein=protein,
         protein_reactive_atom_index=protein_reactive_atom_index,
         ligand_reactive_atom_index=ligand_reactive_atom_index,
+        initial_smiles=ligand_smiles,
         settings=settings or stjames.CovalentInhibitorScanSettings(),
     )
 
