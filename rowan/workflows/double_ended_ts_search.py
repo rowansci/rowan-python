@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import stjames
-from stjames.optimization.freezing_string_method import FSMSettings
+from stjames.optimization.band_method import NEBSettings
+from stjames.optimization.string_method import StringMethodSettings
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
@@ -151,7 +152,7 @@ def submit_double_ended_ts_search_workflow(
     reactant: StructureInput,
     product: StructureInput,
     calculation_settings: stjames.Settings | dict[str, Any] | None = None,
-    search_settings: FSMSettings | dict[str, Any] | None = None,
+    search_settings: StringMethodSettings | NEBSettings | dict[str, Any] | None = None,
     optimize_inputs: bool = True,
     optimize_ts: bool = True,
     name: str = "Double-Ended TS Search Workflow",
@@ -167,7 +168,7 @@ def submit_double_ended_ts_search_workflow(
     :param reactant: reactant Molecule.
     :param product: product Molecule.
     :param calculation_settings: Settings to use for calculations. Defaults to omol25_conserving_s.
-    :param search_settings: Settings for the transition state search. Defaults to FSMSettings().
+    :param search_settings: Settings for the transition state search; resolves to FSM
     :param optimize_inputs: Whether to optimize the reactant and product before the search.
     :param optimize_ts: Whether to optimize the found transition state.
     :param name: name of the workflow.
@@ -195,7 +196,7 @@ def submit_double_ended_ts_search_workflow(
         reactant=reactant_dict,
         product=product_dict,
         calculation_settings=calculation_settings,
-        search_settings=search_settings or FSMSettings(),
+        search_settings=search_settings or StringMethodSettings(),
         optimize_inputs=optimize_inputs,
         optimize_ts=optimize_ts,
     )

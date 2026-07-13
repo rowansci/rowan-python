@@ -2,7 +2,7 @@
 
 ## Input
 
-Two 3D structures, a `reactant` and a `product`, each a `StructureInput` (a `rowan.Molecule`, `stjames.Molecule`, or RDKit `Mol` carrying coordinates). Get them any way: load coordinates with `rowan.Molecule.from_xyz(...)` or `rowan.Molecule.from_xyz_file(path)`, or embed from a SMILES with `rowan.Molecule.from_smiles(...)`. They must share the same atom ordering so the two endpoints can be interpolated. If a reaction involves multiple reactants or products, combine them into a single 3D structure for that endpoint. If you know the mechanism, arranging the molecules in the reaction channel can speed up the search, but it is not required. The workflow finds the transition state connecting them using the freezing string method (FSM).
+Two 3D structures, a `reactant` and a `product`, each a `StructureInput` (a `rowan.Molecule`, `stjames.Molecule`, or RDKit `Mol` carrying coordinates). Get them any way: load coordinates with `rowan.Molecule.from_xyz(...)` or `rowan.Molecule.from_xyz_file(path)`, or embed from a SMILES with `rowan.Molecule.from_smiles(...)`. They must share the same atom ordering so the two endpoints can be interpolated. If a reaction involves multiple reactants or products, combine them into a single 3D structure for that endpoint. If you know the mechanism, arranging the molecules in the reaction channel can speed up the search, but it is not required. The workflow finds the transition state connecting them using a string method (freezing string method, FSM, by default; growing string method, GSM, via `freeze=False`) or a nudged elastic band (NEB).
 
 ## Example
 
@@ -32,7 +32,7 @@ print([p.distance for p in result.backward_path])
 ## Settings
 
 - `calculation_settings` (default none, resolves to omol25_conserving_s): a `rowan.Settings` specifying the level of theory (method, basis set, and so on) used during the search and optimizations. Set an implicit solvent here through its `solvent_settings` (default none, gas phase); see the basic calculation reference for `solvent_settings`.
-- `search_settings` (default none): a `rowan.FSMSettings` controlling the freezing string method (node count, interpolation, coordinate system, displacement, optimizer iterations). Run `help(rowan.FSMSettings)` for the fields and their defaults. `interpolation_method` takes a `rowan.FSMInterpolation` and `optimization_coordinates` a `rowan.FSMOptimizationCoordinates`.
+- `search_settings` (default none, resolves to `rowan.StringMethodSettings()`): either a `rowan.StringMethodSettings` (`freeze=True` -> FSM; `freeze=False` -> GSM) or a `rowan.NEBSettings` (nudged elastic band). Both take `interpolation_method`, a `rowan.Interpolation` (`GEODESIC` by default, or `IDPP`, `CARTESIAN`, `LINEAR_SYNCHRONOUS_TRANSIT`, `REDUNDANT_INTERNAL_COORDINATES`).
 - `optimize_inputs` (default `True`): pre-optimize the reactant and product before the search. Leave it on for most cases; turn it off when you have manually arranged the endpoints in the reaction channel, since optimization would relax them out of that arrangement.
 - `optimize_ts` (default `True`): optimize the located TS guess to a true transition state.
 

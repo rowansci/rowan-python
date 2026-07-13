@@ -22,22 +22,20 @@ H 0 0 2.3
 C 0 0 0
 N 0 0 1.2""",
 )
-fsm_settings = rowan.FSMSettings(
-    optimization_coordinates=rowan.FSMOptimizationCoordinates.CARTESIAN,
-    interpolation_method=rowan.FSMInterpolation.REDUNDANT_INTERNAL_COORDINATES,
-    min_num_nodes=7,
-    num_interpolation_points=5,
-    max_optimizer_iterations=3,
-    max_line_search_steps=2,
-    max_displacement=0.1,
-)
 
+# Freezing string method (FSM)
+search_settings = rowan.StringMethodSettings(
+    freeze=True,
+    interpolation_method=rowan.Interpolation.GEODESIC,
+)
+# Use `freeze=False` for the growing string method (GSM)
+# Use rowan.NEBSettings for nudged elastic band (NEB)
 
 workflow = rowan.submit_double_ended_ts_search_workflow(
     reactant=HCN,
     product=CNH,
     calculation_settings=rowan.Settings(method=rowan.Method.GFN2_XTB),
-    search_settings=fsm_settings,
+    search_settings=search_settings,
     optimize_inputs=True,
     optimize_ts=True,
     name="H-C≡N Isomerization",

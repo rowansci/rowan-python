@@ -48,11 +48,9 @@ from stjames.engine_compatibility import (
     METHOD_ENGINES,
     get_supported_corrections,
 )
-from stjames.optimization.freezing_string_method import (
-    FSMInterpolation,
-    FSMOptimizationCoordinates,
-    FSMSettings,
-)
+from stjames.optimization.band_method import NEBSettings
+from stjames.optimization.interpolation import Interpolation
+from stjames.optimization.string_method import FSMSettings, StringMethodSettings
 
 api_key: str | None = None
 project_uuid: str | None = None

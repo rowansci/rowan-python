@@ -32,7 +32,8 @@ profile = result.get_forward_energies(relative=True)   # kcal/mol along the forw
 - `method` (required): level of theory. Ideally use the same level of theory the transition state was optimized at. `basis_set`, `corrections`, and `engine` are also accepted, like a basic calculation.
 - `solvent_settings` (default gas phase): implicit solvent (see Solvent below).
 - `preopt` (default `True`): re-optimize the input transition state before tracing the path. Use with caution unless the input geometry is already very close to the transition state, since re-optimizing a poor guess can move it to a different saddle point.
-- `step_size` (default `0.05`, in amu^(1/2)·Å) and `max_irc_steps` (default `30`): IRC step size and maximum steps in each direction. The defaults usually suffice; use a smaller `step_size` for a smoother path (especially proton-transfer reactions) and more `max_irc_steps` to capture reactions with large-scale motion.
+- `step_size` (default `0.05`, range `0.001`-`0.5`, in amu^(1/2)·Å) and `max_irc_steps` (default `30`): Initial IRC step size and maximum steps in each direction. The defaults usually suffice; use a smaller `step_size` for a smoother path (especially proton-transfer reactions) and more `max_irc_steps` to capture reactions with large-scale motion. Actual per-step sizes taken are available on the result as `forward_step_sizes`/`backward_step_sizes` once the workflow completes (they are not streamed).
+- `optimize_endpoints` (default `False`): optimize the forward and backward endpoint geometries once the IRC completes. When enabled, `result.forward_endpoint_molecule` / `backward_endpoint_molecule` give the optimized product/reactant; use to confirm the endpoints connect to the desired species or to obtain reaction-barrier heights.
 
 ## Solvent
 
