@@ -88,6 +88,7 @@ wf = rowan.submit_protein_cofolding_workflow(
 ## Result fields
 
 - `predictions` (also `cofolding_results`): all cofolding predictions.
+- `predictions[i].mmgbsa_score`: optional MM/GBSA binding free energy estimate for that prediction, in kcal/mol. Check for `None`; MM/GBSA is stored per prediction and is not guaranteed for every run.
 - `predicted_structure_uuid` and `predicted_refined_structure_uuid`: UUIDs of the predicted structure and, when pose refinement ran, the refined one. Fetch with `rowan.retrieve_protein(uuid)`.
 - `lddt`: per-residue LDDT confidence for the primary prediction.
 - `scores`: confidence scores; `affinity_score`: predicted binding affinity for the primary prediction.

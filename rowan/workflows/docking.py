@@ -22,7 +22,11 @@ from .base import (
 
 @dataclass(frozen=True, slots=True)
 class DockingScore:
-    """A docking pose with its score."""
+    """A docking pose with its scores.
+
+    :param score: Docking score in kcal/mol.
+    :param mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol.
+    """
 
     score: float
     pose: str | None = None
@@ -30,6 +34,7 @@ class DockingScore:
     posebusters_valid: bool = False
     strain: float | None = None
     rmsd: float | None = None
+    mmgbsa_score: float | None = None
 
 
 @register_result("docking")
@@ -60,6 +65,7 @@ class DockingResult(WorkflowResult):
                 posebusters_valid=s.posebusters_valid,
                 strain=s.strain,
                 rmsd=s.rmsd,
+                mmgbsa_score=s.mmgbsa_score,
             )
             for s in self._workflow.scores
         ]

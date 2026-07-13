@@ -52,6 +52,10 @@ print(result)   # e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC
 # result.analogue_scores: docking scores per analogue (keyed by SMILES); result.best_poses: top pose per analogue
 ```
 
+Each entry in `result.analogue_scores[smiles]` has the Vina `score` and an optional
+`mmgbsa_score`, both in kcal/mol. `mmgbsa_score` is populated only when
+`run_local_optimization=True`; otherwise it is `None`.
+
 ## Settings
 
 - `scoring_function` (default `vinardo`): scoring function, `vinardo` or `vina`. Vinardo is more accurate; Vina is faster.
@@ -59,4 +63,4 @@ print(result)   # e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC
 - `max_poses` (default `4`): maximum number of poses generated per input conformer.
 - `num_conformers_per_analogue` (default `100`): maximum number of conformers generated per analogue. 10-50 is suitable for routine use. 100-1000 is recommended when preparing structures for free energy perturbation calculations.
 - `require_posebusters` (default `False`): run PoseBusters validity checks and keep only poses that pass.
-- `run_local_optimization` (default `False`): optimize each pose within the binding pocket after generation. Leaving this off is recommended, since local optimization can move poses off the template and cause poorer alignment of the analogues.
+- `run_local_optimization` (default `False`): optimize each pose within the binding pocket after generation and compute its MM/GBSA binding free energy estimate. Leaving this off is recommended when consistent template alignment is more important, since local optimization can move poses off the template; `mmgbsa_score` is `None` when it is off.

@@ -59,6 +59,7 @@ class AnalogueDockingResult(WorkflowResult):
                     posebusters_valid=s.posebusters_valid,
                     strain=s.strain,
                     rmsd=s.rmsd,
+                    mmgbsa_score=s.mmgbsa_score,
                 )
                 for s in scores
             ]

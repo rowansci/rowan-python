@@ -48,10 +48,14 @@ wf = rowan.submit_docking_workflow(
 
 result = wf.result()
 for score in result.scores:
-    print(score.score, score.posebusters_valid)
+    print(score.score, score.mmgbsa_score, score.posebusters_valid)
 ```
 
 Each pose's `strain` is its energy above the ligand's lowest-energy conformer, populated only when `do_csearch=True` (otherwise `None`). The result also exposes `best_pose` (the top-scoring pose) and `conformers`. Poses come back with explicit hydrogens reconstructed (Vina strips them during docking), so `best_pose` is a complete 3D structure ready for downstream use such as MD.
+
+Each pose also has an optional `mmgbsa_score`, an MM/GBSA binding free energy estimate in
+kcal/mol. Treat it as optional and check for `None`; the result schema does not guarantee that
+every docking run or pose has an MM/GBSA value.
 
 ## Settings
 

@@ -80,6 +80,7 @@ class CofoldingResult:
     :param scores: Confidence scores for the prediction.
     :param affinity_score: Predicted binding affinity (if computed).
     :param strain: Ligand strain energy (if computed).
+    :param mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol (if computed).
     :param posebusters_valid: Whether the pose passes PoseBusters validation.
     :param lddt: Per-residue LDDT confidence scores.
     :param pose_uuid: UUID of the pose.
@@ -90,6 +91,7 @@ class CofoldingResult:
     scores: CofoldingScores | None = None
     affinity_score: AffinityScore | None = None
     strain: float | None = None
+    mmgbsa_score: float | None = None
     posebusters_valid: bool | None = None
     lddt: list[float] | None = None
     pose_uuid: str | None = None
@@ -197,6 +199,7 @@ class ProteinCofoldingResult(WorkflowResult):
                     scores=scores,
                     affinity_score=affinity_score,
                     strain=getattr(r, "strain", None),
+                    mmgbsa_score=getattr(r, "mmgbsa_score", None),
                     posebusters_valid=getattr(r, "posebusters_valid", None),
                     lddt=list(lddt) if lddt else None,
                     pose_uuid=getattr(r, "pose", None),
