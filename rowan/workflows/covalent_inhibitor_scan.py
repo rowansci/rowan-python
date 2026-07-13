@@ -115,6 +115,7 @@ def submit_covalent_inhibitor_scan_workflow(
     data = {
         "workflow_type": "covalent_inhibitor_scan",
         "workflow_data": workflow.model_dump(mode="json"),
+        "initial_smiles": ligand_smiles,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
