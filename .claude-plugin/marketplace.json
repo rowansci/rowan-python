@@ -1,0 +1,17 @@
+{
+  "name": "rowan",
+  "owner": {
+    "name": "Rowan",
+    "email": "eli@rowansci.com"
+  },
+  "description": "Claude Code plugins for the Rowan computational chemistry platform",
+  "plugins": [
+    {
+      "name": "computational-chemistry-and-biology",
+      "source": "./skills/computational-chemistry-and-biology",
+      "description": "Run computational chemistry and structural biology calculations on the Rowan platform via the rowan Python package",
+      "skills": ["./"],
+      "strict": false
+    }
+  ]
+}

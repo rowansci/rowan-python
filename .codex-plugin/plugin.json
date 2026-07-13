@@ -1,0 +1,37 @@
+{
+  "name": "computational-chemistry-and-biology",
+  "version": "0.0.1",
+  "description": "Run computational chemistry and structural biology calculations on the Rowan platform via the rowan-python package",
+  "skills": "./skills/",
+  "author": {
+    "name": "Rowan",
+    "email": "eli@rowansci.com",
+    "url": "https://rowansci.com"
+  },
+  "homepage": "https://rowansci.com",
+  "repository": "https://github.com/rowansci/rowan-python",
+  "license": "MIT",
+  "keywords": [
+    "computational chemistry",
+    "structural biology",
+    "molecular simulation",
+    "Rowan"
+  ],
+  "interface": {
+    "displayName": "Rowan Computational Chemistry",
+    "shortDescription": "Run computational chemistry and structural biology workflows with Rowan.",
+    "longDescription": "Use Rowan to choose and run molecular and protein workflows, including quantum chemistry, docking, molecular dynamics, protein structure prediction, and cheminformatics. The bundled skill provides workflow selection guidance, safe defaults, result retrieval patterns, and links to detailed workflow references.",
+    "developerName": "Rowan",
+    "category": "Science",
+    "capabilities": [
+      "Read",
+      "Compute"
+    ],
+    "websiteURL": "https://rowansci.com",
+    "defaultPrompt": [
+      "Run a Rowan calculation for this molecule.",
+      "Help me choose a Rowan workflow for my chemistry question.",
+      "Analyze this protein-ligand system with Rowan."
+    ]
+  }
+}
