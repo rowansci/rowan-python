@@ -165,6 +165,44 @@ class IRCResult(WorkflowResult):
         energies: list[float] = [m.energy for m in self.backward_molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
 
+    @property
+    def forward_step_sizes(self) -> list[float]:
+        """Actual step sizes taken along the forward IRC path (Å√amu)."""
+        return list(self._workflow.step_sizes_forward)
+
+    @property
+    def backward_step_sizes(self) -> list[float]:
+        """Actual step sizes taken along the backward IRC path (Å√amu)."""
+        return list(self._workflow.step_sizes_backward)
+
+    @property
+    def forward_endpoint_calculation(self) -> Calculation | None:
+        """Optimization of the forward endpoint (if ``optimize_endpoints=True``, lazily fetched)."""
+        if "forward_endpoint_calc" not in self._cache:
+            uuid = self._workflow.endpoint_opt_forward
+            self._cache["forward_endpoint_calc"] = retrieve_calculation(uuid) if uuid else None
+        return self._cache["forward_endpoint_calc"]
+
+    @property
+    def backward_endpoint_calculation(self) -> Calculation | None:
+        """Optimization of backward endpoint (if ``optimize_endpoints=True``, lazily fetched)."""
+        if "backward_endpoint_calc" not in self._cache:
+            uuid = self._workflow.endpoint_opt_backward
+            self._cache["backward_endpoint_calc"] = retrieve_calculation(uuid) if uuid else None
+        return self._cache["backward_endpoint_calc"]
+
+    @property
+    def forward_endpoint_molecule(self) -> Molecule | None:
+        """Optimized forward endpoint molecule (if ``optimize_endpoints=True``)."""
+        calc = self.forward_endpoint_calculation
+        return calc.molecule if calc else None
+
+    @property
+    def backward_endpoint_molecule(self) -> Molecule | None:
+        """Optimized backward endpoint molecule (if ``optimize_endpoints=True``)."""
+        calc = self.backward_endpoint_calculation
+        return calc.molecule if calc else None
+
 
 def submit_irc_workflow(
     initial_molecule: StructureInput,
@@ -177,6 +215,7 @@ def submit_irc_workflow(
     preopt: bool = True,
     step_size: float = 0.05,
     max_irc_steps: int = 30,
+    optimize_endpoints: bool = False,
     name: str = "IRC Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -195,8 +234,9 @@ def submit_irc_workflow(
     :param engine: Engine for the calculation (and optional preopt)
     :param pbc_dft_settings: PBC DFT settings for the IRC (and optional preopt)
     :param preopt: Whether to perform a pre-optimization of the TS guess
-    :param step_size: Step size for the IRC calculation
+    :param step_size: Step size for the IRC calculation (0.001-0.5 Å√amu)
     :param max_irc_steps: Maximum number of IRC steps to perform
+    :param optimize_endpoints: Whether to optimize the endpoint geometries once the IRC completes
     :param name: Name for the workflow
     :param folder_uuid: UUID of the folder to place the workflow in
     :param folder: Folder object to store the workflow in
@@ -244,6 +284,7 @@ def submit_irc_workflow(
         preopt=preopt,
         step_size=step_size,
         max_irc_steps=max_irc_steps,
+        optimize_endpoints=optimize_endpoints,
     )
 
     data = {
