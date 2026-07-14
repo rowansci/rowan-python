@@ -14,9 +14,26 @@ The documentation is available [here](https://docs.rowansci.com/python-api).
 
 ## Agent skill
 
-Ships with a [skill](skills/computational-chemistry-and-biology/) that makes it easy for coding agents to use Rowan's tools to power chemistry and biology tasks. To use it, copy the directory into your agent's skills folder.
+Ships with a [computational chemistry and biology skill](skills/computational-chemistry-and-biology/)
+that helps coding agents choose and run Rowan workflows through the Rowan Python SDK.
 
-Download the latest skill as a zip [here](https://github.com/rowansci/rowan-python/releases/download/skill-latest/computational-chemistry-and-biology-skill.zip), then unzip it into your agent's skills folder.
+### Claude Code
+
+```bash
+claude plugin marketplace add https://github.com/rowansci/rowan-python.git
+claude plugin install computational-chemistry-and-biology@rowan
+```
+
+### Codex
+
+```bash
+codex plugin marketplace add rowansci/rowan-python --ref master
+codex plugin add computational-chemistry-and-biology@rowan
+```
+
+Start a new Claude Code or Codex session after installation. For manual installation, download the
+[latest skill ZIP](https://github.com/rowansci/rowan-python/releases/download/skill-latest/computational-chemistry-and-biology-skill.zip)
+and extract it into your agent's skills directory.
 
 ## Running examples
 
