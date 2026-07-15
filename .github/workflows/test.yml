@@ -31,3 +31,4 @@ jobs:
       - run: pixi run fmt
       - run: pixi run lint
       - run: pixi run types
+      - run: pixi run test

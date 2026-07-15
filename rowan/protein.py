@@ -400,22 +400,20 @@ def upload_protein(
     if isinstance(project_uuid, Project):
         project_uuid = project_uuid.uuid
     with api_client() as client:
-        # Step 1: Read the file and post it to the conversion endpoint.
         conversion_payload = {"name": name, "text": file_path.read_text()}
         conversion_response = client.post("/convert/pdb_file_to_protein", json=conversion_payload)
+        conversion_response.raise_for_status()
 
-        # Extract the JSON data from the conversion response.
         protein_data = conversion_response.json()
 
-        # Step 2: Use the converted data to create the final protein object.
         creation_payload = {
             "name": name,
             "protein_data": protein_data,
             "project_uuid": project_uuid,
         }
         final_response = client.post("/protein", json=creation_payload)
+        final_response.raise_for_status()
 
-        # Deserialize the final JSON response into a Protein object and return it.
         return Protein(**final_response.json())
 
 

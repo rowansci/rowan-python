@@ -1,5 +1,7 @@
 import os
 from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Generator
 
 import httpx
@@ -8,6 +10,40 @@ import stjames
 import rowan
 
 from .constants import API_URL
+
+
+@dataclass(frozen=True, slots=True)
+class _APIContext:
+    """Store credentials isolated to the current execution context."""
+
+    api_key: str
+    project_uuid: str | None
+
+
+_api_context: ContextVar[_APIContext | None] = ContextVar("rowan_api_context", default=None)
+
+
+@contextmanager
+def api_credentials(api_key: str, project_uuid: str | None = None) -> Generator[None, None, None]:
+    """Temporarily use Rowan credentials in the current execution context.
+
+    Context-local credentials take precedence over module-level and environment configuration.
+    Nested contexts restore the previous credentials when they exit, and concurrent threads or
+    asynchronous tasks remain isolated from one another.
+
+    :param api_key: Rowan API key
+    :param project_uuid: active project UUID, if any
+    :yields: control while the credentials are active
+    :raises ValueError: API key is empty
+    """
+    if not api_key:
+        raise ValueError("API key cannot be empty.")
+
+    token = _api_context.set(_APIContext(api_key=api_key, project_uuid=project_uuid))
+    try:
+        yield
+    finally:
+        _api_context.reset(token)
 
 
 def get_api_key() -> str:
@@ -19,6 +55,8 @@ def get_api_key() -> str:
 
     :returns: API key.
     """
+    if (context := _api_context.get()) is not None:
+        return context.api_key
     if hasattr(rowan, "api_key") and rowan.api_key:
         return rowan.api_key
     elif (api_key := os.environ.get("ROWAN_API_KEY")) is not None:
@@ -36,6 +74,8 @@ def get_project_uuid() -> str | None:
 
     :returns: Project UUID string, or None if not set.
     """
+    if (context := _api_context.get()) is not None:
+        return context.project_uuid
     if hasattr(rowan, "project_uuid") and rowan.project_uuid:
         return rowan.project_uuid
     return None

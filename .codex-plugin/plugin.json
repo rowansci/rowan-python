@@ -1,7 +1,7 @@
 {
   "name": "computational-chemistry-and-biology",
-  "version": "0.0.1",
-  "description": "Run computational chemistry and structural biology calculations on the Rowan platform via the rowan-python package",
+  "version": "0.0.2",
+  "description": "Run computational chemistry and structural biology calculations through Rowan MCP tools or rowan-python",
   "skills": "./skills/",
   "author": {
     "name": "Rowan",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Rowan Computational Chemistry",
     "shortDescription": "Run computational chemistry and structural biology workflows with Rowan.",
-    "longDescription": "Use Rowan to choose and run molecular and protein workflows, including quantum chemistry, docking, molecular dynamics, protein structure prediction, and cheminformatics. The bundled skill provides workflow selection guidance, safe defaults, result retrieval patterns, and links to detailed workflow references.",
+    "longDescription": "Use Rowan to choose and run molecular and protein workflows, including quantum chemistry, docking, molecular dynamics, protein structure prediction, and cheminformatics. The bundled skill provides shared scientific and workflow guidance for Rowan MCP tools and rowan-python, including safe defaults, result retrieval patterns, and detailed references.",
     "developerName": "Rowan",
     "category": "Science",
     "capabilities": [

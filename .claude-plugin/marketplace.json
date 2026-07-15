@@ -9,7 +9,7 @@
     {
       "name": "computational-chemistry-and-biology",
       "source": "./skills/computational-chemistry-and-biology",
-      "description": "Run computational chemistry and structural biology calculations on the Rowan platform via the rowan Python package",
+      "description": "Run computational chemistry and structural biology calculations through Rowan MCP tools or rowan-python",
       "skills": ["./"],
       "strict": false
     }

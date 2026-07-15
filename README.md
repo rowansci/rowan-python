@@ -15,7 +15,8 @@ The documentation is available [here](https://docs.rowansci.com/python-api).
 ## Agent skill
 
 Ships with a [computational chemistry and biology skill](skills/computational-chemistry-and-biology/)
-that helps coding agents choose and run Rowan workflows through the Rowan Python SDK.
+that helps coding agents choose and run Rowan workflows through either Rowan MCP tools or the
+Rowan Python SDK.
 
 ### Claude Code
 
