@@ -1,5 +1,6 @@
 """RBFE perturbation workflow - run relative binding free energy FEP simulations."""
 
+import csv
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -90,6 +91,11 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     def protein(self) -> Protein:
         """Prepared protein structure used as the simulation target."""
         return Protein(uuid=str(self._workflow.protein))
+
+    @property
+    def settings(self) -> TMDRBFESettings:
+        """FEP settings used for the simulation."""
+        return self._workflow.settings
 
     @property
     def graph(self) -> RBFEGraph | None:
@@ -186,6 +192,34 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         return {
             k: RelativeBindingFreeEnergyResult(dg=v.dg, dg_err=v.dg_err) for k, v in raw.items()
         }
+
+    def write_ligand_results_csv(self, path: Path | str = "ligand_results.csv") -> Path:
+        """
+        Write per-ligand results to a CSV, matching the platform's ligand-results export.
+
+        Columns are ``Ligand name``, ``ΔG``, ``ΔG error``, ``SMILES``, quoted and
+        BOM-prefixed for spreadsheet compatibility, identical to the download in the web UI.
+
+        :param path: destination CSV path.
+        :returns: path written to.
+        :raises ValueError: if per-ligand results are not yet available.
+        """
+        if (results := self.ligand_dg_results) is None:
+            raise ValueError("No per-ligand results yet - has the workflow completed?")
+
+        # Match JS Number->string: whole numbers render without a trailing ".0" (0.0 -> "0").
+        def num(x: float) -> str:
+            return str(int(x)) if x == int(x) else str(x)
+
+        ligands = self.ligands
+        path = Path(path)
+        with path.open("w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_ALL, lineterminator="\n")
+            writer.writerow(["Ligand name", "ΔG", "ΔG error", "SMILES"])
+            for name, res in results.items():
+                smiles = ligands[name].smiles if name in ligands else None
+                writer.writerow([name, num(res.dg), num(res.dg_err), smiles or ""])
+        return path
 
     @property
     def diagnostics(self) -> RelativeBindingFreeEnergyDiagnostics | None:

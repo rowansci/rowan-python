@@ -126,6 +126,29 @@ def create_project(
     return Project(**project_data)
 
 
+def get_project(name: str, create: bool = False) -> Project:
+    """
+    Get a project by exact name, optionally creating it if it does not exist.
+
+    The project analogue of :func:`get_folder`. Unlike ``get_folder``, ``create``
+    defaults to ``False``: a project is a top-level container, so a typo should
+    raise rather than silently spawn a new one. Does not change the active project -
+    assign ``rowan.project_uuid`` or use :func:`set_project` for that.
+
+    :param name: Exact name of the project.
+    :param create: If True, create the project when no exact match exists.
+    :returns: Matched (or newly created) project.
+    :raises ValueError: If no match is found and ``create`` is False.
+    """
+    matches = list_projects(name_contains=name, size=100)
+    project = next((p for p in matches if p.name == name), None)
+    if project is not None:
+        return project
+    if create:
+        return create_project(name)
+    raise ValueError(f"Project {name!r} not found")
+
+
 def set_project(name: str) -> Project:
     """
     Set the active project by name for all subsequent API calls.
@@ -142,10 +165,7 @@ def set_project(name: str) -> Project:
     :returns: Matched project.
     :raises ValueError: If no project with that name is found.
     """
-    matches = list_projects(name_contains=name, size=100)
-    project = next((p for p in matches if p.name == name), None)
-    if project is None:
-        raise ValueError(f"Project {name!r} not found")
+    project = get_project(name)
     rowan.project_uuid = project.uuid
     return project
 

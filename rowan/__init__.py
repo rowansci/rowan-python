@@ -38,7 +38,11 @@ from stjames import (
     VibrationalMode,
     VinaSettings,
 )
-from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, RBFEGraphEdge
+from stjames.workflows.relative_binding_free_energy_perturbation import (
+    RBFEGraph,
+    RBFEGraphEdge,
+    TMDRBFESettings,
+)
 from stjames.excited_state_settings import TDDFTSettings
 from stjames.pbc_dft_settings import PBCDFTSmearing
 from stjames.engine_compatibility import (

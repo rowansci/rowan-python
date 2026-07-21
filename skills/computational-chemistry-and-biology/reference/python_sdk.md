@@ -57,7 +57,7 @@ print(draft.dispatch_info())
 draft.submit_draft()  # or draft.delete()
 ```
 
-**Status and control:** `wf.done()` and `wf.get_status()` check state without waiting, `wf.stop()` cancels a running workflow, and `wf.delete()` removes it and its data.
+**Status and control:** `wf.done()` and `wf.get_status()` check state without waiting, `wf.stop()` cancels a running workflow, and `wf.delete()` removes it and its data. `wf.update(...)` edits workflow metadata (`name`, folder, `starred`, `public`, `email_when_complete=True` to email on completion).
 
 **Resubmit:** call `rowan.submit_workflow(workflow_type, workflow_data, initial_molecule=..., folder=folder)`. Pass a prior run's `result.data` unchanged for an identical rerun, edit it to change settings, or use a matching workflow type and data to submit another workflow.
 

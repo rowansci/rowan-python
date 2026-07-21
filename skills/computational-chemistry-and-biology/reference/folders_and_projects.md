@@ -45,6 +45,7 @@ default = rowan.default_project()           # the account's default project
 
 # Create
 proj = rowan.create_project("CDK2 campaign")
+proj = rowan.get_project("CDK2 campaign", create=True)   # get-or-create (create defaults to False)
 
 # Switch the active project (all subsequent folder/workflow operations scope to it)
 rowan.set_project("CDK2 campaign")          # by name; sets rowan.project_uuid

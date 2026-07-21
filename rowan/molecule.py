@@ -145,6 +145,15 @@ class Molecule(BaseModel):
     # -- Properties --
 
     @property
+    def name(self) -> str | None:
+        """Optional molecule name."""
+        return self._stjames.name
+
+    @name.setter
+    def name(self, value: str | None) -> None:
+        self._stjames.name = value
+
+    @property
     def charge(self) -> int:
         """Molecular charge."""
         return self._stjames.charge

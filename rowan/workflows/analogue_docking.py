@@ -98,15 +98,26 @@ class AnalogueDockingResult(WorkflowResult):
         Best docked pose per analogue, keyed by SMILES.
 
         Fetches the final geometry from each analogue's top-scoring pose.
-        Analogues with no successful poses are excluded.
+        Analogues with no successful poses are excluded. When ``analogue_names``
+        were supplied at submission, each pose's ``name`` is set to the analogue
+        name, so poses can be re-keyed by name (e.g. ``{p.name: p for p in ...}``).
 
         :returns: Dictionary mapping SMILES to docked ``Molecule`` with 3D coordinates.
         """
-        return {
-            smiles: self.get_pose(smiles).molecules[-1]
-            for smiles, scores in self.analogue_scores.items()
-            if scores
-        }
+        # analogue_names is empty or parallel to analogues; zip drops the tail when empty.
+        name_by_smiles = dict(
+            zip(self._workflow.analogues, self._workflow.analogue_names, strict=False)
+        )
+        poses = {}
+        for smiles, scores in self.analogue_scores.items():
+            if not scores:
+                continue
+            pose = self.get_pose(smiles).molecules[-1]
+            # Keep any name the pose already carries; otherwise fall back to analogue_names.
+            if not pose.name:
+                pose.name = name_by_smiles.get(smiles)
+            poses[smiles] = pose
+        return poses
 
     def get_poses(self, smiles: str) -> list[Calculation]:
         """
@@ -175,6 +186,7 @@ def submit_analogue_docking_workflow(
     analogues: list[str],
     initial_molecule: StructureInput,
     protein: str | Protein,
+    analogue_names: list[str] | None = None,
     scoring_function: Literal["vina", "vinardo"] = "vinardo",
     exhaustiveness: int = 8,
     max_poses: int = 4,
@@ -194,6 +206,9 @@ def submit_analogue_docking_workflow(
     :param analogues: SMILES strings to dock.
     :param initial_molecule: Template to which to align molecules to.
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
+    :param analogue_names: Names parallel to `analogues`. When provided, each docked
+        pose's `Molecule.name` is set to its analogue name (see `best_poses`), and must
+        be the same length as `analogues`. If omitted, poses are identified by SMILES.
     :param scoring_function: Docking scoring function: "vina" or "vinardo".
     :param exhaustiveness: How many times Vina attempts to find a pose for each conformer.
     :param max_poses: Maximum number of poses generated per input conformer.
@@ -210,6 +225,11 @@ def submit_analogue_docking_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
+    if analogue_names is not None and len(analogue_names) != len(analogues):
+        raise ValueError(
+            f"analogue_names must match analogues in length "
+            f"(got {len(analogue_names)} names for {len(analogues)} analogues)."
+        )
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
@@ -228,6 +248,7 @@ def submit_analogue_docking_workflow(
 
     workflow = stjames.AnalogueDockingWorkflow(
         analogues=analogues,
+        analogue_names=analogue_names or [],
         initial_molecule=mol_dict,
         protein=protein,
         docking_settings=docking_settings,
