@@ -18,8 +18,8 @@ To narrow a blind search to likely sites first, run pocket detection and feed a 
 
 ```python
 pockets = rowan.submit_pocket_detection_workflow(protein).result().pockets
-best = max(pockets, key=lambda p: p.score)   # rank by druggability score
-pocket = [list(best.pocket_center), list(best.pocket_sides)]   # ready for submit_docking_workflow
+best = max(pockets, key=lambda p: p.score)  # rank by druggability score
+pocket = [list(best.pocket_center), list(best.pocket_sides)]  # ready for submit_docking_workflow
 ```
 
 ## Example

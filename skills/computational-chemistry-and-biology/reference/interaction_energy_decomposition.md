@@ -21,7 +21,9 @@ wf = rowan.submit_interaction_energy_decomposition_workflow(
 )
 
 result = wf.result()
-print(result.total_interaction_energy)   # kcal/mol; also electrostatic/exchange/dispersion/induction components
+print(
+    result.total_interaction_energy
+)  # kcal/mol; also electrostatic/exchange/dispersion/induction components
 ```
 
 ## Settings

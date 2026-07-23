@@ -19,7 +19,7 @@ wf = rowan.submit_fukui_workflow(
 )
 
 result = wf.result()
-print(result)   # per-atom Fukui indices and the global electrophilicity index
+print(result)  # per-atom Fukui indices and the global electrophilicity index
 ```
 
 ## Settings

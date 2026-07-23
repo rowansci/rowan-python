@@ -12,17 +12,19 @@ import rowan
 folder = rowan.get_folder("examples")
 
 reactant = rowan.Molecule.from_xyz("H 0 0 -1.1\nC 0 0 0\nN 0 0 1.2")  # HCN
-product = rowan.Molecule.from_xyz("H 0 0 2.3\nC 0 0 0\nN 0 0 1.2")    # CNH
+product = rowan.Molecule.from_xyz("H 0 0 2.3\nC 0 0 0\nN 0 0 1.2")  # CNH
 
 wf = rowan.submit_double_ended_ts_search_workflow(
     reactant=reactant,
     product=product,
-    calculation_settings=rowan.Settings(method=rowan.Method.GFN2_XTB),  # level of theory for the search
+    calculation_settings=rowan.Settings(
+        method=rowan.Method.GFN2_XTB
+    ),  # level of theory for the search
     folder=folder,
 )
 
 result = wf.result()
-print(result)   # <DoubleEndedTSSearchResult ts_uuid=... fwd=... bwd=...>
+print(result)  # <DoubleEndedTSSearchResult ts_uuid=... fwd=... bwd=...>
 print([p.distance for p in result.forward_path])
 print([p.distance for p in result.backward_path])
 ```

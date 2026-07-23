@@ -13,13 +13,13 @@ folder = rowan.get_folder("examples")
 
 wf = rowan.submit_descriptors_workflow(
     initial_molecule=rowan.Molecule.from_smiles("CC(=O)Oc1ccccc1C(=O)O"),  # aspirin
-    solvent="water",   # opt into the COSMO descriptors; omit for gas phase
+    solvent="water",  # opt into the COSMO descriptors; omit for gas phase
     folder=folder,
 )
 
 result = wf.result()
-print(result)               # <DescriptorsResult n=...>
-print(result.descriptors)   # dict of computed descriptors
+print(result)  # <DescriptorsResult n=...>
+print(result.descriptors)  # dict of computed descriptors
 ```
 
 `result.descriptors` holds electronic descriptors from xTB (atomic charges, the global electrophilicity index, and Fukui indices, as in the Fukui workflow), cheminformatic descriptors from Mordred, and the COSMO solvation descriptors when a `solvent` is set.

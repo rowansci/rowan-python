@@ -14,11 +14,11 @@ folder = rowan.get_folder("examples")
 wf = rowan.submit_scan_workflow(
     initial_molecule=rowan.Molecule.from_smiles("O"),
     scan_settings=rowan.ScanSettings(
-        type="angle",      # "bond", "angle", or "dihedral"
-        atoms=[2, 1, 3],   # 1-indexed
+        type="angle",  # "bond", "angle", or "dihedral"
+        atoms=[2, 1, 3],  # 1-indexed
         start=100,
         stop=110,
-        num=5,             # number of points
+        num=5,  # number of points
     ),
     calculation_method="gfn2_xtb",
     calculation_engine="xtb",
@@ -45,7 +45,9 @@ For a 2D scan, `result.get_energies()` returns energies indexed by scan point (t
 # 2D grid: scan a dihedral against a bond length.
 wf = rowan.submit_scan_workflow(
     initial_molecule=mol,
-    scan_settings=rowan.ScanSettings(type="dihedral", atoms=[1, 2, 3, 4], start=0, stop=180, num=10),
+    scan_settings=rowan.ScanSettings(
+        type="dihedral", atoms=[1, 2, 3, 4], start=0, stop=180, num=10
+    ),
     scan_settings_2d=rowan.ScanSettings(type="bond", atoms=[2, 3], start=1.3, stop=1.6, num=7),
     folder=folder,
 )

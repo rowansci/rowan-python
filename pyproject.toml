@@ -83,6 +83,7 @@ ignore = [
     "PLR0911", # Too many returns
     "PLR0912", # Too many branches
     "PLR0913", # Too many arguments to function call
+    "PLR0917", # Too many positional arguments
     "PLR0914", # Too many locals
     "PLR0915", # Too many statements
     "PLR1702", # Too many nested-blocks

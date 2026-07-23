@@ -18,7 +18,7 @@ wf = rowan.submit_tautomer_search_workflow(
 
 result = wf.result()
 
-best = result.best_tautomer   # predominant tautomer (highest Boltzmann weight), a rowan.Molecule
+best = result.best_tautomer  # predominant tautomer (highest Boltzmann weight), a rowan.Molecule
 
 # All tautomers, with populations and relative energies.
 for t in result.tautomers:

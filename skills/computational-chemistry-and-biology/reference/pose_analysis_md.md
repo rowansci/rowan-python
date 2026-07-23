@@ -27,13 +27,13 @@ protein.prepare(remove_heterogens=False)
 wf = rowan.submit_pose_analysis_md_workflow(
     protein=protein,
     initial_smiles=ligand,
-    num_trajectories=1,      # example uses 1 for speed; default 4
-    simulation_time_ns=1,    # example uses 1 for speed; default 10
+    num_trajectories=1,  # example uses 1 for speed; default 4
+    simulation_time_ns=1,  # example uses 1 for speed; default 10
     folder=folder,
 )
 
 result = wf.result()
-print(result.trajectories[0].ligand_rmsd)   # ligand RMSD by frame
+print(result.trajectories[0].ligand_rmsd)  # ligand RMSD by frame
 ```
 
 ## Settings

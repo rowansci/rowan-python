@@ -21,7 +21,7 @@ folder = rowan.get_folder("examples")
 protein = rowan.create_protein_from_pdb_id(
     "thymidine phosphorylase", "1OTP", project_uuid=rowan.default_project().uuid
 )
-protein.prepare()   # fix residues, add missing atoms/hydrogens; blocks until done
+protein.prepare()  # fix residues, add missing atoms/hydrogens; blocks until done
 
 wf = rowan.submit_pocket_detection_workflow(
     protein=protein,

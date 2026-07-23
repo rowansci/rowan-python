@@ -49,7 +49,7 @@ wf = rowan.submit_analogue_docking_workflow(
 )
 
 result = wf.result()
-print(result)   # e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC...')>
+print(result)  # e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC...')>
 
 # result.analogue_scores: docking scores per analogue (keyed by SMILES).
 # result.best_poses: top pose per analogue (keyed by SMILES); each pose's .name is the

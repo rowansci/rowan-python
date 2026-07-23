@@ -19,7 +19,7 @@ wf = rowan.submit_redox_potential_workflow(
 )
 
 result = wf.result()
-print(result)   # oxidation and/or reduction potentials, in volts vs SCE
+print(result)  # oxidation and/or reduction potentials, in volts vs SCE
 ```
 
 ## Settings

@@ -25,10 +25,14 @@ Every workflow is submitted and retrieved the same way. `submit_*_workflow(...)`
 import rowan
 
 folder = rowan.get_folder("my-project")
-wf = rowan.submit_<workflow>_workflow(
-    ...,  # use the scientific arguments selected by the entry skill
-    folder=folder,
-    name="my run",
+wf = (
+    rowan.submit_
+    < workflow
+    > _workflow(
+        ...,  # use the scientific arguments selected by the entry skill
+        folder=folder,
+        name="my run",
+    )
 )
 result = wf.result()
 ```
@@ -52,7 +56,7 @@ Use inline submit-and-wait for quick questions or one result. For long-running o
 **Estimate before committing:**
 
 ```python
-draft = rowan.submit_<workflow>_workflow(..., folder=folder, is_draft=True)
+draft = rowan.submit_ < workflow > _workflow(..., folder=folder, is_draft=True)
 print(draft.dispatch_info())
 draft.submit_draft()  # or draft.delete()
 ```

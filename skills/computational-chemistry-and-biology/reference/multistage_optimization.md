@@ -18,7 +18,7 @@ wf = rowan.submit_multistage_optimization_workflow(
 )
 
 result = wf.result()
-print(result.energy)   # energy in Hartree
+print(result.energy)  # energy in Hartree
 ```
 
 ## Settings

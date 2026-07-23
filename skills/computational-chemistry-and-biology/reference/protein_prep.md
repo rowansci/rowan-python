@@ -19,17 +19,17 @@ The main entry point. Runs PDBFixer + OpenMM server-side and blocks until done.
 protein = rowan.create_protein_from_pdb_id("1IEP")
 
 protein.prepare(
-    find_missing_residues=True,      # identify and model missing residues
-    add_missing_atoms=True,          # add missing heavy atoms
-    remove_heterogens=True,          # remove ligands, salts, and other non-protein residues
-    keep_waters=False,               # preserve waters when removing heterogens
-    remove_hydrogens=False,          # remove existing hydrogens before re-adding
+    find_missing_residues=True,  # identify and model missing residues
+    add_missing_atoms=True,  # add missing heavy atoms
+    remove_heterogens=True,  # remove ligands, salts, and other non-protein residues
+    keep_waters=False,  # preserve waters when removing heterogens
+    remove_hydrogens=False,  # remove existing hydrogens before re-adding
     remove_invalid_hydrogens=False,  # remove hydrogens not matching the forcefield template
-    add_hydrogens=True,              # add missing hydrogens
-    add_hydrogen_ph=7.0,             # pH used to set protonation states
-    optimize_hydrogens=True,         # optimize hydrogen positions with OpenMM
-    poll_interval=10.0,              # seconds between status checks
-    timeout=300.0,                   # seconds to wait before raising
+    add_hydrogens=True,  # add missing hydrogens
+    add_hydrogen_ph=7.0,  # pH used to set protonation states
+    optimize_hydrogens=True,  # optimize hydrogen positions with OpenMM
+    poll_interval=10.0,  # seconds between status checks
+    timeout=300.0,  # seconds to wait before raising
 )
 ```
 

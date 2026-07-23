@@ -12,12 +12,14 @@ import rowan
 folder = rowan.get_folder("examples")
 
 wf = rowan.submit_strain_workflow(
-    initial_molecule=rowan.Molecule.from_xyz_file("pose.xyz"),  # any specific 3D geometry to measure
+    initial_molecule=rowan.Molecule.from_xyz_file(
+        "pose.xyz"
+    ),  # any specific 3D geometry to measure
     folder=folder,
 )
 
 result = wf.result()
-print(result.strain)   # strain energy in kcal/mol
+print(result.strain)  # strain energy in kcal/mol
 ```
 
 ## Settings

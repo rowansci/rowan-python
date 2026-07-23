@@ -36,7 +36,7 @@ wf = rowan.submit_batch_docking_workflow(
 )
 
 result = wf.result()
-print(result.scores)   # dict of SMILES -> best docking score
+print(result.scores)  # dict of SMILES -> best docking score
 ```
 
 ## Settings

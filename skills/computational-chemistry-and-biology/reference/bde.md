@@ -16,16 +16,16 @@ mol = rowan.Molecule.from_smiles("CCO")  # ethanol
 # Find the bond you want. The bond-finder helpers return 1-indexed (heavy, H) pairs.
 # Here: oxygen (atomic number 8) to hydrogen (1), within 1.2 Angstroms.
 oh_bonds = rowan.find_bonds(mol, element_a=8, element_b=1, distance_max=1.2)  # -> [(3, 9)]
-h = oh_bonds[0][1]                            # the hydroxyl hydrogen (atom 9)
+h = oh_bonds[0][1]  # the hydroxyl hydrogen (atom 9)
 
 wf = rowan.submit_bde_workflow(
     initial_molecule=mol,
-    fragment_indices=[[h]],   # break the O-H: the dissociating fragment is just that H
+    fragment_indices=[[h]],  # break the O-H: the dissociating fragment is just that H
     folder=folder,
 )
 
 result = wf.result()
-print(result.bdes)   # list of BDEEntry, each with fragment_idxs and energy (Hartree)
+print(result.bdes)  # list of BDEEntry, each with fragment_idxs and energy (Hartree)
 ```
 
 Reported BDEs are empirically corrected to experiment (the ExpBDE54 benchmark) to account for zero-point, enthalpy, and relativistic effects, so they are corrected enthalpies rather than raw electronic energies. Expect a few kcal/mol RMSE versus experiment.

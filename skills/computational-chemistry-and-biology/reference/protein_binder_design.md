@@ -28,10 +28,13 @@ folder = rowan.get_folder("examples")
 # Design a protein to bind brilacidin, an antimicrobial small molecule.
 binder_design_input = {
     "protein_entities": [
-        {"id": "A", "sequence": "140..180"},   # design a 140-180 residue protein binder
+        {"id": "A", "sequence": "140..180"},  # design a 140-180 residue protein binder
     ],
     "ligand_entities": [
-        {"id": "B", "smiles": "C1CNC[C@@H]1OC2=C(C=C(C=C2NC(=O)C3=CC(=NC=N3)C(=O)NC4=CC(=CC(=C4O[C@@H]5CCNC5)NC(=O)CCCCN=C(N)N)C(F)(F)F)C(F)(F)F)NC(=O)CCCCN=C(N)N"},
+        {
+            "id": "B",
+            "smiles": "C1CNC[C@@H]1OC2=C(C=C(C=C2NC(=O)C3=CC(=NC=N3)C(=O)NC4=CC(=CC(=C4O[C@@H]5CCNC5)NC(=O)CCCCN=C(N)N)C(F)(F)F)C(F)(F)F)NC(=O)CCCCN=C(N)N",
+        },
     ],
 }
 
@@ -42,7 +45,7 @@ wf = rowan.submit_protein_binder_design_workflow(
 )
 
 result = wf.result()
-for binder in result.generated_binders:   # sorted by quality score
+for binder in result.generated_binders:  # sorted by quality score
     print(binder.sequence, binder.iptm, binder.bound_structure_uuid)
 ```
 

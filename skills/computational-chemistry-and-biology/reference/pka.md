@@ -23,8 +23,8 @@ wf = rowan.submit_pka_workflow(
 )
 
 result = wf.result()
-print(result.strongest_acid)     # strongest acidic site pKa, or None
-print(result.strongest_base)     # strongest basic site pKa, or None
+print(result.strongest_acid)  # strongest acidic site pKa, or None
+print(result.strongest_base)  # strongest basic site pKa, or None
 for ms in result.conjugate_bases:
     print(ms.atom_index, ms.pka)  # per-site deprotonation pKa values
 ```

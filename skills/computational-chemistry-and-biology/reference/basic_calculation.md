@@ -49,8 +49,8 @@ wf = rowan.submit_basic_calculation_workflow(
 )
 
 result = wf.result()
-print(result.energy)     # energy in Hartree
-print(result.molecule)   # resulting structure with computed properties
+print(result.energy)  # energy in Hartree
+print(result.molecule)  # resulting structure with computed properties
 ```
 
 ## Tuning individual settings

@@ -17,7 +17,7 @@ wf = rowan.submit_solvent_dependent_conformers_workflow(
 )
 
 result = wf.result()
-print(result)   # <SolventDependentConformersResult conformers=... solvents=...>
+print(result)  # <SolventDependentConformersResult conformers=... solvents=...>
 
 # Transfer free energies relative to the lowest solvent
 for solvent, dg in result.relative_free_energy_by_solvent.items():

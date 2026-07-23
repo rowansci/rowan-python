@@ -13,12 +13,12 @@ folder = rowan.get_folder("examples")
 
 wf = rowan.submit_ion_mobility_workflow(
     initial_molecule=rowan.Molecule.from_smiles("c1ccccn1"),
-    protonate=True,   # model the protonated ion that positive-mode IM-MS detects
+    protonate=True,  # model the protonated ion that positive-mode IM-MS detects
     folder=folder,
 )
 
 result = wf.result()
-print(result.average_ccs)   # weighted-mean CCS in A^2 (also average_ccs_stdev for the uncertainty)
+print(result.average_ccs)  # weighted-mean CCS in A^2 (also average_ccs_stdev for the uncertainty)
 ```
 
 ## Settings

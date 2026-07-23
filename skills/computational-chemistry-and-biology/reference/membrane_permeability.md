@@ -25,7 +25,7 @@ gnn_wf = rowan.submit_membrane_permeability_workflow(
 
 # pypermm: physics-based free-energy method, predicts intrinsic permeability for five membranes
 pypermm_wf = rowan.submit_membrane_permeability_workflow(
-    rowan.Molecule.from_smiles(smiles),   # pypermm needs a 3D structure with coordinates
+    rowan.Molecule.from_smiles(smiles),  # pypermm needs a 3D structure with coordinates
     method="pypermm",
     folder=folder,
 )
@@ -33,7 +33,7 @@ pypermm_wf = rowan.submit_membrane_permeability_workflow(
 gnn_result = gnn_wf.result()
 pypermm_result = pypermm_wf.result()
 
-print(gnn_result.caco2_p_app)      # log10 Caco-2 apparent permeability P_app, in cm/s
+print(gnn_result.caco2_p_app)  # log10 Caco-2 apparent permeability P_app, in cm/s
 print(pypermm_result.caco2_log_p)  # Caco-2 intrinsic permeability coefficient logP
 ```
 

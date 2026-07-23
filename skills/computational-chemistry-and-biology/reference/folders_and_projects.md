@@ -5,7 +5,7 @@ Workflows live in a tree of folders, rooted in a project. A project is a closed 
 ## Get a folder by path
 
 ```python
-folder = rowan.get_folder("CDK2/docking/batch_1")   # creates missing segments by default
+folder = rowan.get_folder("CDK2/docking/batch_1")  # creates missing segments by default
 folder = rowan.get_folder("CDK2/docking", create=False)  # raises if it doesn't exist
 wf = rowan.submit_docking_workflow(..., folder=folder)
 ```
@@ -17,14 +17,14 @@ wf = rowan.submit_docking_workflow(..., folder=folder)
 Start at the project root, then list or navigate:
 
 ```python
-root = rowan.root_folder()          # root folder of the active project
+root = rowan.root_folder()  # root folder of the active project
 
-root.children()                     # list[Folder]   — subfolders only
-root.workflows()                    # list[Workflow] — workflows only
-root.contents()                     # list[Folder | Workflow] — both, folders first
+root.children()  # list[Folder]   — subfolders only
+root.workflows()  # list[Workflow] — workflows only
+root.contents()  # list[Folder | Workflow] — both, folders first
 
-docking = root / "CDK2" / "docking" # navigate by name with the / operator
-parent = docking.parent()           # Folder, or None at the root
+docking = root / "CDK2" / "docking"  # navigate by name with the / operator
+parent = docking.parent()  # Folder, or None at the root
 ```
 
 - `children()`, `workflows()`, and `contents()` each take a `size=` cap (default 100) and return fully-typed objects you can act on (e.g. `wf.result()`).
@@ -38,22 +38,22 @@ project is a closed scope — set it once and all folder/workflow operations sta
 
 ```python
 # Find / list
-rowan.list_projects()                       # list[Project]
-rowan.list_projects(name_contains="CDK2")   # filtered
-proj = rowan.retrieve_project(uuid)         # by UUID (from the project URL)
-default = rowan.default_project()           # the account's default project
+rowan.list_projects()  # list[Project]
+rowan.list_projects(name_contains="CDK2")  # filtered
+proj = rowan.retrieve_project(uuid)  # by UUID (from the project URL)
+default = rowan.default_project()  # the account's default project
 
 # Create
 proj = rowan.create_project("CDK2 campaign")
-proj = rowan.get_project("CDK2 campaign", create=True)   # get-or-create (create defaults to False)
+proj = rowan.get_project("CDK2 campaign", create=True)  # get-or-create (create defaults to False)
 
 # Switch the active project (all subsequent folder/workflow operations scope to it)
-rowan.set_project("CDK2 campaign")          # by name; sets rowan.project_uuid
-rowan.project_uuid = proj.uuid              # or assign the UUID directly
+rowan.set_project("CDK2 campaign")  # by name; sets rowan.project_uuid
+rowan.project_uuid = proj.uuid  # or assign the UUID directly
 
 # Rename / delete
 proj.update(name="CDK2 campaign v2")
-proj.delete()                               # destructive: removes all folders + workflows inside
+proj.delete()  # destructive: removes all folders + workflows inside
 ```
 
 With no project set, the default project is used. `set_project` raises `ValueError` if no project

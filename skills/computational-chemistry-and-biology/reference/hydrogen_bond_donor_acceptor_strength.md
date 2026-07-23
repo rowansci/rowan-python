@@ -17,7 +17,7 @@ wf = rowan.submit_hydrogen_bond_donor_acceptor_strength_workflow(
 )
 
 result = wf.result()
-print(result)   # <HydrogenBondDonorAcceptorStrengthResult acceptors=... donors=...>
+print(result)  # <HydrogenBondDonorAcceptorStrengthResult acceptors=... donors=...>
 ```
 
 `submit_hydrogen_bond_basicity_workflow` is an alias that submits the same workflow.

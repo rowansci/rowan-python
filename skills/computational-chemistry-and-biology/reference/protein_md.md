@@ -21,17 +21,17 @@ folder = rowan.get_folder("examples")
 protein = rowan.create_protein_from_pdb_id(
     "crambin", "1CRN", project_uuid=rowan.default_project().uuid
 )
-protein.prepare()   # fix residues, add missing atoms/hydrogens; blocks until done
+protein.prepare()  # fix residues, add missing atoms/hydrogens; blocks until done
 
 wf = rowan.submit_protein_md_workflow(
     protein=protein,
-    num_trajectories=1,      # example uses 1 for speed; default 4
-    simulation_time_ns=1,    # example uses 1 for speed; default 10
+    num_trajectories=1,  # example uses 1 for speed; default 4
+    simulation_time_ns=1,  # example uses 1 for speed; default 10
     folder=folder,
 )
 
 result = wf.result()
-print(result.trajectory_uuids)            # one UUID per trajectory
+print(result.trajectory_uuids)  # one UUID per trajectory
 result.download_trajectories([0], path=".")  # save DCD trajectory files
 ```
 

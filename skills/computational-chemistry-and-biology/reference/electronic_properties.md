@@ -20,7 +20,7 @@ wf = rowan.submit_electronic_properties_workflow(
 )
 
 result = wf.result()
-print(result)   # orbitals, density/ESP cubes, charges, bond orders, multipole moments
+print(result)  # orbitals, density/ESP cubes, charges, bond orders, multipole moments
 ```
 
 ## Settings

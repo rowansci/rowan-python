@@ -29,7 +29,7 @@ wf = rowan.submit_relative_binding_free_energy_graph_workflow(
 )
 
 result = wf.result()
-print(result)   # e.g. <RelativeBindingFreeEnergyGraphResult edges=18 ligands=16>
+print(result)  # e.g. <RelativeBindingFreeEnergyGraphResult edges=18 ligands=16>
 
 for edge in result.edges:
     print(f"  {edge.ligand_a} -> {edge.ligand_b}  score={edge.score:.3f}")
@@ -45,7 +45,7 @@ The main use of `seed_graph` is to add ligands to a study that has **already run
 # Retrieve a completed perturbation; its graph already carries ddG on every edge.
 finished = rowan.retrieve_workflow(FINISHED_RBFE_UUID).result()
 ligands = finished.ligands
-ligands["new-analog"] = new_ligand   # a rowan.Molecule / stjames.Molecule / RDKit Mol
+ligands["new-analog"] = new_ligand  # a rowan.Molecule / stjames.Molecule / RDKit Mol
 
 # Rebuild the graph, seeding from the finished graph: existing edges (and ddG) kept,
 # only edges for "new-analog" are added.

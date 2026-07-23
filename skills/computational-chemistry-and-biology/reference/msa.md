@@ -15,12 +15,12 @@ wf = rowan.submit_msa_workflow(
     initial_protein_sequences=[
         "HPETLVKVKDAEDQLGARVGYIELDLNSGKILESFRPEERFPMMSTFKVLLCGAVLSRIDAGQEQLGRRIHYSQNDLVEYSPVTEKHLTDGMTVRELCSAAITMSDNTAANLLLTTIGGPKELTAFLHNMGDHVTRLDRWEPELNEAIPNDERDTTMPVAMATTLRKLLTGELLTLASRQQLIDWMEADKVAGPLLRSALPAGWFIADKSGAGERGSRGIIAALGPDGKPSRIVVIYTTGSQATMDERNRQIAEIGASLIKHW"
     ],
-    output_formats={rowan.MSAFormat.BOLTZ},   # defaults to {rowan.MSAFormat.COLABFOLD}
+    output_formats={rowan.MSAFormat.BOLTZ},  # defaults to {rowan.MSAFormat.COLABFOLD}
     folder=folder,
 )
 
 result = wf.result()
-result.download_files(rowan.MSAFormat.BOLTZ, path="msa_files")   # saves a .tar.gz archive
+result.download_files(rowan.MSAFormat.BOLTZ, path="msa_files")  # saves a .tar.gz archive
 ```
 
 ## Settings

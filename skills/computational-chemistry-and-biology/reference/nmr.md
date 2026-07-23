@@ -13,12 +13,12 @@ folder = rowan.get_folder("examples")
 
 wf = rowan.submit_nmr_workflow(
     initial_molecule=rowan.Molecule.from_smiles("O[C@H]1[C@H](C(C)C)CC[C@@H](C)C1"),
-    do_csearch=True,   # search conformers first (off by default)
+    do_csearch=True,  # search conformers first (off by default)
     folder=folder,
 )
 
 result = wf.result()
-for peak in result.predicted_peaks[1]:   # keyed by atomic number: 1 = hydrogen, 6 = carbon
+for peak in result.predicted_peaks[1]:  # keyed by atomic number: 1 = hydrogen, 6 = carbon
     print(peak)
 ```
 

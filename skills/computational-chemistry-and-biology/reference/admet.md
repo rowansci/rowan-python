@@ -19,7 +19,7 @@ wf = rowan.submit_admet_workflow(
 )
 
 result = wf.result()
-print(result.properties)   # dict of property name -> predicted value
+print(result.properties)  # dict of property name -> predicted value
 ```
 
 ## Settings

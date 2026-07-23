@@ -13,7 +13,7 @@ folder = rowan.get_folder("examples")
 
 wf = rowan.submit_solubility_workflow(
     initial_smiles="C1CCOC(=O)C1=C[C@@H](OC(CC)CC)[C@H](NC(C)=O)[C@@H]([NH3+])C1CCC1",  # oseltamivir
-    method="fastsolv",                  # temperature-dependent, any solvent
+    method="fastsolv",  # temperature-dependent, any solvent
     solvents=["ethanol", "toluene"],
     temperatures=[298.15, 323.15],
     folder=folder,
@@ -22,7 +22,9 @@ wf = rowan.submit_solubility_workflow(
 result = wf.result()
 for entry in result.solubilities:
     for v in entry.values:
-        print(f"  {entry.solvent} @ {v.temperature} K: {v.solubility:.2f} +/- {v.uncertainty} log(mol/L)")
+        print(
+            f"  {entry.solvent} @ {v.temperature} K: {v.solubility:.2f} +/- {v.uncertainty} log(mol/L)"
+        )
 ```
 
 ## Settings

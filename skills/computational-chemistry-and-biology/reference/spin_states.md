@@ -13,12 +13,12 @@ folder = rowan.get_folder("examples")
 
 wf = rowan.submit_spin_states_workflow(
     initial_molecule=rowan.Molecule.from_smiles("[CH2]"),
-    states=[1, 3],   # singlet vs triplet; defaults to [1, 3, 5] if omitted
+    states=[1, 3],  # singlet vs triplet; defaults to [1, 3, 5] if omitted
     folder=folder,
 )
 
 result = wf.result()
-print(result)   # e.g. <SpinStatesResult states=2 ground=(mult=3, E=-39.14 H)>
+print(result)  # e.g. <SpinStatesResult states=2 ground=(mult=3, E=-39.14 H)>
 
 # Energies relative to the ground (lowest-energy) state.
 for state, rel in zip(result.spin_states, result.get_energies(relative=True)):

@@ -22,19 +22,21 @@ protein_sequence = "..."  # your target's full amino-acid sequence
 
 wf = rowan.submit_protein_cofolding_workflow(
     initial_protein_sequences=[protein_sequence],
-    initial_smiles_list=["CCOC(=O)N1c2ccc(C(F)(F)F)cc2[C@@H](N(Cc2cc(C(F)(F)F)cc(C(F)(F)F)c2)C(=O)OC)C[C@H]1CC"],
-    ligand_binding_affinity_index=0,   # predict affinity for the first ligand
+    initial_smiles_list=[
+        "CCOC(=O)N1c2ccc(C(F)(F)F)cc2[C@@H](N(Cc2cc(C(F)(F)F)cc(C(F)(F)F)c2)C(=O)OC)C[C@H]1CC"
+    ],
+    ligand_binding_affinity_index=0,  # predict affinity for the first ligand
     model="boltz_2",
     use_msa_server=True,
     use_potentials=False,
     num_samples=None,
     compute_strain=False,
-    do_pose_refinement=True,           # optimize the predicted ligand pose
+    do_pose_refinement=True,  # optimize the predicted ligand pose
     folder=folder,
 )
 
 result = wf.result()
-print(result)   # e.g. <ProteinCofoldingResult predictions=5 iptm=0.87>
+print(result)  # e.g. <ProteinCofoldingResult predictions=5 iptm=0.87>
 ```
 
 ## Settings
@@ -58,7 +60,7 @@ asp189 = rowan.ConstraintTarget(input_type="protein", input_index=0, token_index
 amidine_c = rowan.ConstraintTarget(input_type="ligand", input_index=0, token_index=1)
 
 pocket = rowan.PocketConstraint(
-    input_type="ligand",   # the binder being placed into the pocket
+    input_type="ligand",  # the binder being placed into the pocket
     input_index=0,
     contacts=[his57, asp189],
     max_distance=6.0,
@@ -67,7 +69,7 @@ salt_bridge = rowan.ContactConstraint(
     token_1=amidine_c,
     token_2=asp189,
     max_distance=4.0,
-    force=True,            # requires use_potentials=True
+    force=True,  # requires use_potentials=True
 )
 
 wf = rowan.submit_protein_cofolding_workflow(
@@ -76,7 +78,7 @@ wf = rowan.submit_protein_cofolding_workflow(
     ligand_binding_affinity_index=0,
     pocket_constraints=[pocket],
     contact_constraints=[salt_bridge],
-    use_potentials=True,   # required for force=True
+    use_potentials=True,  # required for force=True
     num_samples=3,
     folder=folder,
 )

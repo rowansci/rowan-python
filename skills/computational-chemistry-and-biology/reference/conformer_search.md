@@ -15,14 +15,14 @@ import rowan
 folder = rowan.get_folder("examples")
 
 wf = rowan.submit_conformer_search_workflow(
-    initial_molecule="CCOCC",   # SMILES works because the default generator is OpenConf
+    initial_molecule="CCOCC",  # SMILES works because the default generator is OpenConf
     final_method="aimnet2_wb97md3",
     folder=folder,
 )
 
 result = wf.result()
-print(result.get_energies(relative=True))   # relative energies (kcal/mol), lowest first
-best = result.get_conformers(1)[0]          # lowest-energy conformer, a rowan.Molecule
+print(result.get_energies(relative=True))  # relative energies (kcal/mol), lowest first
+best = result.get_conformers(1)[0]  # lowest-energy conformer, a rowan.Molecule
 ```
 
 `get_conformers(n)` returns the `n` lowest-energy conformers as `rowan.Molecule` objects (omit `n` for all), and `get_energies(relative=True)` gives their relative energies in kcal/mol. Both are energy-ordered, so the lowest-energy conformer is index 0, ready to feed into a downstream 3D workflow. `get_conformers` makes one API call per conformer, so request only as many as you need.

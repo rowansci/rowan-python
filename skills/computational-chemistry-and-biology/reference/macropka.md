@@ -18,7 +18,7 @@ wf = rowan.submit_macropka_workflow(
 )
 
 result = wf.result()
-print(result.pka_values)   # macroscopic pKa values; see Result fields for the rest
+print(result.pka_values)  # macroscopic pKa values; see Result fields for the rest
 ```
 
 ## Settings

@@ -48,7 +48,7 @@ wf = rowan.submit_relative_binding_free_energy_perturbation_workflow(
 )
 
 result = wf.result()
-print(result)   # e.g. <RelativeBindingFreeEnergyPerturbationResult ligands=16>
+print(result)  # e.g. <RelativeBindingFreeEnergyPerturbationResult ligands=16>
 
 # Per-ligand binding free energy (dG), relative to the series reference.
 for name, res in result.ligand_dg_results.items():

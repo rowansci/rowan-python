@@ -18,13 +18,13 @@ wf = rowan.submit_irc_workflow(
 )
 
 result = wf.result()
-print(result)   # forward and backward reaction paths
+print(result)  # forward and backward reaction paths
 
 # the two species the TS connects are the ends of each branch:
 reactant = result.backward_molecules[-1]
 product = result.forward_molecules[-1]
 # compare these to your expected reactant/product to confirm the TS connects them
-profile = result.get_forward_energies(relative=True)   # kcal/mol along the forward branch
+profile = result.get_forward_energies(relative=True)  # kcal/mol along the forward branch
 ```
 
 ## Settings
