@@ -1,6 +1,7 @@
 """NMR workflow - predict Nuclear Magnetic Resonance spectra."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import stjames
 
@@ -98,6 +99,32 @@ class NMRResult(WorkflowResult):
         return self._workflow.symmetry_equivalent_nuclei
 
 
+def _nmr_multistage_opt_settings(solvent: SolventInput) -> stjames.MultiStageOptSettings:
+    """
+    Build NMR optimization settings, adding a solvated AIMNet2 singlepoint.
+
+    Optimization runs gas-phase (matching MagNet); the solvated singlepoint, whose solvent model
+    is looked up from stjames.NMR_SOLVENT_MODELS, reweights the conformer ensemble.
+
+    :param solvent: solvent for the prediction
+    :returns: multi-stage optimization settings
+    """
+    singlepoint_settings = stjames.Settings(
+        method=stjames.Method.AIMNET2_WB97MD3,
+        tasks=[stjames.Task.ENERGY],
+        solvent_settings=stjames.SolventSettings(
+            solvent=solvent, model=stjames.NMR_SOLVENT_MODELS[stjames.Solvent(solvent)]
+        ),
+    )
+
+    return stjames.MultiStageOptSettings(
+        optimization_settings=[
+            stjames.Settings(method=stjames.Method.AIMNET2_WB97MD3, tasks=[stjames.Task.OPTIMIZE])
+        ],
+        singlepoint_settings=singlepoint_settings,
+    )
+
+
 def submit_nmr_workflow(
     initial_molecule: StructureInput,
     solvent: SolventInput = "chloroform",
@@ -114,7 +141,10 @@ def submit_nmr_workflow(
     Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
 
     :param initial_molecule: Molecule to predict NMR spectra for.
-    :param solvent: Solvent for NMR calculation (default: chloroform).
+    :param solvent: Solvent for NMR calculation (default: chloroform). Must be an NMR-supported
+        solvent (see rowan.NMR_SUPPORTED_SOLVENTS); others raise ValueError. A solvated AIMNet2
+        singlepoint reweights the conformer ensemble, using CPCM-X where supported and
+        otherwise ALPB.
     :param do_csearch: Whether to perform a conformational search. Requires do_optimization.
     :param do_optimization: Whether to optimize conformer geometries.
     :param name: Name of the workflow.
@@ -127,6 +157,12 @@ def submit_nmr_workflow(
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
+    if stjames.Solvent(solvent) not in stjames.NMR_SUPPORTED_SOLVENTS:
+        supported = ", ".join(sorted(s.value for s in stjames.NMR_SUPPORTED_SOLVENTS))
+        raise ValueError(
+            f"{stjames.Solvent(solvent).value!r} is not an NMR-supported solvent. "
+            f"NMR-supported solvents: {supported}."
+        )
     if do_csearch and not do_optimization:
         raise ValueError(
             "`do_optimization` must be True when `do_csearch` is True; the conformers from "
@@ -138,13 +174,15 @@ def submit_nmr_workflow(
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
-    workflow_data = {"initial_molecule": mol_dict, "solvent": solvent}
+    workflow_data: dict[str, Any] = {"initial_molecule": mol_dict, "solvent": solvent}
 
     if not do_csearch:
         workflow_data["conf_gen_settings"] = None
 
     if not do_optimization:
         workflow_data["multistage_opt_settings"] = None
+    else:
+        workflow_data["multistage_opt_settings"] = _nmr_multistage_opt_settings(solvent)
 
     workflow = stjames.NMRSpectroscopyWorkflow.model_validate(workflow_data)
 

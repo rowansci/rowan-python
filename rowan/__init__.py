@@ -24,6 +24,7 @@ from stjames import (
     Mode,
     MSAFormat,
     MultiStageOptSettings,
+    NMR_SUPPORTED_SOLVENTS,
     OpenConfSettings,
     OptimizationSettings,
     PBCDFTSettings,
