@@ -3,6 +3,7 @@ from . import constants
 from stjames import (
     Atom,
     BandStructure,
+    Binder,
     BindingPoseContact,
     HydrationBridgeResidue,
     HydrationSite,
