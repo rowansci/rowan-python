@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import stjames
-from stjames import GreedyClusteringSettings, KMeansClusteringSettings
+from stjames import Binder, GreedyClusteringSettings, KMeansClusteringSettings
 
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
@@ -171,6 +171,10 @@ def submit_protein_md_workflow(
     ionic_strength_M: float = 0.0,
     water_buffer: float = 10.0,
     save_solvent: bool = False,
+    num_solvent_to_save: int | None = None,
+    binder: Binder | None = None,
+    protein_restraint_cutoff: float | None = None,
+    protein_restraint_constant: float = 100,
     analysis_interval_ps: float | None = None,
     clustering: KMeansClusteringSettings | GreedyClusteringSettings | None = None,
     validate_forcefield: bool = True,
@@ -198,6 +202,16 @@ def submit_protein_md_workflow(
     :param ionic_strength_M: ionic strength of the solution, in M (molar)
     :param water_buffer: amount of water to add around the protein, in A
     :param save_solvent: whether solvent should be saved
+    :param num_solvent_to_save: keep this many solvent molecules nearest the binder, or all if None;
+        only meaningful when save_solvent is True and a binder is present
+    :param binder: optional binder specification (protein chains and/or small molecules).
+        When set, per-frame MM/GBSA scores are computed against the whole binder.
+        Per-frame binder RMSD is populated only when the binder is a single component
+        (one small molecule → heavy-atom RMSD; one binder chain → backbone N/CA/C/O RMSD);
+        it is empty for multi-molecule, multi-chain, or combined chain+molecule binders.
+    :param protein_restraint_cutoff: cutoff distance from the binder past which Cα atoms are
+        harmonically restrained, in Å; None disables restraints
+    :param protein_restraint_constant: force constant for Cα backbone restraints, in kcal/mol/Å²
     :param analysis_interval_ps: Interval at which to compute per-frame SASA and polar SASA, in ps.
         None disables those analyses.
     :param clustering: How to cluster trajectory frames. None disables clustering; pass a
@@ -222,7 +236,14 @@ def submit_protein_md_workflow(
         protein = protein.uuid
 
     if validate_forcefield:
-        Protein(uuid=protein).validate_protein_forcefield()
+        exclude_residue_names = (
+            [name for name in binder.small_molecules if isinstance(name, str)]
+            if binder is not None and binder.small_molecules
+            else None
+        )
+        Protein(uuid=protein).validate_protein_forcefield(
+            exclude_residue_names=exclude_residue_names
+        )
 
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein=protein,
@@ -238,6 +259,10 @@ def submit_protein_md_workflow(
         ionic_strength_M=ionic_strength_M,
         water_buffer=water_buffer,
         save_solvent=save_solvent,
+        num_solvent_to_save=num_solvent_to_save,
+        binder=binder,
+        protein_restraint_cutoff=protein_restraint_cutoff,
+        protein_restraint_constant=protein_restraint_constant,
         analysis_interval_ps=analysis_interval_ps,
         clustering=clustering,
     )
