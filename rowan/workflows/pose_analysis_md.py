@@ -62,7 +62,7 @@ class PoseAnalysisMDResult(WorkflowResult):
         return [
             TrajectoryResult(
                 uuid=t.uuid,
-                ligand_rmsd=t.ligand_rmsd,
+                ligand_rmsd=t.binder_rmsd,
                 contacts=t.contacts,
                 sasa=t.sasa,
                 polar_sasa=t.polar_sasa,
