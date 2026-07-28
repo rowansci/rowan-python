@@ -218,7 +218,10 @@ def submit_protein_md_workflow(
         KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom).
     :param validate_forcefield: if True (default), validate the protein forcefield
         compatibility before submitting. Raises an error early if the protein cannot
-        be parameterized or has clashing residues.
+        be parameterized or has clashing residues. Caveat: binder small molecules
+        specified by index (rather than residue name) or with duplicate residue
+        names are not excluded from validation, so those submissions may fail here
+        even when the backend would accept them.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
