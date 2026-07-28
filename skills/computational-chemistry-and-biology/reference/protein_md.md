@@ -51,7 +51,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `save_solvent` (default `False`): whether to save solvent atoms in the trajectories.
 - `analysis_interval_ps` (default `None`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` (the default) disables those analyses.
 - `clustering` (default `None`): cluster the trajectory frames. `None` disables it; pass `rowan.KMeansClusteringSettings(num_clusters=10)` or `rowan.GreedyClusteringSettings(cutoff_angstrom=2.0)`.
-- `validate_forcefield` (default `True`): validate the protein forcefield before running.
+- `validate_forcefield` (default `True`): validate the protein forcefield before submitting; raises early if the protein cannot be parameterized or has clashing residues. When a `binder` is set, small molecules identified by residue-name string are excluded from validation. Caveat: binder small molecules specified by index or with duplicate residue names are not excluded, so those submissions may fail this pre-check even when the backend would accept them — set `False` to skip.
 
 ## Result fields
 
