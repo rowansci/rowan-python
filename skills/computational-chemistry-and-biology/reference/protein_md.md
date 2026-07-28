@@ -49,14 +49,18 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `ionic_strength_M` (default `0.0`): ionic strength of the solution, in molar.
 - `water_buffer` (default `10.0`): amount of water added around the protein, in angstrom.
 - `save_solvent` (default `False`): whether to save solvent atoms in the trajectories.
+- `num_solvent_to_save` (default `None`): when `save_solvent=True` and a `binder` is set, keep only the N solvent molecules nearest the binder each frame; `None` keeps all solvent. Ignored when `save_solvent=False` or no `binder`.
+- `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecules`, keyed by residue-name string or 0-based non-polymer residue index, values are SMILES for parameterization), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
+- `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
+- `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
 - `analysis_interval_ps` (default `None`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` (the default) disables those analyses.
 - `clustering` (default `None`): cluster the trajectory frames. `None` disables it; pass `rowan.KMeansClusteringSettings(num_clusters=10)` or `rowan.GreedyClusteringSettings(cutoff_angstrom=2.0)`.
-- `validate_forcefield` (default `True`): validate the protein forcefield before submitting; raises early if the protein cannot be parameterized or has clashing residues. When a `binder` is set, small molecules identified by residue-name string are excluded from validation. Caveat: binder small molecules specified by index or with duplicate residue names are not excluded, so those submissions may fail this pre-check even when the backend would accept them — set `False` to skip.
+- `validate_forcefield` (default `True`): validate the protein forcefield before running.
 
 ## Result fields
 
 - `trajectory_uuids`: UUIDs of the trajectory calculations, one per replicate.
-- `trajectories`: per-replicate results. Each exposes the radius of gyration per frame (`isotropic_radius_of_gyration`); `sasa` and `polar_sasa` when `analysis_interval_ps` is set; and `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set.
+- `trajectories`: per-replicate results. Each exposes the radius of gyration per frame (`isotropic_radius_of_gyration`); `sasa` and `polar_sasa` when `analysis_interval_ps` is set; `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set; `mmgbsa_scores` (per-frame MM/GBSA binding-side interaction energy, kcal/mol) when a `binder` is set; and `binder_rmsd` (per-frame binder RMSD vs starting pose, Å — heavy-atom RMSD for a single small-molecule binder or backbone N/CA/C/O RMSD for a single binder chain; empty for multi-component binders) when a `binder` is set.
 - `minimized_protein_uuid` / `get_minimized_protein()`: the energy-minimized protein.
 - `bonds`: bond list for the simulated system.
 - `messages`: messages emitted during the run.
