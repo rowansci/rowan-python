@@ -55,10 +55,14 @@ Raises `RuntimeError` if preparation fails, is stopped, or times out.
 Server-side check that the protein can be parameterized by the MD forcefield. Call before any MD workflow (protein MD, pose-analysis MD, RBFE perturbation) to catch parameterization issues early.
 
 ```python
-protein.validate_protein_forcefield(exclude_residue_names=None)
+protein.validate_protein_forcefield(exclude_residues=None)
 ```
 
-Ligand residues (`LIG`) are always excluded automatically. Pass `exclude_residue_names=["RES1", "RES2"]` for other residues to skip.
+Ligand residues (`LIG`) are always excluded automatically. Pass `exclude_residues` for other residues to skip: a residue name excludes the first residue with that name, so further copies are still validated, while an integer is a 0-based index into the protein's sorted non-polymer records and excludes that record without naming it. Both spellings match `rowan.Binder`'s `small_molecules` keys, so `exclude_residues=list(binder.small_molecules)` skips exactly the residues an MD workflow parameterizes from SMILES.
+
+```python
+protein.validate_protein_forcefield(exclude_residues=["STI", 2])
+```
 
 ## Troubleshooting
 

@@ -55,7 +55,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
 - `analysis_interval_ps` (default `None`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` (the default) disables those analyses.
 - `clustering` (default `None`): cluster the trajectory frames. `None` disables it; pass `rowan.KMeansClusteringSettings(num_clusters=10)` or `rowan.GreedyClusteringSettings(cutoff_angstrom=2.0)`.
-- `validate_forcefield` (default `True`): validate the protein forcefield before running.
+- `validate_forcefield` (default `True`): validate the protein forcefield before submitting; raises early if the protein cannot be parameterized or has clashing residues. When a `binder` is set, its small molecules are excluded from validation, whether keyed by residue name or by non-polymer index, since they are parameterized from their SMILES. Cofactors, metals, and glycans outside the binder are still validated — set `False` to skip the pre-check entirely.
 
 ## Result fields
 

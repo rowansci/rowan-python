@@ -291,7 +291,7 @@ class Protein(BaseModel):
 
         raise RuntimeError(f"Protein preparation timed out after {timeout:.0f}s for {self.uuid}.")
 
-    def validate_protein_forcefield(self, exclude_residue_names: list[str] | None = None) -> None:
+    def validate_protein_forcefield(self, exclude_residues: list[str | int] | None = None) -> None:
         """
         Validate that this protein can be parameterized with the MD forcefield.
 
@@ -299,16 +299,24 @@ class Protein(BaseModel):
         recognized by OpenMM and that there are no clashing atoms. Call this
         before submitting any MD workflow to catch preparation issues early.
 
-        Ligand residues (``LIG``) are always excluded — they are parameterized
-        separately by the MD workflow from the provided SMILES.
+        Ligand residues (`LIG`) are always excluded — they are parameterized
+        separately by the MD workflow from the provided SMILES. Pass the keys of a
+        binder's `small_molecules` to exclude those as well.
+
+        A name is matched case-insensitively and excludes only the first residue
+        with that name, so further copies are still validated. Integer entries are
+        0-based indices into the protein's sorted non-polymer records, and reference
+        a record without naming it.
 
         If validation fails, try re-preparing with ``remove_invalid_hydrogens=True``:
         ``protein.prepare(remove_invalid_hydrogens=True)``
 
-        :param exclude_residue_names: Additional residue names to skip during validation.
+        :param exclude_residues: additional residue names and/or 0-based non-polymer indices to skip
         :raises requests.HTTPError: if validation fails or the API request fails.
         """
-        excluded = list({"LIG"} | {name.upper() for name in (exclude_residue_names or [])})
+        entries: list[str | int] = ["LIG"]
+        entries += [r.upper() if isinstance(r, str) else r for r in exclude_residues or []]
+        excluded = list(dict.fromkeys(entries))
         with api_client() as client:
             response = client.post(
                 f"/protein/{self.uuid}/validate_forcefield",

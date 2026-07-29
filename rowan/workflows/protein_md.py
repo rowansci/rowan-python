@@ -218,7 +218,10 @@ def submit_protein_md_workflow(
         KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom).
     :param validate_forcefield: if True (default), validate the protein forcefield
         compatibility before submitting. Raises an error early if the protein cannot
-        be parameterized or has clashing residues.
+        be parameterized or has clashing residues. Binder small molecules are skipped,
+        whether given by residue name or by index, since they are parameterized from their
+        SMILES rather than the protein forcefield; cofactors, metals, and glycans outside
+        the binder are still validated.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -236,14 +239,10 @@ def submit_protein_md_workflow(
         protein = protein.uuid
 
     if validate_forcefield:
-        exclude_residue_names = (
-            [name for name in binder.small_molecules if isinstance(name, str)]
-            if binder is not None and binder.small_molecules
-            else None
+        exclude_residues = (
+            list(binder.small_molecules) if binder is not None and binder.small_molecules else None
         )
-        Protein(uuid=protein).validate_protein_forcefield(
-            exclude_residue_names=exclude_residue_names
-        )
+        Protein(uuid=protein).validate_protein_forcefield(exclude_residues=exclude_residues)
 
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein=protein,
