@@ -87,7 +87,9 @@ class ProteinMDResult(WorkflowResult):
         if not (uuid := self.minimized_protein_uuid):
             return None
         if "minimized_protein" not in self._cache:
-            self._cache["minimized_protein"] = retrieve_protein(uuid)
+            self._cache["minimized_protein"] = retrieve_protein(
+                uuid, workflow_uuid=self.workflow_uuid
+            )
         return self._cache["minimized_protein"]
 
     @property

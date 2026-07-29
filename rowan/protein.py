@@ -4,7 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
+from stjames.pdb import PDB, pdb_object_to_pdb_filestring
 
 from .project import Project
 from .utils import api_client
@@ -36,6 +37,8 @@ class Protein(BaseModel):
     data: dict | None = None
     public: bool | None = None
     pocket: list[list[float]] | None = None
+
+    _workflow_uuid: str | None = PrivateAttr(default=None)
 
     def __repr__(self) -> str:
         return f"<Protein name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
@@ -119,18 +122,24 @@ class Protein(BaseModel):
             response.raise_for_status()
             return Protein(**response.json())
 
-    def refresh(self, in_place: bool = True) -> Self:
+    def refresh(self, in_place: bool = True, workflow_uuid: str | None = None) -> Self:
         """
         Loads protein data
 
+        :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+            only through a workflow you can read. Not needed for proteins from a workflow result.
         :returns: protein with loaded data
         """
+        workflow_uuid = workflow_uuid or self._workflow_uuid
+        params = {"workflow_uuid": workflow_uuid} if workflow_uuid else None
         with api_client() as client:
-            response = client.get(f"/protein/{self.uuid}")
+            response = client.get(f"/protein/{self.uuid}", params=params)
             response.raise_for_status()
             protein_data = response.json()
             if not in_place:
-                return self.__class__.model_validate(protein_data)
+                refreshed = self.__class__.model_validate(protein_data)
+                refreshed._workflow_uuid = workflow_uuid
+                return refreshed
 
         self.name = protein_data.get("name")
         self.data = protein_data.get("data")
@@ -138,6 +147,7 @@ class Protein(BaseModel):
         self.pocket = protein_data.get("pocket")
         self.sanitized = protein_data.get("sanitized")
         self.used_in_workflow = protein_data.get("used_in_workflow")
+        self._workflow_uuid = workflow_uuid
         return self
 
     def update(
@@ -324,42 +334,66 @@ class Protein(BaseModel):
             )
             response.raise_for_status()
 
-    def download_pdb_file(self, path: Path | str | None = None, name: str | None = None) -> None:
+    def download_pdb_file(
+        self,
+        path: Path | str | None = None,
+        name: str | None = None,
+        workflow_uuid: str | None = None,
+    ) -> None:
         """
-        Downloads the PDB file for a protein
+        Downloads the PDB file for a protein.
+
+        Builds the file locally from this protein's data, calling `refresh()` if needed, so it
+        works anywhere `refresh()` does — including proteins reachable only through a workflow.
 
         :param path: Directory to save the file to (defaults to current directory)
         :param name: Optional custom name for the file (defaults to protein name)
+        :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+            only through a workflow you can read. Not needed for proteins from a workflow result.
         :raises requests.HTTPError: if the request to the API fails
         """
         path = Path(path) if path is not None else Path.cwd()
 
         path.mkdir(parents=True, exist_ok=True)
 
-        with api_client() as client:
-            response = client.get(f"/protein/{self.uuid}/get_pdb_file")
-            response.raise_for_status()
+        if self.data is None:
+            self.refresh(workflow_uuid=workflow_uuid)
 
-        file_path = path / f"{name or self.name}.pdb"
-        with open(file_path, "wb") as f:
-            f.write(response.content)
+        pdb_object = PDB.model_validate(self.data)
+        pdb_string = pdb_object_to_pdb_filestring(
+            pdb=pdb_object,
+            header=True,
+            source=True,
+            keyword=True,
+            crystallography=True,
+            remark=False,
+        )
+
+        file_path = path / f"{name or self.name or self.uuid}.pdb"
+        with open(file_path, "w") as f:
+            f.write(pdb_string)
 
 
-def retrieve_protein(uuid: str) -> Protein:
+def retrieve_protein(uuid: str, workflow_uuid: str | None = None) -> Protein:
     """
     Retrieves a protein from the API using its UUID.
 
     :param uuid: UUID of the protein to retrieve.
+    :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+        only through a workflow you can read. Not needed for proteins from a workflow result.
     :returns: Protein object representing the retrieved protein.
     :raises requests.HTTPError: if the request to the API fails.
     """
+    params = {"workflow_uuid": workflow_uuid} if workflow_uuid else None
 
     with api_client() as client:
-        response = client.get(f"/protein/{uuid}")
+        response = client.get(f"/protein/{uuid}", params=params)
         response.raise_for_status()
         protein_data = response.json()
 
-    return Protein(**protein_data)
+    protein = Protein(**protein_data)
+    protein._workflow_uuid = workflow_uuid
+    return protein
 
 
 def list_proteins(

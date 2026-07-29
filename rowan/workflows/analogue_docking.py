@@ -160,7 +160,7 @@ class AnalogueDockingResult(WorkflowResult):
 
         cache_key = f"complex_{smiles}_{index}"
         if cache_key not in self._cache:
-            self._cache[cache_key] = retrieve_protein(uuid)
+            self._cache[cache_key] = retrieve_protein(uuid, workflow_uuid=self.workflow_uuid)
         return self._cache[cache_key]
 
     def get_complexes(self, smiles: str) -> list[Protein]:

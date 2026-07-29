@@ -165,7 +165,9 @@ class ProteinCofoldingResult(WorkflowResult):
         if not (uuid := self.predicted_structure_uuid):
             return None
         if "predicted_structure" not in self._cache:
-            self._cache["predicted_structure"] = retrieve_protein(uuid)
+            self._cache["predicted_structure"] = retrieve_protein(
+                uuid, workflow_uuid=self.workflow_uuid
+            )
         return self._cache["predicted_structure"]
 
     def get_refined_structure(self) -> Protein | None:
@@ -178,7 +180,9 @@ class ProteinCofoldingResult(WorkflowResult):
         if not (uuid := self.predicted_refined_structure_uuid):
             return None
         if "refined_structure" not in self._cache:
-            self._cache["refined_structure"] = retrieve_protein(uuid)
+            self._cache["refined_structure"] = retrieve_protein(
+                uuid, workflow_uuid=self.workflow_uuid
+            )
         return self._cache["refined_structure"]
 
     @property

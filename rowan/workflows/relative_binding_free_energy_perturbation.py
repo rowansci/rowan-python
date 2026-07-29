@@ -90,7 +90,9 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
     @property
     def protein(self) -> Protein:
         """Prepared protein structure used as the simulation target."""
-        return Protein(uuid=str(self._workflow.protein))
+        protein = Protein(uuid=str(self._workflow.protein))
+        protein._workflow_uuid = self.workflow_uuid
+        return protein
 
     @property
     def settings(self) -> TMDRBFESettings:
