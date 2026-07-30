@@ -83,6 +83,7 @@ from .interaction_energy_decomposition import (
 )
 from .ion_mobility import IonMobilityResult, submit_ion_mobility_workflow
 from .irc import IRCResult, submit_irc_workflow
+from .logp import LogPResult, submit_logp_workflow
 from .macropka import (
     MacropKaMicrostate,
     MacropKaResult,
