@@ -22,7 +22,7 @@ For project or folder management, also read [folders and projects](reference/fol
 
 Structure-based workflows take a `rowan.Molecule`, not a bare SMILES string. Build one from a SMILES with `rowan.Molecule.from_smiles(...)` (RDKit embeds a 3D structure) or from coordinates with `rowan.Molecule.from_xyz(...)` / `from_xyz_file(...)`. A plain SMILES string is accepted only by the SMILES-based (2D) workflows. Each reference file states which case its workflow is:
 
-- **SMILES (2D)**: predicts from the graph, ignores 3D, so a plain SMILES string works (ADMET, solubility, macropKa, the SMILES pKa/permeability methods).
+- **SMILES (2D)**: predicts from the graph, ignores 3D, so a plain SMILES string works (ADMET, solubility, logP, macropKa, the SMILES pKa/permeability methods).
 - **3D from a SMILES is fine**: pass `rowan.Molecule.from_smiles(...)`; the embedded structure is built and optimized as needed (basic calculation, NMR, descriptors, redox, BDE, conformer search, and most QM workflows).
 - **Real coordinates needed**: pass a structure with meaningful geometry via `rowan.Molecule.from_xyz(...)`, a prior result's `.molecule`, or a docked/crystal pose (electronic properties, interaction-energy decomposition, strain, IRC, double-ended TS, 3D pKa methods).
 
@@ -55,6 +55,7 @@ Not every account can run every workflow. MCP users must consult the `mcp_suppor
 - **Interaction energy decomposition**: break the non-covalent interaction energy between two molecules into SAPT0 components (electrostatics, exchange, induction, dispersion), to quantify how much each contributes. See [reference/interaction_energy_decomposition.md](reference/interaction_energy_decomposition.md).
 - **Ion mobility**: predict a molecule's rotationally averaged collision cross-section (CCS) in nitrogen via explicit trajectory-based scattering, accounting for conformers and protonation states. See [reference/ion_mobility.md](reference/ion_mobility.md).
 - **IRC**: trace the steepest-descent reaction path in both directions from an optimized transition state to the reactant and product it connects. See [reference/irc.md](reference/irc.md).
+- **LogP**: predict the octanol/water partition coefficient, either quickly from a graph neural network or the Wildman-Crippen atom-contribution model, or from a physics-based COSMO-RS conformer ensemble. See [reference/logp.md](reference/logp.md).
 - **macropKa**: enumerate a molecule's protonation microstates and conformers to predict its macroscopic pKa, microstate populations, and pH-dependent properties (isoelectric point, logD, aqueous solubility, blood-brain-barrier permeability). See [reference/macropka.md](reference/macropka.md).
 - **Membrane permeability**: predict small-molecule permeability, either experimental Caco-2 apparent permeability via a graph neural network, or intrinsic permeability coefficients for five membranes (plasma, blood-brain barrier, Caco-2, black lipid membrane, PAMPA) via a physics-based free-energy method. See [reference/membrane_permeability.md](reference/membrane_permeability.md).
 - **MSA**: generate and format multiple-sequence-alignment data for downstream use with co-folding models. See [reference/msa.md](reference/msa.md).
