@@ -1,5 +1,7 @@
 # LogP
 
+logP, the octanol/water partition coefficient, is the standard measure of lipophilicity and one of the cheapest early reads on developability: it tracks with permeability, solubility, metabolic clearance, and promiscuity-driven tox risk. Most oral drugs sit between roughly 1 and 3 and the Rule of Five caps it at 5, so it is worth checking that a series is not drifting greasy as potency is optimized. Predictions are a guide for ranking analogs, not a substitute for measurement.
+
 ## Input
 
 A SMILES string passed as `initial_smiles`. This workflow is SMILES-based: pass a SMILES string, not a 3D structure. To start from a `rowan.Molecule` or RDKit `Mol`, extract its SMILES first (`molecule.smiles` for a `rowan.Molecule`) and pass that string. The `cosmors` method generates its own conformers internally, so it also takes only a SMILES.
