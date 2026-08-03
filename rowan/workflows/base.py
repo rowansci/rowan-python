@@ -144,10 +144,10 @@ the server (a field is missing, extra, or the wrong type). Underlying validation
 RESULT_REGISTRY: dict[str, type[WorkflowResult]] = {}
 
 
-def register_result(workflow_type: str) -> Callable[[type[WorkflowResult]], type[WorkflowResult]]:
+def register_result[R: WorkflowResult](workflow_type: str) -> Callable[[type[R]], type[R]]:
     """Decorator to register a result class for a workflow type."""
 
-    def decorator(cls: type[WorkflowResult]) -> type[WorkflowResult]:
+    def decorator(cls: type[R]) -> type[R]:
         RESULT_REGISTRY[workflow_type] = cls
         return cls
 
