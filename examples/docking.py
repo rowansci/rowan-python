@@ -35,5 +35,5 @@ for i, score in enumerate(result.scores):
 
 # Download the top-scoring protein–ligand complex as a PDB
 complex_protein = result.get_complex(0)
-complex_protein.download_pdb_file("dasatinib_2GQG_complex.pdb")
+complex_protein.download_pdb_file(name="dasatinib_2GQG_complex")
 print("Saved dasatinib_2GQG_complex.pdb")

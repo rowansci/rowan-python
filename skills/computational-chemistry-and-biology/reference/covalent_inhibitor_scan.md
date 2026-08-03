@@ -6,6 +6,7 @@ A `rowan.Protein` (or its UUID string) with the protein and ligand as separate e
 
 - `protein_reactive_atom_index`: the reacting protein atom (e.g. a catalytic Cys `SG`).
 - `ligand_reactive_atom_index`: the reacting ligand atom (e.g. the warhead carbon).
+- `ligand_smiles`: SMILES of the ligand, used to parameterize it for the scan.
 
 The ligand must be classified as non-polymer in the protein's data — `protein.prepare()` can misclassify a covalently-bonded ligand as part of the polymer chain, in which case the workflow fails at compute time with "Complex PDB has no non-polymer atoms to use as the ligand".
 
@@ -22,6 +23,7 @@ wf = rowan.submit_covalent_inhibitor_scan_workflow(
     protein=protein,  # covalently bonded or normally docked complex
     protein_reactive_atom_index=1571,
     ligand_reactive_atom_index=4492,
+    ligand_smiles=ligand_smiles,
     settings=rowan.CovalentInhibitorScanSettings(scan_num=4),
     folder=folder,
 )

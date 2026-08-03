@@ -5,7 +5,7 @@
 A protein, a binding pocket, and a list of ligand SMILES.
 
 - `smiles_list`: a list of SMILES strings to dock.
-- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(name, pdb_code, project_uuid=...)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
 - `pocket`: the search box as two `[x, y, z]` points, `[[center_x, center_y, center_z], [size_x, size_y, size_z]]`, the box center and its dimensions in angstroms.
 
 Each SMILES is prepared internally: RDKit generates 3D coordinates, adds hydrogens, embeds several conformers, and runs a quick MMFF94 optimization, then the lowest-energy conformer is docked. This is why the input is SMILES rather than a posed 3D ligand.
@@ -24,7 +24,7 @@ ligands = [
 ]
 
 protein = rowan.create_protein_from_pdb_id(
-    "CDK2", "1HCK", project_uuid=rowan.default_project().uuid
+    "1HCK", name="CDK2", project_uuid=rowan.default_project().uuid
 )
 protein.prepare()
 

@@ -820,7 +820,7 @@ packages:
   name: rowan-python
   requires_dist:
   - httpx
-  - stjames>=0.0.237
+  - stjames>=0.0.237,<0.0.238
   - setuptools
   - rdkit
   - nest-asyncio

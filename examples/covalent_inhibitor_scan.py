@@ -15,10 +15,13 @@ protein.prepare(remove_heterogens=False)
 protein_reactive_atom_index = 1571
 ligand_reactive_atom_index = 4492
 
+ligand_smiles = "CC(C)(C)C[C@@H](C#N)C(=O)N1CCC[C@H](C1)n2nc(c3ccc(Oc4ccccc4)cc3)c5c(N)ncnc25"
+
 workflow = rowan.submit_covalent_inhibitor_scan_workflow(
     protein=protein,
     protein_reactive_atom_index=protein_reactive_atom_index,
     ligand_reactive_atom_index=ligand_reactive_atom_index,
+    ligand_smiles=ligand_smiles,
     settings=rowan.CovalentInhibitorScanSettings(scan_num=4),
     name="BTK covalent inhibitor scan (Cys481, 4YHF)",
     folder=folder,

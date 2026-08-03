@@ -4,7 +4,7 @@
 
 A `rowan.Protein` (or its UUID string). Proteins are not SMILES. Load one and prepare it before submitting:
 
-- From a PDB ID: `rowan.create_protein_from_pdb_id("crambin", "1CRN", project_uuid=rowan.default_project().uuid)`.
+- From a PDB ID: `rowan.create_protein_from_pdb_id("1CRN", name="crambin", project_uuid=rowan.default_project().uuid)`.
 - From a local PDB file: `rowan.upload_protein("my protein", "path/to/file.pdb")`.
 
 Then call `protein.prepare()`, which runs PDBFixer to fix nonstandard residues and add missing atoms and hydrogens, and waits for it to finish.
@@ -19,7 +19,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 protein = rowan.create_protein_from_pdb_id(
-    "crambin", "1CRN", project_uuid=rowan.default_project().uuid
+    "1CRN", name="crambin", project_uuid=rowan.default_project().uuid
 )
 protein.prepare()  # fix residues, add missing atoms/hydrogens; blocks until done
 

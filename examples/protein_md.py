@@ -5,7 +5,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 protein = rowan.create_protein_from_pdb_id(
-    "crambin", "1CRN", project_uuid=rowan.default_project().uuid
+    "1CRN", name="crambin", project_uuid=rowan.default_project().uuid
 )
 
 protein.prepare()

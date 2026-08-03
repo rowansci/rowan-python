@@ -5,7 +5,7 @@
 A completed RBFE graph and a prepared protein.
 
 - `graph_result`: a `RelativeBindingFreeEnergyGraphResult` from the RBFE graph workflow, which turns a congeneric ligand series into the graph of ligand pairs FEP transforms between.
-- `protein`: a `rowan.Protein` or its UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(name, pdb_code, project_uuid=...)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- `protein`: a `rowan.Protein` or its UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
 
 This workflow runs FEP simulations along the graph edges to predict relative binding free energies across the ligand series.
 

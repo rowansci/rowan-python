@@ -21,21 +21,19 @@ It exits with actionable guidance for a missing key, a rejected or expired key, 
 
 Every workflow is submitted and retrieved the same way. `submit_*_workflow(...)` returns a `Workflow` immediately, and results are fetched separately.
 
+<!-- fmt: off -->
 ```python
 import rowan
 
 folder = rowan.get_folder("my-project")
-wf = (
-    rowan.submit_
-    < workflow
-    > _workflow(
-        ...,  # use the scientific arguments selected by the entry skill
-        folder=folder,
-        name="my run",
-    )
+wf = rowan.submit_<workflow>_workflow(
+    ...,  # use the scientific arguments selected by the entry skill
+    folder=folder,
+    name="my run",
 )
 result = wf.result()
 ```
+<!-- fmt: on -->
 
 **Universal submit arguments.** Every `submit_*_workflow` accepts these in addition to its scientific arguments:
 
@@ -55,11 +53,13 @@ Use inline submit-and-wait for quick questions or one result. For long-running o
 
 **Estimate before committing:**
 
+<!-- fmt: off -->
 ```python
-draft = rowan.submit_ < workflow > _workflow(..., folder=folder, is_draft=True)
+draft = rowan.submit_<workflow>_workflow(..., folder=folder, is_draft=True)
 print(draft.dispatch_info())
 draft.submit_draft()  # or draft.delete()
 ```
+<!-- fmt: on -->
 
 **Status and control:** `wf.done()` and `wf.get_status()` check state without waiting, `wf.stop()` cancels a running workflow, and `wf.delete()` removes it and its data. `wf.update(...)` edits workflow metadata (`name`, folder, `starred`, `public`, `email_when_complete=True` to email on completion).
 
