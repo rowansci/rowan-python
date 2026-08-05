@@ -1,16 +1,44 @@
 site_name: Rowan Python API
 theme:
   name: material
-  logo: images/deciduous-tree-favicon.png
+  logo: images/RowanSquareLogo.png
+  favicon: images/favicon.svg
   palette:
-    - scheme: default        # ← light mode
-      primary: custom        # tell Material we’re supplying a color
-      accent: teal
-    - scheme: slate          # ← dark mode
+    - scheme: default # ← light mode
+      primary: custom # tell Material we’re supplying a color
+      accent: custom
+    - scheme: slate # ← dark mode
       primary: custom
-      accent: teal
+      accent: custom
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
 extra_css:
   - stylesheets/colors.css
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 plugins:
   - search
   - mkdocstrings:
@@ -18,17 +46,87 @@ plugins:
         python:
           paths: ["."]
           options:
+            extensions:
+              - griffe_pydantic:
+                  schema: true
             heading_level: 3
-            docstring_style: sphinx     # ← "sphinx", "google" or "numpy"
-            docstring_section_style: table  # or "table" if you prefer grids
-            show_signature_annotations: false
-            merge_init_into_class: true     # if you want __init__ docs on the class
-            separate_signature: true          # uses Black if it’s on your PATH
-            line_length: 88
+            docstring_style: sphinx # ← "sphinx", "google" or "numpy"
+            docstring_section_style: table # or "table" if you prefer grids
+            show_signature_annotations: true
+            merge_init_into_class: true # if you want __init__ docs on the class
+            separate_signature: true # uses Black if it’s on your PATH
+            line_length: 65
             unwrap_annotated: true
 nav:
-  - Core API: index.md
   - "← docs.rowansci.com": https://docs.rowansci.com
+  - Get started: index.md
+  - Account:
+      - User: api/user.md
+      - API keys: api/api-keys.md
+      - Webhooks: api/webhooks.md
+  - Objects:
+      - Project: api/project.md
+      - Folder: api/folder.md
+      - Workflow: api/workflow.md
+      - Calculation: api/calculation.md
+      - Molecule: api/molecule.md
+      - Protein: api/protein.md
+  - Settings:
+      - Settings: workflows/settings.md
+      - Conformer search settings: workflows/conformer-search-settings.md
+      - Types: workflows/types.md
+  - Molecular modeling:
+      - Basic calculation: workflows/basic-calculation.md
+      - Conformer search: workflows/conformer-search.md
+      - Solvent-dependent conformers: workflows/solvent-dependent-conformers.md
+      - Scan: workflows/scan.md
+      - Multistage optimization: workflows/multistage-optimization.md
+      - Electronic properties: workflows/electronic-properties.md
+      - IRC: workflows/irc.md
+      - Double-ended TS search: workflows/double-ended-ts-search.md
+      - Strain: workflows/strain.md
+      - Interaction energy decomposition: workflows/interaction-energy-decomposition.md
+      - Covalent inhibitor scan: workflows/covalent-inhibitor-scan.md
+  - Property prediction:
+      - Macroscopic pKa: workflows/macropka.md
+      - pKa: workflows/pka.md
+      - Redox potential: workflows/redox-potential.md
+      - Fukui: workflows/fukui.md
+      - Tautomer search: workflows/tautomer-search.md
+      - Solubility: workflows/solubility.md
+      - LogP: workflows/logp.md
+      - Hydrogen bond donor/acceptor strength: workflows/hydrogen-bond-donor-acceptor-strength.md
+      - Bond dissociation energy: workflows/bond-dissociation-energy.md
+      - Spin states: workflows/spin-states.md
+      - ADME-tox prediction: workflows/admet.md
+      - Membrane permeability: workflows/membrane-permeability.md
+  - Protein–ligand:
+      - Docking: workflows/docking.md
+      - Protein co-folding: workflows/protein-cofolding.md
+      - Binding affinity: workflows/binding-affinity.md
+      - Protein MD: workflows/protein-md.md
+      - Pose-analysis MD: workflows/pose-analysis-md.md
+      - Protein binder design: workflows/protein-binder-design.md
+      - Pocket detection: workflows/pocket-detection.md
+      - MSA: workflows/msa.md
+      - Batch docking: workflows/batch-docking.md
+      - Analogue docking: workflows/analogue-docking.md
+      - RBFE graph: workflows/rbfe-graph.md
+      - Relative binding free-energy perturbation: workflows/relative-binding-free-energy-perturbation.md
+  - Spectrometry:
+      - NMR prediction: workflows/nmr.md
+      - Ion-mobility mass spectrometry prediction: workflows/ion-mobility.md
+  - Cheminformatics:
+      - Descriptors: workflows/descriptors.md
 
+copyright: Copyright &copy; 2023–2026 Rowan Scientific Corporation
 extra:
   homepage: https://rowansci.com
+  generator: true
+  social:
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/rowansci
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/rowansci
+    - icon: fontawesome/brands/github
+      link: https://github.com/rowansci

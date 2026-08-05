@@ -1,521 +1,104 @@
-## Workflow Utilities
-::: rowan.workflows.base
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-      members:
-        - Workflow
-        - WorkflowResult
-        - WorkflowError
-        - DispatchInfo
-        - Message
-        - Solvent
-        - Mode
-        - submit_workflow
-        - retrieve_workflow
-        - retrieve_workflows
-        - list_workflows
-        - batch_submit_workflow
-        - batch_poll_status
+![Rowan](images/RowanLogoLarge.png){ width="320" }
 
-::: rowan.calculation
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^_"]
+# Rowan Python API
 
-## ADMET
-::: rowan.workflows.admet
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+The `rowan` package is the official Python client for the [Rowan](https://rowansci.com) computational
+chemistry platform. Submit workflows, poll or stream results, and manage
+molecules, proteins, folders, and projects—all from plain Python.
 
-## Analogue Docking
-::: rowan.workflows.analogue_docking
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+## Installation
 
-## Binding Affinity
-::: rowan.workflows.binding_affinity
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+=== "pip"
 
-## Basic Calculation
-::: rowan.workflows.basic_calculation
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    ```bash
+    pip install rowan-python
+    ```
 
-## Batch Docking
-::: rowan.workflows.batch_docking
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+=== "pixi"
 
-## Bond Dissociation Energy
-::: rowan.workflows.bde
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    ```bash
+    pixi add --pypi rowan-python
+    ```
 
-## Conformer Search
-::: rowan.workflows.conformer_search
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+=== "uv"
 
-## Descriptors
-::: rowan.workflows.descriptors
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    ```bash
+    uv add rowan-python
+    ```
 
-## Docking
-::: rowan.workflows.docking
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+## Authentication
 
-## Double-Ended TS Search
-::: rowan.workflows.double_ended_ts_search
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+Create an API key on your [account page](https://labs.rowansci.com/account), then either export
+it as an environment variable or set it directly on the module:
 
-## Electronic Properties
-::: rowan.workflows.electronic_properties
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+```python
+import os
+os.environ["ROWAN_API_KEY"]  # picked up automatically, or...
 
-## Fukui
-::: rowan.workflows.fukui
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+import rowan
+rowan.api_key = "rowan-sk..."
+```
 
-## Hydrogen Bond Donor/Acceptor Strength
-::: rowan.workflows.hydrogen_bond_donor_acceptor_strength
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+!!! tip "Working in a shared process?"
+    Use [`rowan.api_credentials`](api/api-keys.md) to scope a key to a single `with` block instead
+    of setting it globally — handy for multi-tenant scripts or test suites.
 
-## Interaction Energy Decomposition
-::: rowan.workflows.interaction_energy_decomposition
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+## Quickstart
 
-## Ion Mobility
-::: rowan.workflows.ion_mobility
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+This example runs a geometry optimization on isoprene and streams each optimization step as it
+completes:
 
-## IRC
-::: rowan.workflows.irc
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+```python title="quickstart.py" linenums="1"
+import rowan
 
-## LogP
-::: rowan.workflows.logp
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+folder = rowan.get_folder("examples")  # (1)!
 
-## MacropKa
-::: rowan.workflows.macropka
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+workflow = rowan.submit_basic_calculation_workflow(
+    initial_molecule=rowan.Molecule.from_smiles("CC(=C)C=C"),
+    preset="rapid_semiempirical",  # (2)!
+    tasks=["optimize"],
+    name="Isoprene Optimization",
+    folder=folder,
+)
 
-## Membrane Permeability
-::: rowan.workflows.membrane_permeability
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+print(f"View workflow at: https://labs.rowansci.com/calculation/{workflow.uuid}")
 
-## MSA
-::: rowan.workflows.msa
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+for result in workflow.stream_result(poll_interval=3):  # (3)!
+    if result.calculation_uuid:
+        mols = rowan.retrieve_calculation_molecules(result.calculation_uuid)
+        print(f"  {len(mols)} opt steps, energy={mols[-1].get('energy') if mols else None}")
 
-## Multistage Optimization
-::: rowan.workflows.multistage_optimization
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+print(result)  # (4)!
+```
 
-## NMR
-::: rowan.workflows.nmr
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+1. Folders are created on first use — no need to pre-create them in the UI.
+2. Presets bundle a method, basis set, and corrections into one named choice. See
+   [Basic Calculation](workflows/basic-calculation.md) for the full list and when to use each one.
+3. `stream_result` polls the API and yields an updated result after every optimization step,
+   instead of blocking until the whole workflow finishes.
+4. The final yielded result is the completed workflow — same object you'd get from `workflow.result`
+   after `workflow.wait()`.
 
-## pKa
-::: rowan.workflows.pka
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+## What's next
 
-## Pocket Detection
-::: rowan.workflows.pocket_detection
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+<div class="grid cards" markdown>
 
-## Pose Analysis MD
-::: rowan.workflows.pose_analysis_md
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+-   :material-flask-outline: **Workflows**
 
-## Protein Binder Design
-::: rowan.workflows.protein_binder_design
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    ---
 
-## Protein Cofolding
-::: rowan.workflows.protein_cofolding
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    Every Rowan workflow's submit function, settings, and result type, grouped by molecular
+    modeling, property prediction, protein–ligand, spectrometry, and cheminformatics.
 
-## Protein MD
-::: rowan.workflows.protein_md
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    [:octicons-arrow-right-24: Browse workflows](workflows/basic-calculation.md)
 
-## RBFE Graph
-::: rowan.workflows.rbfe_graph
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+-   :material-code-braces: **Objects**
 
-## Relative Binding Free Energy Perturbation
-::: rowan.workflows.relative_binding_free_energy_perturbation
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    ---
 
-## Redox Potential
-::: rowan.workflows.redox_potential
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    `Molecule`, `Protein`, `Folder`, `Project`, `Workflow`, `Calculation`, and the account/API-key
+    types every workflow builds on.
 
-## Scan
-::: rowan.workflows.scan
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
+    [:octicons-arrow-right-24: Browse objects](api/workflow.md)
 
-## Solubility
-::: rowan.workflows.solubility
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Solvent-Dependent Conformers
-::: rowan.workflows.solvent_dependent_conformers
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Spin States
-::: rowan.workflows.spin_states
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Strain
-::: rowan.workflows.strain
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Tautomer Search
-::: rowan.workflows.tautomer_search
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## API Keys
-::: rowan.api_keys
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Folder Class and Functions
-::: rowan.folder
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Molecule Class and Functions
-::: rowan.molecule
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## User Class and Functions
-::: rowan.user
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Protein Class and Functions
-::: rowan.protein
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Project Class and Functions
-::: rowan.project
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      filters: ["!^__"]
-
-## Utilities
-::: rowan.utils
-    handler: python
-    options:
-      show_source: false
-      show_root_heading: false
-      show_root_toc_entry: false
-      members_order: source
-      group_by_category: true
-      members:
-        - get_api_key
-        - get_project_uuid
-        - smiles_to_stjames
+</div>
