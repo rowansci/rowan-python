@@ -21,6 +21,8 @@ class APIKey(BaseModel):
     :ivar is_revoked: Whether the key has been revoked.
     :ivar scope: Permission scope ("read", "read_write", or "read_write_delete").
     :ivar can_manage_api_keys: Whether this key can create/list/revoke other API keys.
+    :ivar budget: Maximum credits this key may spend. ``None`` means unlimited.
+    :ivar credits_used: Credits spent by this key so far.
     :ivar scoped_project_uuid: If set, the key can only access this project.
     :ivar created_by_key_uuid: UUID of the API key used to create this one (if any).
     :ivar revoked_at: When the key was revoked, if applicable.
@@ -35,6 +37,8 @@ class APIKey(BaseModel):
     is_revoked: bool
     scope: str
     can_manage_api_keys: bool
+    budget: float | None = None
+    credits_used: float = 0
     scoped_project_uuid: str | None = None
     created_by_key_uuid: str | None = None
     revoked_at: datetime | None = None
@@ -78,6 +82,7 @@ def create_api_key(
     scope: APIKeyScope = "read_write",
     valid_days: int = 365,
     scoped_project_uuid: str | None = None,
+    budget: float | None = None,
 ) -> CreatedAPIKey:
     """
     Create a new API key.
@@ -89,6 +94,8 @@ def create_api_key(
     :param scope: Permission scope. One of "read", "read_write", "read_write_delete".
     :param valid_days: Number of days until the key expires.
     :param scoped_project_uuid: If provided, restrict the key to a single project.
+    :param budget: Maximum credits the key may spend. If not provided, the key has no
+        spending limit.
     :returns: plaintext key together with its metadata; the plaintext key is
         only returned once — store it immediately.
     """
@@ -99,6 +106,7 @@ def create_api_key(
         "scope": scope,
         "valid_days": valid_days,
         "scoped_project_uuid": scoped_project_uuid,
+        "budget": budget,
     }
     with api_client() as client:
         response = client.post("/api_key", json=payload)
@@ -140,5 +148,30 @@ def revoke_api_key(uuid: str) -> APIKey:
     """
     with api_client() as client:
         response = client.post(f"/api_key/{uuid}/revoke")
+        response.raise_for_status()
+        return APIKey(**response.json())
+
+
+def update_api_key_budget(uuid: str, budget: float | None) -> APIKey:
+    """
+    Update the spending budget of an API key.
+
+    The caller must currently authenticate with an unscoped key that has
+    ``can_manage_api_keys`` permission.
+
+    :param uuid: UUID of the key to update.
+    :param budget: New maximum credits the key may spend. Pass ``None`` to remove
+        the spending limit.
+    :returns: Updated APIKey object.
+    """
+    with api_client() as client:
+        response = client.patch(f"/api_key/{uuid}", json={"budget": budget})
+        if response.status_code == 403:
+            raise PermissionError(
+                "API key update rejected by the server (403). The key you are "
+                "authenticating with must be unscoped and have `can_manage_api_keys` "
+                "permission. Create a manager key from the Rowan web UI "
+                "(Account → API keys) and retry with that key."
+            )
         response.raise_for_status()
         return APIKey(**response.json())

@@ -1,6 +1,76 @@
-/* Light-mode brand green */
+/* Rowan brand palette */
 :root > * {
-  --md-primary-fg-color:        #16a34a;
-  --md-primary-fg-color--light: #c3d3e1;
-  --md-primary-fg-color--dark:  #74967E;
+  --color-light: #FFFFFF;
+  --color-offlight: #F4F5F4;
+  --color-neutral: #DDDDDD;
+
+  --color-subtle: #6E716E;
+  --color-dark: #181D18;
+
+  --color-border-primary: #74967E;
+  --color-border-secondary: #BACBBF;
+
+  --color-form-text: #5A7763;
+  --color-form-placeholder: #9CADA1;
+  --color-link-text: #5A7763;
+
+  --color-primary-bright: #24B256;
+  --color-primary-std: #189143;
+  --color-primary-hover: #14793B;
+  --color-primary-active: #0C5C30;
+  --color-primary-disabled: #7AA982;
+
+  /* Header + top nav-tabs bar: offlight background instead of a solid green fill */
+  --md-primary-fg-color: var(--color-offlight);
+  --md-primary-fg-color--light: var(--color-light);
+  --md-primary-fg-color--dark: var(--color-offlight);
+  --md-primary-bg-color: var(--color-dark);
+  --md-primary-bg-color--light: var(--color-subtle);
+
+  /* Accent: links, buttons, focus rings, and (via --md-typeset-a-color below) the
+     current-page highlight in the sidebar nav. Material defaults --md-typeset-a-color
+     to --md-primary-fg-color, which would make it offlight-on-white and invisible —
+     pin it to the brand green explicitly instead. */
+  --md-accent-fg-color: var(--color-primary-std);
+  --md-accent-fg-color--transparent: #1891431a;
+  --md-accent-bg-color: var(--color-light);
+  --md-typeset-a-color: var(--color-primary-std);
+}
+
+/* Material's collapsed search box is a translucent-black pill tuned for a dark
+   header; against our light header it read as a dark gray box. Use a plain
+   light input instead. */
+.md-search__form {
+  background-color: var(--color-neutral);
+}
+
+.md-search__form:hover {
+  background-color: var(--color-border-secondary);
+}
+
+/* Material hardcodes each admonition type's accent color (tip = teal, #00bfa5)
+   rather than deriving it from the theme palette — recolor "tip" to match brand green. */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: var(--color-primary-std);
+}
+
+.md-typeset .admonition.tip:focus-within,
+.md-typeset details.tip:focus-within {
+  box-shadow: 0 0 0 0.2rem var(--md-accent-fg-color--transparent);
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .tip > summary::before {
+  background-color: var(--color-primary-std);
+}
+
+.md-typeset .tip > .admonition-title::after,
+.md-typeset .tip > summary::after {
+  color: var(--color-primary-std);
 }
