@@ -61,6 +61,27 @@ class APIKey(BaseModel):
             response.raise_for_status()
             return type(self)(**response.json())
 
+    def refresh(self, in_place: bool = True) -> Self:
+        """
+        Reload this key's metadata (e.g. ``credits_used``) from the server.
+
+        :param in_place: If True, update this instance in-place. If False, return new instance.
+        :returns: Updated APIKey object.
+        :raises ValueError: If this key is no longer present in the account's key list.
+        """
+        matches = [key for key in list_api_keys(active=None) if key.uuid == self.uuid]
+        if not matches:
+            raise ValueError(f"API key {self.uuid!r} not found.")
+        updated = matches[0]
+
+        if not in_place:
+            return type(self)(**updated.model_dump())
+
+        for field_name in type(self).model_fields:
+            setattr(self, field_name, getattr(updated, field_name))
+
+        return self
+
 
 class CreatedAPIKey(BaseModel):
     """
