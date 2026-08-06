@@ -8,6 +8,7 @@ from stjames import Binder, GreedyClusteringSettings, KMeansClusteringSettings
 
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
@@ -160,7 +161,7 @@ class ProteinMDResult(WorkflowResult):
 
 
 def submit_protein_md_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     num_trajectories: int = 4,
     equilibration_time_ns: float = 1,
     simulation_time_ns: float = 10,

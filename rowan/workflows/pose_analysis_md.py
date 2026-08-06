@@ -8,6 +8,7 @@ from stjames import GreedyClusteringSettings, KMeansClusteringSettings
 
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
@@ -173,7 +174,7 @@ class PoseAnalysisMDResult(WorkflowResult):
 
 
 def submit_pose_analysis_md_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     initial_smiles: str,
     num_trajectories: int = 4,
     equilibration_time_ns: float = 1,

@@ -6,7 +6,7 @@ Useful for analyzing pose stability and specific protein–ligand interactions, 
 
 A docked protein-ligand complex (a holo structure) and the ligand SMILES. The protein must contain the bound ligand as a residue, since the workflow runs MD on the complex and measures the ligand's RMSD against its starting pose; a plain apo protein has no pose to analyze.
 
-- `protein`: the holo complex on which MD runs, as a `rowan.Protein` or its UUID. Upload a complex with `rowan.upload_protein(name, path)`, or obtain one from a co-folding prediction. Either way, call `protein.prepare(remove_heterogens=False)` first to add hydrogens while keeping the bound ligand.
+- `protein`: any stored `rowan.Protein` or protein UUID. The structure must be a holo complex containing the bound ligand. Upload a complex with `rowan.upload_protein(name, path)`, or obtain one from a co-folding prediction. Protein preparation is recommended before MD; retain the bound ligand by mapping its residue name to its SMILES in `retain_non_polymer`.
 - `initial_smiles`: the SMILES of the ligand bound in the complex, the same molecule. It supplies the chemical identity used to parameterize the ligand for MD (bond orders, force-field atom types); the 3D pose comes from the complex structure.
 
 The MD runs in explicit solvent, and backbone atoms outside the binding pocket are restrained to preserve the protein's fold while the pocket and ligand stay flexible.
@@ -20,12 +20,17 @@ folder = rowan.get_folder("examples")
 
 ligand = "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1"
 
-# load a docked protein-ligand complex; remove_heterogens=False keeps the bound ligand
+# Load a docked protein-ligand complex and retain its LIG residue during preparation.
 protein = rowan.upload_protein("complex", "complex.pdb")
-protein.prepare(remove_heterogens=False)
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    retain_non_polymer={"LIG": ligand},
+    folder=folder,
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 wf = rowan.submit_pose_analysis_md_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     initial_smiles=ligand,
     num_trajectories=1,  # example uses 1 for speed; default 4
     simulation_time_ns=1,  # example uses 1 for speed; default 10

@@ -9,6 +9,7 @@ from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import (
     StructureInput,
@@ -150,7 +151,7 @@ class DockingResult(WorkflowResult):
 
 
 def submit_docking_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     pocket: list[list[float]],
     initial_molecule: StructureInput,
     docking_settings: stjames.VinaSettings | stjames.GninaSettings | None = None,

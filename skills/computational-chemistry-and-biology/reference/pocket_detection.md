@@ -4,10 +4,10 @@
 
 A `rowan.Protein` (or its UUID string). Proteins are not SMILES. Load one and prepare it before submitting:
 
-- From a PDB ID: `rowan.create_protein_from_pdb_id("1OTP", name="thymidine phosphorylase", project_uuid=rowan.default_project().uuid)`.
+- From a PDB ID: `rowan.create_protein_from_pdb_id("1OTP", name="thymidine phosphorylase")`.
 - From a local PDB file: `rowan.upload_protein("my protein", "path/to/file.pdb")`.
 
-Then call `protein.prepare()`, which runs PDBFixer to fix nonstandard residues and add missing atoms and hydrogens, and waits for it to finish.
+Pocket detection accepts any stored `rowan.Protein` or protein UUID. Protein preparation is recommended before submission; when chaining from it, passing `prepared_protein_uuid` avoids an unnecessary structure fetch.
 
 Detects potential binding pockets on the protein structure using Pocketeer.
 
@@ -18,13 +18,15 @@ import rowan
 
 folder = rowan.get_folder("examples")
 
-protein = rowan.create_protein_from_pdb_id(
-    "1OTP", name="thymidine phosphorylase", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1OTP", name="thymidine phosphorylase")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    folder=folder,
 )
-protein.prepare()  # fix residues, add missing atoms/hydrogens; blocks until done
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 wf = rowan.submit_pocket_detection_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     folder=folder,
 )
 

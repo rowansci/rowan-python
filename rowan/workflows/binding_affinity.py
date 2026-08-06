@@ -7,7 +7,7 @@ from stjames import SinglePointEnergySettings
 
 from ..folder import Folder
 from ..protein import Protein
-from ..types import StructureInput
+from ..types import ProteinUUID, StructureInput
 from ..utils import api_client
 from .base import (
     Message,
@@ -61,7 +61,7 @@ class BindingAffinityResult(WorkflowResult):
 
 
 def submit_binding_affinity_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     ligand_residue_name: str | None = None,
     ligand_structures: list[StructureInput] | None = None,
     binding_affinity_settings: SinglePointEnergySettings | None = None,

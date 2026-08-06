@@ -33,9 +33,11 @@ it as an environment variable or set it directly on the module:
 
 ```python
 import os
+
 os.environ["ROWAN_API_KEY"]  # picked up automatically, or...
 
 import rowan
+
 rowan.api_key = "rowan-sk..."
 ```
 

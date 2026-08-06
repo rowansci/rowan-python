@@ -4,7 +4,7 @@
 
 A protein, a binding pocket, and a single ligand.
 
-- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` to fix nonstandard residues, add missing atoms, and add hydrogens.
+- Protein: any stored `rowan.Protein` or protein UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Protein preparation is recommended before docking; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
 - `pocket`: the search box as two `[x, y, z]` points, `[[center_x, center_y, center_z], [size_x, size_y, size_z]]`, the box center and its dimensions in angstroms.
 - `initial_molecule`: the ligand as a 3D structure (`StructureInput`): a `rowan.Molecule`, `stjames.Molecule`, or RDKit `Mol` carrying coordinates. Get one any way: embed from a SMILES with `rowan.Molecule.from_smiles(...)`, load coordinates with `rowan.Molecule.from_xyz_file(path)`, or reuse a prior result's `.molecule`. Vina re-poses the ligand in the box, so the input coordinates are only a starting point.
 
@@ -33,14 +33,16 @@ folder = rowan.get_folder("examples")
 dasatinib = rowan.Molecule.from_smiles("Cc1nc(Nc2ncc(C(=O)Nc3c(C)cccc3Cl)s2)cc(N2CCN(CCO)CC2)n1")
 
 protein = rowan.create_protein_from_pdb_id("2GQG")  # warns if multiple chains
-if len(protein.chains) > 1:
-    protein = protein.select_chains([protein.chains[0]])
-protein.prepare()
+protein = protein.select_chains(["A"])
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid, folder=folder
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 center = [44.59, 79.75, 39.59]
 size = [24.15, 21.33, 19.88]
 wf = rowan.submit_docking_workflow(
-    protein,
+    prepared_protein_uuid,
     pocket=[center, size],
     initial_molecule=dasatinib,
     folder=folder,
@@ -78,7 +80,7 @@ Pass a `rowan.GninaSettings` object as `docking_settings` to dock with gnina ins
 ```python
 gnina_settings = rowan.GninaSettings(scoring_function="gnina_cnn", exhaustiveness=8, max_poses=4)
 wf = rowan.submit_docking_workflow(
-    protein,
+    protein.uuid,
     pocket=[center, size],
     initial_molecule=dasatinib,
     docking_settings=gnina_settings,

@@ -9,7 +9,12 @@ folder = rowan.get_folder("examples")
 data_dir = Path(__file__).parent / "data"
 
 protein = rowan.upload_protein("TYK2", data_dir / "tyk2_structure.pdb")
-protein.prepare()
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    name="Prepare TYK2",
+    folder=folder,
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 # Step 1: build the perturbation graph from TYK2 ligands with 3D coordinates
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
@@ -26,7 +31,7 @@ print(rbfe_graph_result)
 # Step 2: run the FEP simulation
 perturbation_workflow = rowan.submit_relative_binding_free_energy_perturbation_workflow(
     graph_result=rbfe_graph_result,
-    protein=protein,
+    protein=prepared_protein_uuid,
     tmd_settings="recommended",  # or "fast", "rigorous"
     folder=folder,
     name="TYK2 RBFE Perturbation",

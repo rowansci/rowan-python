@@ -7,7 +7,7 @@ A protein, a reference ligand already bound in its pocket, and a list of analogu
 - `analogues`: a list of SMILES strings for the analogues to dock.
 - `analogue_names`: names parallel to `analogues`, used to set each pose's `Molecule.name` for identification (otherwise poses are keyed only by SMILES).
 - `initial_molecule`: the reference bound pose, used as the template the analogues are aligned to. Read it from a file with `rowan.Molecule.from_xyz_file(path)`, or pass a `rowan.Molecule`.
-- Protein: a `rowan.Protein` or its UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- Protein: any stored `rowan.Protein` or protein UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Protein preparation is recommended before docking; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
 
 This workflow generates conformers of each analogue in poses analogous to the bound reference ligand. Local optimization with the docking scoring function and PoseBusters validation are both opt-in (see Settings).
 
@@ -20,7 +20,7 @@ bound_pose = rowan.submit_docking_workflow(...).result().best_pose
 # a rowan.Molecule in the protein's coordinate frame; pass it as initial_molecule below
 ```
 
-This is the usual prep for a relative binding free energy perturbation screen: analogue docking places every analogue into the pocket in the protein's coordinate frame, so the ligands are consistently posed and aligned before you build the `rbfe_graph`. Reach for it when your ligands are not yet posed (or not in the same coordinate space as the protein).
+This is the usual preparation for a relative binding free energy perturbation screen: analogue docking places every analogue into the pocket in the protein's coordinate frame, so the ligands are consistently posed and aligned before you build the `rbfe_graph`. Reach for it when your ligands are not yet posed (or not in the same coordinate space as the protein).
 
 ## Example
 
@@ -43,7 +43,7 @@ protein = rowan.upload_protein("1IEP receptor", data_dir / "1iep_receptorH.pdb")
 wf = rowan.submit_analogue_docking_workflow(
     analogues=list(analogues.values()),
     analogue_names=list(analogues.keys()),
-    protein=protein,
+    protein=protein.uuid,
     initial_molecule=bound_pose,
     folder=folder,
 )

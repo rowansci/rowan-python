@@ -4,10 +4,10 @@
 
 A `rowan.Protein` (or its UUID string). Proteins are not SMILES. Load one and prepare it before submitting:
 
-- From a PDB ID: `rowan.create_protein_from_pdb_id("1CRN", name="crambin", project_uuid=rowan.default_project().uuid)`.
+- From a PDB ID: `rowan.create_protein_from_pdb_id("1CRN", name="crambin")`.
 - From a local PDB file: `rowan.upload_protein("my protein", "path/to/file.pdb")`.
 
-Then call `protein.prepare()`, which runs PDBFixer to fix nonstandard residues and add missing atoms and hydrogens, and waits for it to finish.
+Protein MD accepts any stored `rowan.Protein` or protein UUID. Protein preparation is recommended before submission; when chaining from it, passing `prepared_protein_uuid` avoids an unnecessary structure fetch.
 
 Runs a molecular dynamics simulation on the protein.
 
@@ -18,13 +18,15 @@ import rowan
 
 folder = rowan.get_folder("examples")
 
-protein = rowan.create_protein_from_pdb_id(
-    "1CRN", name="crambin", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1CRN", name="crambin")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    folder=folder,
 )
-protein.prepare()  # fix residues, add missing atoms/hydrogens; blocks until done
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 wf = rowan.submit_protein_md_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     num_trajectories=1,  # example uses 1 for speed; default 4
     simulation_time_ns=1,  # example uses 1 for speed; default 10
     folder=folder,

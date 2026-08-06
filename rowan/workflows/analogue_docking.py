@@ -8,6 +8,7 @@ from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein, retrieve_protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import (
     StructureInput,
@@ -185,7 +186,7 @@ class AnalogueDockingResult(WorkflowResult):
 def submit_analogue_docking_workflow(
     analogues: list[str],
     initial_molecule: StructureInput,
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     analogue_names: list[str] | None = None,
     scoring_function: Literal["vina", "vinardo"] = "vinardo",
     exhaustiveness: int = 8,

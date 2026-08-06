@@ -8,9 +8,13 @@ folder = rowan.get_folder("examples")
 dasatinib = rowan.Molecule.from_smiles("Cc1nc(Nc2ncc(C(=O)Nc3c(C)cccc3Cl)s2)cc(N2CCN(CCO)CC2)n1")
 
 protein = rowan.create_protein_from_pdb_id("2GQG")
-if len(protein.chains) > 1:
-    protein = protein.select_chains([protein.chains[0]])
-protein.prepare()
+protein = protein.select_chains(["A"])
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    name="Prepare ABL1",
+    folder=folder,
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 # Pocket is [[center_x, center_y, center_z], [size_x, size_y, size_z]] in Å.
 # For a co-crystal structure, extract these from the bound ligand's position.
@@ -18,7 +22,7 @@ protein.prepare()
 center = [44.59, 79.75, 39.59]
 size = [24.15, 21.33, 19.88]
 workflow = rowan.submit_docking_workflow(
-    protein,
+    prepared_protein_uuid,
     pocket=[center, size],
     initial_molecule=dasatinib,
     name="dasatinib docking (2GQG redock)",

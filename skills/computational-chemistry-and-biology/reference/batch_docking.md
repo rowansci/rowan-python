@@ -5,7 +5,7 @@
 A protein, a binding pocket, and a list of ligand SMILES.
 
 - `smiles_list`: a list of SMILES strings to dock.
-- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- Protein: any stored `rowan.Protein` or protein UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`, or upload your own PDB with `rowan.upload_protein(name, path)`. Protein preparation is recommended before docking; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
 - `pocket`: the search box as two `[x, y, z]` points, `[[center_x, center_y, center_z], [size_x, size_y, size_z]]`, the box center and its dimensions in angstroms.
 
 Each SMILES is prepared internally: RDKit generates 3D coordinates, adds hydrogens, embeds several conformers, and runs a quick MMFF94 optimization, then the lowest-energy conformer is docked. This is why the input is SMILES rather than a posed 3D ligand.
@@ -23,14 +23,16 @@ ligands = [
     "CC(C)CCNC1=NCC2CC(COC2=N)O1",
 ]
 
-protein = rowan.create_protein_from_pdb_id(
-    "1HCK", name="CDK2", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1HCK", name="CDK2")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    folder=folder,
 )
-protein.prepare()
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 wf = rowan.submit_batch_docking_workflow(
     ligands,
-    protein.uuid,
+    prepared_protein_uuid,
     pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],  # [center], [box size] in Angstrom
     folder=folder,
 )

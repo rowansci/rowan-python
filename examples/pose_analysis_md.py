@@ -22,12 +22,17 @@ print(
 )
 cofolding_result = cofolding_workflow.result()
 
-# Cofolding predictions lack hydrogens — prepare but keep the ligand for MD
-protein = rowan.Protein(uuid=cofolding_result.predicted_refined_structure_uuid)
-protein.prepare(remove_heterogens=False)
+# Cofolding predictions lack hydrogens — prepare and retain the ligand for MD
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=cofolding_result.predicted_refined_structure_uuid,
+    retain_non_polymer={"LIG": ligand},
+    name="Prepare cofolded CDK2 complex",
+    folder=folder,
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 md_workflow = rowan.submit_pose_analysis_md_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     initial_smiles=ligand,
     num_trajectories=1,
     simulation_time_ns=1,

@@ -119,6 +119,7 @@ from .protein_cofolding import (
     submit_protein_cofolding_workflow,
 )
 from .protein_md import ProteinMDResult, submit_protein_md_workflow
+from .protein_preparation import ProteinPreparationResult, submit_protein_preparation_workflow
 from .rbfe_graph import (
     RelativeBindingFreeEnergyGraphEdge,
     RelativeBindingFreeEnergyGraphResult,

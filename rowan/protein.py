@@ -247,11 +247,14 @@ class Protein(BaseModel):
         timeout: float = 300.0,
     ) -> None:
         """
-        Prepare a protein for simulation and waits for the process to complete.
+        Quickly prepare a protein in place using PDBFixer and OpenMM.
 
         Runs PDBFixer to fix nonstandard residues, add missing atoms/hydrogens,
-        and optionally optimizes hydrogen positions with OpenMM. This is the
-        recommended method for preparing proteins before MD or RBFE workflows.
+        and optionally optimizes hydrogen positions with OpenMM. This is the fast
+        preparation option and typically finishes in about a minute or less. Use
+        ``submit_protein_preparation_workflow`` for the full protein preparation workflow,
+        which can take around ten minutes but includes Boltz-2 missing-structure modeling,
+        terminal capping, selectable protonation methods, and retained non-polymers.
 
         :param find_missing_residues: Identify and model missing residues.
         :param add_missing_atoms: Add missing heavy atoms to residues.
@@ -318,8 +321,8 @@ class Protein(BaseModel):
         0-based indices into the protein's sorted non-polymer records, and reference
         a record without naming it.
 
-        If validation fails, try re-preparing with ``remove_invalid_hydrogens=True``:
-        ``protein.prepare(remove_invalid_hydrogens=True)``
+        Run validation on the structure returned by ``submit_protein_preparation_workflow``.
+        The preparation workflow strips and reassigns hydrogens before returning the structure.
 
         :param exclude_residues: additional residue names and/or 0-based non-polymer indices to skip
         :raises requests.HTTPError: if validation fails or the API request fails.

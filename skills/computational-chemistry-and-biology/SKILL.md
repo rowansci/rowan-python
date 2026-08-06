@@ -30,7 +30,7 @@ For higher rigor, start a 3D workflow from the conformer search workflow's lowes
 
 ## Protein inputs
 
-After loading a protein with `rowan.create_protein_from_pdb_id` or `rowan.upload_protein`, prepare it before any docking, MD, or FEP workflow. The default `protein.prepare()` fixes nonstandard residues, adds missing atoms, and adds hydrogens. See [reference/protein_prep.md](reference/protein_prep.md) for `prepare` and `validate_protein_forcefield`, options, and the common validation-failure fix.
+Prepare proteins before docking, MD, or FEP. Use the full protein preparation workflow for comprehensive structure repair and `protein.prepare()` for the faster in-place PDBFixer/OpenMM path. Protein workflows accept either a `rowan.Protein` or `rowan.ProteinUUID`. See [protein preparation](reference/protein_preparation.md) for details.
 
 ## Workflows
 
@@ -67,6 +67,7 @@ Not every account can run every workflow. MCP users must consult the `mcp_suppor
 - **Protein binder design**: generate, filter, and rank protein binders for a given protein or small-molecule target. See [reference/protein_binder_design.md](reference/protein_binder_design.md).
 - **Protein co-folding**: predict 3D structures of biomolecules and protein-ligand complexes using AlphaFold 3-style models (Boltz-2, Chai-1r, Boltz-1). See [reference/protein_cofolding.md](reference/protein_cofolding.md).
 - **Protein MD**: run a molecular dynamics simulation on a protein. See [reference/protein_md.md](reference/protein_md.md).
+- **Protein preparation**: repair missing protein structure, cap termini, assign protonation states, and retain selected non-polymer residues before docking, MD, or FEP. See [reference/protein_preparation.md](reference/protein_preparation.md).
 - **RBFE graph**: take a list of ligands and generate the graph used by the relative binding free energy perturbation (FEP) workflow. Its edges are the ligand pairs FEP transforms between. See [reference/rbfe_graph.md](reference/rbfe_graph.md).
 - **Redox potential**: predict a molecule's reduction or oxidation potential. See [reference/redox_potential.md](reference/redox_potential.md).
 - **Relative binding free energy perturbation**: predict relative binding affinities across a congeneric ligand series using free energy perturbation (FEP), to rank analogs and prioritize which to synthesize. See [reference/relative_binding_free_energy_perturbation.md](reference/relative_binding_free_energy_perturbation.md).

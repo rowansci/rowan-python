@@ -27,7 +27,7 @@ protein = rowan.upload_protein("TYK2", data_dir / "tyk2_structure.pdb")
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
 
 workflow = rowan.submit_binding_affinity_workflow(
-    protein=protein,
+    protein=protein.uuid,
     ligand_structures=list(ligands.values()),
     name="Binding Affinity — TYK2 ligands",
     folder=folder,
@@ -47,7 +47,7 @@ for name, score in zip(ligands.keys(), result.scores):
 
 ```python
 rowan.submit_binding_affinity_workflow(
-    protein=protein,
+    protein=protein.uuid,
     ligand_residue_name="LIG",
     binding_affinity_settings=rowan.SinglePointEnergySettings(truncation_radius=8.0),
 )

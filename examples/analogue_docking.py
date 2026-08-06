@@ -22,7 +22,7 @@ protein = rowan.upload_protein("1IEP receptor", data_dir / "1iep_receptorH.pdb")
 workflow = rowan.submit_analogue_docking_workflow(
     analogues=list(citalopram_analogues.values()),
     analogue_names=list(citalopram_analogues.keys()),
-    protein=protein,
+    protein=protein.uuid,
     initial_molecule=bound_pose,
     folder=folder,
 )

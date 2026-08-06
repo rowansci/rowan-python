@@ -4,15 +4,16 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
-protein = rowan.create_protein_from_pdb_id(
-    "1CRN", name="crambin", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1CRN", name="crambin")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    name="Prepare crambin",
+    folder=folder,
 )
-
-protein.prepare()
-
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 md_workflow = rowan.submit_protein_md_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     num_trajectories=1,
     simulation_time_ns=1,
     name="MD on crambin",

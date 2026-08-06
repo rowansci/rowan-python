@@ -4,14 +4,16 @@ import rowan
 # rowan.api_key = "rowan-sk..."
 folder = rowan.get_folder("examples")
 
-protein = rowan.create_protein_from_pdb_id(
-    "1OTP", name="thymidine phosphorylase", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1OTP", name="thymidine phosphorylase")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    name="Prepare thymidine phosphorylase",
+    folder=folder,
 )
-
-protein.prepare()
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 workflow = rowan.submit_pocket_detection_workflow(
-    protein=protein,
+    protein=prepared_protein_uuid,
     name="Pocket detection on thymidine phosphorylase",
     folder=folder,
 )

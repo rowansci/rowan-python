@@ -12,7 +12,7 @@ all_ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
 ligands = dict(list(all_ligands.items())[:3])
 
 workflow = rowan.submit_binding_affinity_workflow(
-    protein=protein,
+    protein=protein.uuid,
     ligand_structures=list(ligands.values()),
     name="Binding Affinity — TYK2 ligands",
     folder=folder,

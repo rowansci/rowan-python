@@ -8,7 +8,7 @@ A `rowan.Protein` (or its UUID string) with the protein and ligand as separate e
 - `ligand_reactive_atom_index`: the reacting ligand atom (e.g. the warhead carbon).
 - `ligand_smiles`: SMILES of the ligand, used to parameterize it for the scan.
 
-The ligand must be classified as non-polymer in the protein's data — `protein.prepare()` can misclassify a covalently-bonded ligand as part of the polymer chain, in which case the workflow fails at compute time with "Complex PDB has no non-polymer atoms to use as the ligand".
+The ligand must be classified as non-polymer in the protein's data. When preparing the complex, pass the ligand residue name or index and its SMILES through `retain_non_polymer`. Verify the ligand remains a non-polymer in the prepared output; a covalently bonded ligand classified as part of the polymer chain causes the workflow to fail at compute time with "Complex PDB has no non-polymer atoms to use as the ligand". Measure both reactive atom indices from the final prepared structure, because preparation can change atom ordering.
 
 If you don't already have a covalently-bonded complex (e.g. from a crystal structure), covalent docking (see `docking.md`, "gnina (noncovalent and covalent docking)") is a good way to generate one: it forms the bond between the specified reactive atoms and returns a complex whose `protein_reactive_atom_index`/`ligand_reactive_atom_index` (there, `covalent_protein_atom_index`/`covalent_ligand_atom_index`) can feed directly into this scan.
 
@@ -20,7 +20,7 @@ import rowan
 folder = rowan.get_folder("examples")
 
 wf = rowan.submit_covalent_inhibitor_scan_workflow(
-    protein=protein,  # covalently bonded or normally docked complex
+    protein=protein.uuid,  # covalently bonded or normally docked complex
     protein_reactive_atom_index=1571,
     ligand_reactive_atom_index=4492,
     ligand_smiles=ligand_smiles,

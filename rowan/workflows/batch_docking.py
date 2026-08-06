@@ -4,6 +4,7 @@ import stjames
 
 from ..folder import Folder
 from ..protein import Protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
 
@@ -35,7 +36,7 @@ class BatchDockingResult(WorkflowResult):
 
 def submit_batch_docking_workflow(
     smiles_list: list[str],
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     pocket: list[list[float]],
     executable: str = "vina",
     scoring_function: str = "vinardo",
@@ -69,6 +70,8 @@ def submit_batch_docking_workflow(
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
+    if isinstance(protein, Protein):
+        protein = protein.uuid
     docking_settings = {
         "executable": executable,
         "exhaustiveness": exhaustiveness,

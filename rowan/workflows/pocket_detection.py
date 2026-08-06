@@ -6,6 +6,7 @@ import stjames
 
 from ..folder import Folder
 from ..protein import Protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
 
@@ -61,7 +62,7 @@ class PocketDetectionResult(WorkflowResult):
 
 
 def submit_pocket_detection_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     merge_distance: float = 1.75,
     name: str = "Pocket Detection Workflow",
     folder_uuid: str | None = None,

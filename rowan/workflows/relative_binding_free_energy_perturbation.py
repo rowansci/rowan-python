@@ -11,6 +11,7 @@ from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGrap
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
@@ -237,7 +238,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
 
 def submit_relative_binding_free_energy_perturbation_workflow(
     graph_result: RelativeBindingFreeEnergyGraphResult,
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     tmd_settings: Literal["fast", "recommended", "rigorous"] = "recommended",
     forcefield: Literal["off_sage_2_0_0", "off_sage_2_2_1"] = "off_sage_2_0_0",
     charge_method: Literal["amber_am1bcc", "nagl"] | None = None,

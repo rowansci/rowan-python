@@ -18,15 +18,17 @@ ligands = [
 workflows = []
 results = {}
 
-protein = rowan.create_protein_from_pdb_id(
-    "1HCK", name="CDK2", project_uuid=rowan.default_project().uuid
+protein = rowan.create_protein_from_pdb_id("1HCK", name="CDK2")
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid,
+    name="Prepare CDK2",
+    folder=folder,
 )
-
-protein.prepare()
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 for ligand in ligands:
     workflow = rowan.submit_docking_workflow(
-        protein.uuid,
+        prepared_protein_uuid,
         pocket=[[103.55, 100.59, 82.99], [27.76, 32.67, 48.79]],
         initial_molecule=rowan.Molecule.from_smiles(ligand),
         name=f"Docking {ligand}",

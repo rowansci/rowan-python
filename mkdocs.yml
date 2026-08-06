@@ -101,6 +101,7 @@ nav:
       - ADME-tox prediction: workflows/admet.md
       - Membrane permeability: workflows/membrane-permeability.md
   - Protein–ligand:
+      - Protein preparation: workflows/protein-preparation.md
       - Docking: workflows/docking.md
       - Protein co-folding: workflows/protein-cofolding.md
       - Binding affinity: workflows/binding-affinity.md

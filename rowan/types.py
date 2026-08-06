@@ -15,3 +15,4 @@ StructureInput: TypeAlias = RowanMolecule | StJamesMolecule | RdkitMol
 SolventInput: TypeAlias = stjames.Solvent | str | None
 SMILES: TypeAlias = str
 UUID: TypeAlias = str
+ProteinUUID: TypeAlias = stjames.ProteinUUID

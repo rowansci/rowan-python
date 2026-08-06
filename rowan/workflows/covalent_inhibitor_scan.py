@@ -7,6 +7,7 @@ import stjames
 from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein
+from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
 
@@ -63,7 +64,7 @@ class CovalentInhibitorScanResult(WorkflowResult):
 
 
 def submit_covalent_inhibitor_scan_workflow(
-    protein: str | Protein,
+    protein: Protein | ProteinUUID,
     protein_reactive_atom_index: int,
     ligand_reactive_atom_index: int,
     ligand_smiles: str,

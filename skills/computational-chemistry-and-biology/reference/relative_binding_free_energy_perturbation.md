@@ -5,7 +5,7 @@
 A completed RBFE graph and a prepared protein.
 
 - `graph_result`: a `RelativeBindingFreeEnergyGraphResult` from the RBFE graph workflow, which turns a congeneric ligand series into the graph of ligand pairs FEP transforms between.
-- `protein`: a `rowan.Protein` or its UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Call `protein.prepare()` first to fix nonstandard residues, add missing atoms, and add hydrogens.
+- `protein`: any stored `rowan.Protein` or protein UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Protein preparation is recommended before RBFE; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
 
 This workflow runs FEP simulations along the graph edges to predict relative binding free energies across the ligand series.
 
@@ -29,7 +29,10 @@ folder = rowan.get_folder("examples")
 data_dir = Path("examples/data")
 
 protein = rowan.upload_protein("TYK2", data_dir / "tyk2_structure.pdb")
-protein.prepare()
+preparation_workflow = rowan.submit_protein_preparation_workflow(
+    protein=protein.uuid, folder=folder
+)
+prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 # Step 1: build the RBFE graph from ligands with 3D coordinates.
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")
@@ -42,7 +45,7 @@ graph_result = graph_wf.result()
 # Step 2: run the FEP simulation.
 wf = rowan.submit_relative_binding_free_energy_perturbation_workflow(
     graph_result=graph_result,
-    protein=protein,
+    protein=prepared_protein_uuid,
     tmd_settings="recommended",
     folder=folder,
 )
