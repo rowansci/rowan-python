@@ -6,6 +6,7 @@ import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
+from itertools import batched
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Self
 
@@ -199,6 +200,7 @@ class Workflow(BaseModel):
     :param email_when_complete: Whether to send an email when the workflow completes.
     :param max_credits: Maximum number of credits to use for the workflow.
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
+    :param submission_group_uuid: UUID shared by workflows submitted as one execution group.
     :param elapsed: Elapsed time of the workflow.
     :param credits_charged: Number of credits charged for the workflow.
     :param logfile: Workflow logfile.
@@ -223,6 +225,7 @@ class Workflow(BaseModel):
     credits_charged: float
     logfile: str = Field(alias="object_logfile")
     compute_hardware: str | None = None
+    submission_group_uuid: str | None = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -742,18 +745,21 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
     :returns: List of Workflow objects representing the retrieved workflows.
     :raises HTTPError: If the API request fails.
     """
+    workflows: list[Workflow] = []
     with api_client() as client:
-        response = client.post("/workflow/batch_retrieve", json={"uuids": uuids})
-        response.raise_for_status()
-        return [Workflow(**workflow_data) for workflow_data in response.json()]
+        for batch in batched(uuids, 100):
+            response = client.post("/workflow/batch_retrieve", json={"uuids": list(batch)})
+            response.raise_for_status()
+            workflows.extend(Workflow(**workflow_data) for workflow_data in response.json())
+    return workflows
 
 
-def batch_poll_status(uuids: list[str]) -> list[dict[str, Any]]:
+def batch_poll_status(uuids: list[str]) -> dict[str, int]:
     """
     Poll the status of a list of workflows.
 
     :param uuids: UUIDs of the workflows to poll.
-    :returns: Status information for each workflow.
+    :returns: Counts keyed by lower-case status name, plus the total workflow count.
     :raises HTTPError: If the API request fails.
     """
     with api_client() as client:
@@ -904,3 +910,61 @@ def batch_submit_workflow(
         raise ValueError("You must provide either `initial_smileses` or `initial_molecules`.")
 
     return workflows
+
+
+def submit_workflow_group(
+    workflow_type: stjames.WORKFLOW_NAME,
+    workflow_data: dict[str, Any] | None = None,
+    initial_molecules: list[StructureInput | dict[str, Any]] | None = None,
+    initial_smileses: list[SMILES] | None = None,
+    names: list[str] | None = None,
+    folder_uuid: str | Folder | None = None,
+    max_credits: int | None = None,
+    webhook_url: str | None = None,
+) -> list[Workflow]:
+    """Submit workflows as one execution group."""
+    if isinstance(folder_uuid, Folder):
+        folder_uuid = folder_uuid.uuid
+    if workflow_type not in stjames.WORKFLOW_MAPPING:
+        raise ValueError(
+            "Invalid workflow type. Must be one of:\n    " + "\n    ".join(stjames.WORKFLOW_MAPPING)
+        )
+    if initial_smileses is not None and initial_molecules is not None:
+        raise ValueError("Provide either `initial_smileses` or `initial_molecules`, not both.")
+    if initial_smileses is None and initial_molecules is None:
+        raise ValueError("You must provide either `initial_smileses` or `initial_molecules`.")
+    inputs = initial_smileses if initial_smileses is not None else initial_molecules
+    if not inputs:
+        raise ValueError("You must provide at least one initial SMILES or molecule.")
+    if names is not None and len(names) != len(inputs):
+        raise ValueError(
+            f"Length of names ({len(names)}) must match number of molecules ({len(inputs)})."
+        )
+
+    data: dict[str, Any] = {
+        "workflow_type": workflow_type,
+        "workflow_data": workflow_data or {},
+        "names": names,
+        "folder_uuid": folder_uuid,
+        "max_credits": max_credits,
+        "webhook_url": webhook_url,
+    }
+    if initial_smileses is not None:
+        data["initial_smileses"] = initial_smileses
+    else:
+        data["initial_molecules"] = [
+            molecule_to_dict(molecule) for molecule in initial_molecules or []
+        ]
+
+    with api_client() as client:
+        try:
+            response = client.post("/workflow/submit_group", json=data)
+        except httpx.HTTPStatusError as e:
+            if _FEATURE_GATE_DETAIL in str(e):
+                raise PermissionError(
+                    f"{e} Visit https://labs.rowansci.com/account/settings to upgrade your account"
+                    " or contact us for access. Call rowan.whoami() to see your current"
+                    " .enabled_workflows and .feature_list."
+                ) from None
+            raise
+        return [Workflow(**workflow) for workflow in response.json()]

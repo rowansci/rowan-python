@@ -133,7 +133,7 @@ follow_imports = "skip"
 follow_imports_for_stubs = true
 
 [tool.pytest.ini_options]
-testpaths = ["rowan"]
+testpaths = ["rowan", "tests"]
 addopts = "--doctest-modules --durations=5"
 doctest_optionflags = "NORMALIZE_WHITESPACE"
 

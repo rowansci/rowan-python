@@ -8,7 +8,14 @@ from rdkit import Chem
 
 from ..folder import Folder
 from ..utils import api_client
-from .base import SMILES, Workflow, WorkflowResult, extract_smiles, register_result
+from .base import (
+    SMILES,
+    Workflow,
+    WorkflowResult,
+    extract_smiles,
+    register_result,
+    submit_workflow_group,
+)
 
 # Common solvents with human-readable names (from tinbergen)
 # Users can use these names or provide arbitrary SMILES for fastsolv
@@ -137,6 +144,48 @@ class SolubilityResult(WorkflowResult):
         return entries
 
 
+def _prepare_solubility_settings(
+    method: Literal["fastsolv", "kingfisher", "esol"],
+    solvents: list[str] | None,
+    temperatures: list[float] | None,
+) -> tuple[list[str], list[float]]:
+    """Resolve and validate method-specific solubility settings."""
+    resolved_solvents = (
+        [_resolve_solvent(solvent) for solvent in solvents] if solvents is not None else None
+    )
+
+    match method:
+        case "kingfisher" | "esol":
+            if resolved_solvents is None:
+                resolved_solvents = ["O"]
+            elif resolved_solvents != ["O"]:
+                raise ValueError(
+                    f"Method '{method}' only supports aqueous solubility. "
+                    f"solvents must be ['water'] or ['O'], got {resolved_solvents}"
+                )
+            if temperatures is None:
+                temperatures = [298.15]
+            elif len(temperatures) != 1 or abs(temperatures[0] - 298.15) > 0.1:
+                raise ValueError(
+                    f"Method '{method}' only supports room temperature (298.15K). "
+                    f"Got {temperatures}"
+                )
+        case "fastsolv":
+            if resolved_solvents is None:
+                resolved_solvents = [
+                    "CCCCCC",
+                    "Cc1ccccc1",
+                    "C1CCCO1",
+                    "CC(=O)OCC",
+                    "CCO",
+                    "CC#N",
+                ]
+            if temperatures is None:
+                temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
+
+    return resolved_solvents, temperatures
+
+
 def submit_solubility_workflow(
     initial_smiles: SMILES,
     method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
@@ -181,33 +230,7 @@ def submit_solubility_workflow(
     if folder:
         folder_uuid = folder.uuid
     initial_smiles = extract_smiles(initial_smiles)
-    # Resolve solvent names to SMILES
-    if solvents is not None:
-        solvents = [_resolve_solvent(s) for s in solvents]
-
-    # Method-specific defaults and validation
-    match method:
-        case "kingfisher" | "esol":
-            if solvents is None:
-                solvents = ["O"]
-            elif solvents != ["O"]:
-                raise ValueError(
-                    f"Method '{method}' only supports aqueous solubility. "
-                    f"solvents must be ['water'] or ['O'], got {solvents}"
-                )
-            if temperatures is None:
-                temperatures = [298.15]
-            elif len(temperatures) != 1 or abs(temperatures[0] - 298.15) > 0.1:
-                raise ValueError(
-                    f"Method '{method}' only supports room temperature (298.15K). "
-                    f"Got {temperatures}"
-                )
-        case "fastsolv":
-            if solvents is None:
-                # Default: hexane, toluene, THF, ethyl acetate, ethanol, acetonitrile
-                solvents = ["CCCCCC", "Cc1ccccc1", "C1CCCO1", "CC(=O)OCC", "CCO", "CC#N"]
-            if temperatures is None:
-                temperatures = [273.15, 298.15, 323.15, 348.15, 373.15]
+    solvents, temperatures = _prepare_solubility_settings(method, solvents, temperatures)
 
     workflow = stjames.SolubilityWorkflow(
         initial_smiles=initial_smiles,
@@ -231,3 +254,57 @@ def submit_solubility_workflow(
         response = client.post("/workflow", json=data)
         response.raise_for_status()
         return Workflow(**response.json())
+
+
+def submit_solubility_workflow_group(
+    initial_smileses: list[SMILES],
+    method: Literal["fastsolv", "kingfisher", "esol"] = "fastsolv",
+    solvents: list[str] | None = None,
+    temperatures: list[float] | None = None,
+    names: list[str] | None = None,
+    folder_uuid: str | None = None,
+    folder: Folder | None = None,
+    max_credits: int | None = None,
+    webhook_url: str | None = None,
+) -> list[Workflow]:
+    """Submit solubility workflows as one runtime group.
+
+    :param initial_smileses: nonempty list of solute SMILES strings
+    :param method: solubility prediction method
+    :param solvents: solvent names or SMILES strings
+    :param temperatures: temperatures in Kelvin
+    :param names: optional workflow names, one per SMILES string
+    :param folder_uuid: UUID of the folder in which to store the workflows
+    :param folder: folder in which to store the workflows
+    :param max_credits: maximum credits to use per workflow
+    :param webhook_url: URL Rowan will POST to when each workflow completes
+    :returns: submitted workflows in one runtime group
+    """
+    if folder and folder_uuid:
+        raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
+    if folder:
+        folder_uuid = folder.uuid
+    if not initial_smileses:
+        raise ValueError("Provide at least one initial SMILES string.")
+
+    solvents, temperatures = _prepare_solubility_settings(method, solvents, temperatures)
+    workflow = stjames.SolubilityWorkflow(
+        initial_smiles=initial_smileses[0],
+        solubility_method=method,
+        solvents=solvents,
+        temperatures=temperatures,
+    )
+    workflow_data = workflow.model_dump(
+        mode="json",
+        exclude={"initial_smiles", "messages", "solubilities"},
+    )
+
+    return submit_workflow_group(
+        workflow_type="solubility",
+        workflow_data=workflow_data,
+        initial_smileses=initial_smileses,
+        names=names,
+        folder_uuid=folder_uuid,
+        max_credits=max_credits,
+        webhook_url=webhook_url,
+    )

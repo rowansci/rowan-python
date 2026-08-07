@@ -133,7 +133,12 @@ from .relative_binding_free_energy_perturbation import (
     submit_relative_binding_free_energy_perturbation_workflow,
 )
 from .scan import ScanResult, submit_scan_workflow
-from .solubility import SolubilityEntry, SolubilityResult, submit_solubility_workflow
+from .solubility import (
+    SolubilityEntry,
+    SolubilityResult,
+    submit_solubility_workflow,
+    submit_solubility_workflow_group,
+)
 from .solvent_dependent_conformers import (
     SolventDependentConformer,
     SolventDependentConformerProperties,
