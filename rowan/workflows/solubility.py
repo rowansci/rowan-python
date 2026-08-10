@@ -267,18 +267,23 @@ def submit_solubility_workflow_group(
     max_credits: int | None = None,
     webhook_url: str | None = None,
 ) -> list[Workflow]:
-    """Submit solubility workflows as one runtime group.
+    """Submit a batch of solubility workflows as one submission group.
 
-    :param initial_smileses: nonempty list of solute SMILES strings
+    All molecules use the same method, solvents, and temperatures. A batch may contain
+    up to 5,000 molecules. Each molecule is represented by its own ``Workflow``, and all
+    returned workflows share a ``submission_group_uuid``. Use ``batch_poll_status()`` to
+    monitor their UUIDs together and ``retrieve_workflows()`` to retrieve their records.
+
+    :param initial_smileses: nonempty list of up to 5,000 solute SMILES strings
     :param method: solubility prediction method
     :param solvents: solvent names or SMILES strings
     :param temperatures: temperatures in Kelvin
-    :param names: optional workflow names, one per SMILES string
+    :param names: optional workflow names; when provided, one per SMILES string
     :param folder_uuid: UUID of the folder in which to store the workflows
     :param folder: folder in which to store the workflows
     :param max_credits: maximum credits to use per workflow
     :param webhook_url: URL Rowan will POST to when each workflow completes
-    :returns: submitted workflows in one runtime group
+    :returns: submitted workflows in one submission group
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

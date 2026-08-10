@@ -8,7 +8,7 @@
       show_root_toc_entry: false
       members_order: source
       group_by_category: true
-      filters: ["!^__"]
+      filters: ["!^_"]
 
 ::: rowan.utils
     handler: python
@@ -18,6 +18,6 @@
       show_root_toc_entry: false
       members_order: source
       group_by_category: true
-      filters: ["!^__"]
+      filters: ["!^_"]
       members:
         - get_project_uuid

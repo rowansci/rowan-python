@@ -8,7 +8,7 @@
       show_root_toc_entry: false
       members_order: source
       group_by_category: true
-      filters: ["!^__"]
+      filters: ["!^_"]
       members:
         - User
         - Organization
