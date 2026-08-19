@@ -1,6 +1,7 @@
 """Tests for Rowan request utilities."""
 
 import asyncio
+from pathlib import Path
 
 import httpx
 from pytest import MonkeyPatch, raises
@@ -9,6 +10,7 @@ import rowan
 from rowan.utils import (
     api_client,
     api_credentials,
+    download_file,
     get_api_key,
     get_project_uuid,
     read_only_api_requests,
@@ -85,3 +87,35 @@ def test_read_only_api_requests_rejects_mutating_http_methods(monkeypatch: Monke
         assert http_client.get("/workflow").status_code == 200
         with raises(PermissionError, match="only GET/HEAD"):
             http_client.post("/workflow", json={})
+
+
+def test_download_file_streams_to_an_atomic_temporary_file(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    """Write response chunks without materializing the complete download in memory."""
+
+    class ChunkedStream(httpx.SyncByteStream):
+        def __iter__(self):
+            yield b"first-"
+            yield b"second"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/artifact"
+        assert request.headers["x-api-key"] == "test-key"
+        return httpx.Response(200, stream=ChunkedStream())
+
+    original_client = httpx.Client
+
+    def client(*args, **kwargs):
+        kwargs.pop("event_hooks", None)
+        return original_client(*args, transport=httpx.MockTransport(handler), **kwargs)
+
+    monkeypatch.setattr("rowan.utils.httpx.Client", client)
+    destination = tmp_path / "artifact.tar.gz"
+
+    with api_credentials("test-key"):
+        result = download_file(destination, "GET", "/artifact")
+
+    assert result == destination
+    assert destination.read_bytes() == b"first-second"
+    assert list(tmp_path.glob(".artifact.tar.gz.*")) == []

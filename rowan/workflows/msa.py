@@ -6,7 +6,7 @@ from typing import Literal
 import stjames
 
 from ..folder import Folder
-from ..utils import api_client
+from ..utils import api_client, download_file
 from .base import Workflow, WorkflowResult, register_result
 
 MSAOutputFormat = Literal["colabfold", "chai", "boltz"]
@@ -54,17 +54,15 @@ class MSAResult(WorkflowResult):
         downloaded_paths = []
 
         for fmt in formats_to_download:
-            with api_client() as client:
-                response = client.get(
+            file_path = path / f"msa-{fmt}.tar.gz"
+            downloaded_paths.append(
+                download_file(
+                    file_path,
+                    "GET",
                     f"/workflow/{self.workflow_uuid}/get_msa_files",
                     params={"msa_format": fmt},
                 )
-                response.raise_for_status()
-
-            file_path = path / f"msa-{fmt}.tar.gz"
-            with open(file_path, "wb") as f:
-                f.write(response.content)
-            downloaded_paths.append(file_path)
+            )
 
         return downloaded_paths
 

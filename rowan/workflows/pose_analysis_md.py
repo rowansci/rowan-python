@@ -9,7 +9,7 @@ from stjames import GreedyClusteringSettings, KMeansClusteringSettings
 from ..folder import Folder
 from ..protein import Protein, retrieve_protein
 from ..types import ProteinUUID
-from ..utils import api_client
+from ..utils import api_client, download_file
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
 
@@ -158,19 +158,14 @@ class PoseAnalysisMDResult(WorkflowResult):
         path = Path(path) if path is not None else Path.cwd()
         path.mkdir(parents=True, exist_ok=True)
 
-        with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
-                json=replicates,
-            )
-            response.raise_for_status()
-
         file_name = f"{name or 'trajectories'}.tar.gz"
         file_path = path / file_name
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-
-        return file_path
+        return download_file(
+            file_path,
+            "POST",
+            f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
+            json=replicates,
+        )
 
 
 def submit_pose_analysis_md_workflow(

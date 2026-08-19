@@ -2,7 +2,9 @@ import os
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Generator
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Any, Generator, Literal
 
 import httpx
 import stjames
@@ -156,6 +158,35 @@ def api_client() -> Generator[httpx.Client, None, None]:
         event_hooks={"request": [_enforce_read_only_api_requests], "response": [_raise_for_status]},
     ) as client:
         yield client
+
+
+def download_file(
+    path: Path,
+    method: Literal["GET", "POST"],
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    json: Any = None,
+) -> Path:
+    """Stream an authenticated API response into one local file atomically."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as output:
+            temporary_path = Path(output.name)
+            with (
+                api_client() as client,
+                client.stream(method, url, params=params, json=json) as response,
+            ):
+                response.raise_for_status()
+                for chunk in response.iter_bytes():
+                    output.write(chunk)
+        temporary_path.replace(path)
+    except BaseException:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
+    return path
 
 
 ATOMIC_NUMBER_TO_ATOMIC_SYMBOL = {

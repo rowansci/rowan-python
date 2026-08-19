@@ -187,6 +187,17 @@ def find_bonds(
         mol = Molecule.from_smiles("O")  # water
         bonds = find_bonds(mol, 8, 1, 1.1)  # O-H bonds
         # [(1, 2), (1, 3)]
+
+    Same-element searches return unique undirected bonds without self-pairs::
+
+        >>> peroxide = stjames.Molecule.from_smiles("OO")
+        >>> find_bonds(peroxide, 8, 8, 1.7)
+        [(1, 2)]
     """
     stj = molecule_to_stjames(molecule)
-    return list(_find_AB_bonds(stj, element_a, element_b, distance_max))
+    bonds = _find_AB_bonds(stj, element_a, element_b, distance_max)
+    if element_a != element_b:
+        return list(bonds)
+    return sorted(
+        {(min(atom_a, atom_b), max(atom_a, atom_b)) for atom_a, atom_b in bonds if atom_a != atom_b}
+    )

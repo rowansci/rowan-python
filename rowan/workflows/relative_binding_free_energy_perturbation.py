@@ -12,7 +12,7 @@ from ..folder import Folder
 from ..molecule import Molecule
 from ..protein import Protein
 from ..types import ProteinUUID
-from ..utils import api_client
+from ..utils import api_client, download_file
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
 
@@ -160,19 +160,14 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         if lambda_vals is not None:
             params["lambda_vals"] = lambda_vals
 
-        with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
-                params=params,
-            )
-            response.raise_for_status()
-
         file_name = f"{name or f'edge_{edge_index}_trajectories'}.tar.gz"
         file_path = path / file_name
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-
-        return file_path
+        return download_file(
+            file_path,
+            "POST",
+            f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
+            params=params,
+        )
 
     def download_all_trajectories(
         self,

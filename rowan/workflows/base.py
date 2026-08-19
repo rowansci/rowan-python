@@ -19,7 +19,7 @@ from ..folder import Folder
 from ..molecule import Molecule as RowanMolecule
 from ..project import default_project, retrieve_project
 from ..types import SMILES, StructureInput
-from ..utils import api_client, get_project_uuid
+from ..utils import api_client, download_file, get_project_uuid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -521,15 +521,12 @@ Workflow:  {self.name}
 
         path.mkdir(parents=True, exist_ok=True)
 
-        with api_client() as client:
-            response = client.get(
-                f"/workflow/{self.uuid}/get_msa_files",
-                params={"msa_format": msa_format.value},
-            )
-            response.raise_for_status()
-
-        with open(path / f"{self.name}-msa.tar.gz", "wb") as f:
-            f.write(response.content)
+        download_file(
+            path / f"{self.name}-msa.tar.gz",
+            "GET",
+            f"/workflow/{self.uuid}/get_msa_files",
+            params={"msa_format": msa_format.value},
+        )
 
     def download_dcd_files(
         self, replicates: list[int], name: str | None = None, path: Path | str | None = None
@@ -557,13 +554,13 @@ Workflow:  {self.name}
 
         path.mkdir(parents=True, exist_ok=True)
 
-        with api_client() as client:
-            response = client.post(f"/trajectory/{self.uuid}/trajectory_dcds", json=replicates)
-            response.raise_for_status()
-
         file_path = path / f"{name or self.name}.tar.gz"
-        with open(file_path, "wb") as f:
-            f.write(response.content)
+        download_file(
+            file_path,
+            "POST",
+            f"/trajectory/{self.uuid}/trajectory_dcds",
+            json=replicates,
+        )
 
 
 def extract_smiles(mol: SMILES | StructureInput | dict[str, Any]) -> SMILES:
