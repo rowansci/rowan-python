@@ -18,13 +18,42 @@ class _APIContext:
 
     api_key: str
     project_uuid: str | None
+    reveal_api_key: bool = True
 
 
 _api_context: ContextVar[_APIContext | None] = ContextVar("rowan_api_context", default=None)
+_read_only_api_requests: ContextVar[bool] = ContextVar(
+    "rowan_read_only_api_requests",
+    default=False,
+)
 
 
 @contextmanager
-def api_credentials(api_key: str, project_uuid: str | None = None) -> Generator[None, None, None]:
+def read_only_api_requests() -> Generator[None, None, None]:
+    """Forbid mutating Rowan API requests in the current execution context."""
+    token = _read_only_api_requests.set(True)
+    try:
+        yield
+    finally:
+        _read_only_api_requests.reset(token)
+
+
+def _enforce_read_only_api_requests(request: httpx.Request) -> None:
+    """Reject non-read HTTP requests while :func:`read_only_api_requests` is active."""
+    if _read_only_api_requests.get() and request.method not in {"GET", "HEAD"}:
+        raise PermissionError(
+            f"Read-only API context permits only GET/HEAD requests, not {request.method} "
+            f"{request.url.path}"
+        )
+
+
+@contextmanager
+def api_credentials(
+    api_key: str,
+    project_uuid: str | None = None,
+    *,
+    reveal_api_key: bool = True,
+) -> Generator[None, None, None]:
     """Temporarily use Rowan credentials in the current execution context.
 
     Context-local credentials take precedence over module-level and environment configuration.
@@ -39,22 +68,21 @@ def api_credentials(api_key: str, project_uuid: str | None = None) -> Generator[
     if not api_key:
         raise ValueError("API key cannot be empty.")
 
-    token = _api_context.set(_APIContext(api_key=api_key, project_uuid=project_uuid))
+    token = _api_context.set(
+        _APIContext(
+            api_key=api_key,
+            project_uuid=project_uuid,
+            reveal_api_key=reveal_api_key,
+        )
+    )
     try:
         yield
     finally:
         _api_context.reset(token)
 
 
-def get_api_key() -> str:
-    """
-    Get the API key from the environment variable ROWAN_API_KEY or the module-level attribute
-    rowan.api_key.
-
-    If neither of these are set, raise a ValueError with a helpful message.
-
-    :returns: API key.
-    """
+def _current_api_key() -> str:
+    """Return the active key for SDK transport without exposing it to callers."""
     if (context := _api_context.get()) is not None:
         return context.api_key
     if hasattr(rowan, "api_key") and rowan.api_key:
@@ -66,6 +94,13 @@ def get_api_key() -> str:
         "No API key provided. You can set your API key using 'rowan.api_key = <API-KEY>',"
         + " or you can set the environment variable ROWAN_API_KEY=<API-KEY>)."
     )
+
+
+def get_api_key() -> str:
+    """Return the configured Rowan API key when it is visible in this context."""
+    if (context := _api_context.get()) is not None and not context.reveal_api_key:
+        raise PermissionError("The active API key is not available in this execution context.")
+    return _current_api_key()
 
 
 def get_project_uuid() -> str | None:
@@ -116,9 +151,9 @@ def api_client() -> Generator[httpx.Client, None, None]:
     """Wraps `httpx.Client` with Rowan-specific kwargs."""
     with httpx.Client(
         base_url=API_URL,
-        headers={"X-API-Key": get_api_key()},
+        headers={"X-API-Key": _current_api_key()},
         timeout=120,
-        event_hooks={"response": [_raise_for_status]},
+        event_hooks={"request": [_enforce_read_only_api_requests], "response": [_raise_for_status]},
     ) as client:
         yield client
 

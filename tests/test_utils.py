@@ -2,10 +2,17 @@
 
 import asyncio
 
+import httpx
 from pytest import MonkeyPatch, raises
 
 import rowan
-from rowan.utils import api_credentials, get_api_key, get_project_uuid
+from rowan.utils import (
+    api_client,
+    api_credentials,
+    get_api_key,
+    get_project_uuid,
+    read_only_api_requests,
+)
 
 
 def test_api_credentials_override_global_configuration(monkeypatch: MonkeyPatch) -> None:
@@ -52,3 +59,29 @@ def test_api_credentials_reject_empty_key() -> None:
     with raises(ValueError, match="cannot be empty"):
         with api_credentials(""):
             pass
+
+
+def test_api_credentials_can_hide_the_active_key_from_sdk_helpers() -> None:
+    """Allow transports to authenticate without exposing their credential to generic callers."""
+    with api_credentials("context-key", reveal_api_key=False):
+        with raises(PermissionError, match="not available"):
+            get_api_key()
+
+
+def test_read_only_api_requests_rejects_mutating_http_methods(monkeypatch: MonkeyPatch) -> None:
+    """Keep generic integrations from gaining Rowan write authority."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    original_client = httpx.Client
+
+    def client(*args, **kwargs):
+        return original_client(*args, transport=httpx.MockTransport(handler), **kwargs)
+
+    monkeypatch.setattr("rowan.utils.httpx.Client", client)
+
+    with api_credentials("test-key"), read_only_api_requests(), api_client() as http_client:
+        assert http_client.get("/workflow").status_code == 200
+        with raises(PermissionError, match="only GET/HEAD"):
+            http_client.post("/workflow", json={})

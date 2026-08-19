@@ -32,11 +32,18 @@ For higher rigor, start a 3D workflow from the conformer search workflow's lowes
 
 Prepare proteins before docking, MD, or FEP. Use the full protein preparation workflow for comprehensive structure repair and `protein.prepare()` for the faster in-place PDBFixer/OpenMM path. Protein workflows accept either a `rowan.Protein` or `rowan.ProteinUUID`. See [protein preparation](reference/protein_preparation.md) for details.
 
+### Protein–ligand structure boundary
+
+MCP cannot extract a bound non-polymer ligand from a holo PDB as a reusable molecule. For ligand-based workflows, require a separate ligand input (for example SDF, MOL, MOL2, or SMILES); do not infer it from `HETATM` records. Holo proteins remain usable for preparation and workflows that explicitly accept a ligand residue.
+
 ## Workflows
 
 Pick the workflow matching the task by reading the descriptions, then open its reference file (linked at the end of each entry) for recommended settings and an example. Python's universal submit arguments live in [Python SDK](reference/python_sdk.md) and aren't repeated per workflow; MCP parameters come from `discover_workflow`.
 
-Not every account can run every workflow. MCP users must consult the `mcp_supported_workflows` field returned by `account_status`; Python users must consult `rowan.whoami().enabled_workflows` (a few workflows, such as FEP, are gated by plan).
+The list below provides scientific guidance, not an executable registry. MCP users must consult
+`mcp_supported_workflows` from `account_status`; Python users must consult
+`rowan.whoami().enabled_workflows`. An enabled workflow may appear before this skill gains a
+dedicated reference, in which case trust MCP discovery or the installed SDK for its interface.
 
 - **ADMET**: predict ADME-Tox properties (absorption, distribution, metabolism, excretion, toxicity) with an ML model, for fast early developability, PK, and tox triage. See [reference/admet.md](reference/admet.md).
 - **Analogue docking**: pose analogues of an already-bound reference ligand into consistent, analogous poses, to align and prepare a congeneric series, for example ahead of an RBFE screen. See [reference/analogue_docking.md](reference/analogue_docking.md).

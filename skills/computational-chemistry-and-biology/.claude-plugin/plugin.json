@@ -1,0 +1,21 @@
+{
+  "name": "computational-chemistry-and-biology",
+  "displayName": "Rowan Computational Chemistry",
+  "version": "0.0.2",
+  "description": "Run computational chemistry and structural biology calculations through Rowan MCP tools or rowan-python",
+  "author": {
+    "name": "Rowan",
+    "email": "eli@rowansci.com",
+    "url": "https://rowansci.com"
+  },
+  "homepage": "https://rowansci.com",
+  "repository": "https://github.com/rowansci/rowan-python",
+  "license": "MIT",
+  "keywords": [
+    "computational chemistry",
+    "structural biology",
+    "molecular simulation",
+    "Rowan"
+  ],
+  "skills": "./"
+}
