@@ -27,14 +27,15 @@ class Tautomer:
     Tautomer result.
 
     :param energy: Energy in Hartree.
-    :param weight: Boltzmann weight (sum to 1.0 across all tautomers).
-    :param predicted_relative_energy: Relative energy in kcal/mol (relative to lowest energy).
+    :param weight: Boltzmann weight (sum to 1.0 across all tautomers), if available.
+    :param predicted_relative_energy: Relative energy in kcal/mol (relative to lowest energy),
+        if available.
     :param structure_uuids: UUIDs of the structure calculations.
     """
 
     energy: float
-    weight: float
-    predicted_relative_energy: float
+    weight: float | None
+    predicted_relative_energy: float | None
     structure_uuids: tuple[str, ...]
 
 
@@ -46,9 +47,9 @@ class TautomerResult(WorkflowResult):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        tautomers = self.tautomers
-        if tautomers:
-            best = max(tautomers, key=lambda t: t.weight)
+        weighted = [t for t in self.tautomers if t.weight is not None]
+        if weighted:
+            best = max(weighted, key=lambda t: t.weight if t.weight is not None else 0.0)
             if best.structure_uuids:
                 calc = retrieve_calculation(best.structure_uuids[0])
                 self._cache["best_tautomer"] = calc.molecule
