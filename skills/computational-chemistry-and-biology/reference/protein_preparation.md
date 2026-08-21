@@ -13,7 +13,7 @@ Both return a `rowan.Protein` you can then prepare.
 
 ## Selecting chains
 
-Inspect a multi-chain structure before preparation. Crystal structures may contain duplicate copies of the target, unrelated peptides, antibodies, or other crystallization partners. Keep every chain needed for the intended binding site or biological assembly; do not reduce an interface or required oligomer to one chain. Chain order is not guaranteed, so select chains by their IDs rather than taking the first entry.
+Inspect a multi-chain structure before preparation. PDB entries may contain multiple crystallographic or biological copies of the same complex. Unless the calculation requires the full multimer, select one complete copy: keep every chain forming that copy and discard its symmetry-related duplicates. Do not reduce an interface or required oligomer to one chain, and do not assume adjacent chain IDs belong together; verify the chain identities from the structure or PDB metadata.
 
 `select_chains()` returns a new protein record and leaves the original unchanged:
 
