@@ -1,5 +1,9 @@
 # Covalent Inhibitor Scan
 
+!!! warning "Beta"
+
+    This workflow is in beta. Its interface and behavior may change.
+
 ::: rowan.workflows.covalent_inhibitor_scan
     handler: python
     options:

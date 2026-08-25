@@ -238,7 +238,9 @@ def submit_protein_md_workflow(
 
     if validate_forcefield:
         exclude_residues = (
-            list(binder.small_molecules) if binder is not None and binder.small_molecules else None
+            list(binder.small_molecule_residues)
+            if binder is not None and binder.small_molecule_residues
+            else None
         )
         Protein(uuid=protein).validate_protein_forcefield(exclude_residues=exclude_residues)
 

@@ -13,7 +13,6 @@ from stjames import (
     ConformerClusteringSettings,
     ConformerGenSettingsUnion,
     Correction,
-    CovalentInhibitorScanSettings,
     DockingSettings,
     Engine,
     ETKDGSettings,
@@ -37,6 +36,7 @@ from stjames import (
     SolventSettings,
     SinglePointEnergySettings,
     Task,
+    UmbrellaSamplingScanSettings,
     VibrationalMode,
     VinaSettings,
 )

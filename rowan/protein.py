@@ -2,7 +2,7 @@ import time
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, PrivateAttr
 from stjames.pdb import PDB, pdb_object_to_pdb_filestring
@@ -55,6 +55,36 @@ class Protein(BaseModel):
                 if chain := entity.get("polymer"):
                     chain_ids.add(chain)
         return list(chain_ids)
+
+    def get_atom_index(
+        self,
+        chain: str,
+        residue: int | str,
+        atom: str,
+        *,
+        entity_type: Literal["polymer", "non_polymer", "water", "branched"] | None = None,
+        model_index: int = 0,
+    ) -> int:
+        """Return an atom's zero-based position in PDB atom-record order.
+
+        :param chain: chain ID
+        :param residue: residue number, optionally including an insertion code
+        :param atom: atom name, such as `SG` or `C1`
+        :param entity_type: entity collection to search
+        :param model_index: zero-based model index
+        :returns: atom index in PDB record order
+        :raises ValueError: if protein data is not loaded or the atom cannot be found
+        """
+        if not self.data:
+            raise ValueError("Protein data not loaded: call refresh() first.")
+
+        return PDB.model_validate(self.data).get_atom_index(
+            chain,
+            residue,
+            atom,
+            entity_type=entity_type,
+            model_index=model_index,
+        )
 
     def select_chains(self, chains: list[str]) -> "Protein":
         """
@@ -313,8 +343,8 @@ class Protein(BaseModel):
         before submitting any MD workflow to catch preparation issues early.
 
         Ligand residues (`LIG`) are always excluded — they are parameterized
-        separately by the MD workflow from the provided SMILES. Pass the keys of a
-        binder's `small_molecules` to exclude those as well.
+        separately by the MD workflow from the provided SMILES. Pass a binder's
+        `small_molecule_residues` to exclude those as well.
 
         A name is matched case-insensitively and excludes only the first residue
         with that name, so further copies are still validated. Integer entries are

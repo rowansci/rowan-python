@@ -52,7 +52,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `water_buffer` (default `10.0`): amount of water added around the protein, in angstrom.
 - `save_solvent` (default `False`): whether to save solvent atoms in the trajectories.
 - `num_solvent_to_save` (default `None`): when `save_solvent=True` and a `binder` is set, keep only the N solvent molecules nearest the binder each frame; `None` keeps all solvent. Ignored when `save_solvent=False` or no `binder`.
-- `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecules`, keyed by residue-name string or 0-based non-polymer residue index, values are SMILES for parameterization), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
+- `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecule_residues`, identified by residue-name string or 0-based non-polymer residue index), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
 - `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
 - `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
 - `analysis_interval_ps` (default `None`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` (the default) disables those analyses.

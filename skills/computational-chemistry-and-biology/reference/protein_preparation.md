@@ -85,7 +85,7 @@ Server-side check that the protein can be parameterized by the MD forcefield. Ca
 protein.validate_protein_forcefield(exclude_residues=None)
 ```
 
-Ligand residues (`LIG`) are always excluded automatically. Pass `exclude_residues` for other residues to skip: a residue name excludes the first residue with that name, so further copies are still validated, while an integer is a 0-based index into the protein's sorted non-polymer records and excludes that record without naming it. Both spellings match `rowan.Binder`'s `small_molecules` keys, so `exclude_residues=list(binder.small_molecules)` skips exactly the residues an MD workflow parameterizes from SMILES.
+Ligand residues (`LIG`) are always excluded automatically. Pass `exclude_residues` for other residues to skip: a residue name excludes the first residue with that name, so further copies are still validated, while an integer is a 0-based index into the protein's sorted non-polymer records and excludes that record without naming it. Both spellings match `rowan.Binder`'s `small_molecule_residues` entries, so `exclude_residues=list(binder.small_molecule_residues)` skips exactly the residues an MD workflow parameterizes separately.
 
 ```python
 protein.validate_protein_forcefield(exclude_residues=["STI", 2])

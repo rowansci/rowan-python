@@ -1,6 +1,7 @@
 """Solvent-dependent conformers workflow - conformer search with multi-solvent scoring."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import stjames
 from stjames import ConformerGenSettingsUnion
@@ -114,6 +115,7 @@ def submit_solvent_dependent_conformers_workflow(
     initial_molecule: StructureInput,
     solvents: list[Solvent] | None = None,
     conf_gen_settings: ConformerGenSettingsUnion | None = None,
+    final_correction: Literal["COSMO_RS", "CPCMX"] | None = None,
     name: str = "Solvent-Dependent Conformers",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -136,6 +138,8 @@ def submit_solvent_dependent_conformers_workflow(
         ``rowan.ETKDGSettings``, ``rowan.iMTDSettings``, ``rowan.iMTDGCSettings``.
         Set the energy window (and any other generator parameter) on this object;
         each type carries its own stjames default.
+    :param final_correction: Solvent method used for the final per-conformer corrections,
+        `COSMO_RS` or `CPCMX`.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -158,6 +162,7 @@ def submit_solvent_dependent_conformers_workflow(
         initial_molecule=mol_dict,
         solvents=solvents if solvents is not None else _DEFAULT_SOLVENTS,
         **({"conf_gen_settings": conf_gen_settings} if conf_gen_settings is not None else {}),
+        **({"final_correction": final_correction} if final_correction is not None else {}),
     )
 
     data = {

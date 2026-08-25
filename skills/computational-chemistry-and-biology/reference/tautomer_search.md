@@ -28,6 +28,7 @@ for t in result.tautomers:
 ## Settings
 
 - `conf_gen_settings` and `multistage_opt_settings`: override conformer generation and the optimization stack. When omitted, both inherit the stjames defaults for this workflow — currently OpenConf (`max_confs=20`) for conformers and an AIMNet2/wB97M-D3 optimization with an AIMNet2/wB97M-D3 CPCMx(water) singlepoint.
+- `final_correction` (default `None`): set to `"COSMO_RS"` to apply an additional, more expensive COSMO-RS solvent correction to the final tautomer energies.
 
 ## Result fields
 

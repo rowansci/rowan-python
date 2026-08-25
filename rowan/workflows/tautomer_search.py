@@ -1,7 +1,7 @@
 """Tautomer-search workflow - find tautomeric forms of molecules."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import stjames
 
@@ -108,6 +108,7 @@ def submit_tautomer_search_workflow(
     initial_molecule: StructureInput,
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
     multistage_opt_settings: stjames.MultiStageOptSettings | None = None,
+    final_correction: Literal["COSMO_RS"] | None = None,
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -124,6 +125,8 @@ def submit_tautomer_search_workflow(
     :param multistage_opt_settings: Optimization stages and singlepoint settings
         describing the method stack. Defaults to AIMNet2/wB97M-D3 optimization with
         CPCMx(water) singlepoint.
+    :param final_correction: if `COSMO_RS`, applies an additional, more expensive COSMO-RS
+        solvent correction to the final tautomer energies
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -145,6 +148,8 @@ def submit_tautomer_search_workflow(
         workflow_kwargs["conf_gen_settings"] = conf_gen_settings
     if multistage_opt_settings is not None:
         workflow_kwargs["multistage_opt_settings"] = multistage_opt_settings
+    if final_correction is not None:
+        workflow_kwargs["final_correction"] = final_correction
 
     workflow = stjames.TautomerWorkflow(**workflow_kwargs)
 

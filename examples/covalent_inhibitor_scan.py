@@ -18,32 +18,18 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
 )
 protein = preparation_workflow.result().get_prepared_protein()
 
-# Locate Cys481 SG and the 4C9 ligand's C1 atom in the prepared structure, then convert
-# their atom serials to zero-based PDB record indices.
-model = protein.data["models"][0]
-cys481 = model["polymer"]["A"]["residues"]["A.481"]
-ligand_4c9 = next(residue for residue in model["non_polymer"].values() if residue["name"] == "4C9")
-protein_atom_serial = next(
-    int(serial) for serial, atom in cys481["atoms"].items() if atom["name"] == "SG"
+# Protein preparation normalizes 4YHF's residue numbering: Cys481 becomes residue 101,
+# while the retained 4C9 ligand remains residue 701.
+protein_reactive_atom_index = protein.get_atom_index(chain="A", residue=101, atom="SG")
+ligand_reactive_atom_index = protein.get_atom_index(
+    chain="A", residue=701, atom="C1", entity_type="non_polymer"
 )
-ligand_atom_serial = next(
-    int(serial) for serial, atom in ligand_4c9["atoms"].items() if atom["name"] == "C1"
-)
-entities = [
-    residue for chain in model["polymer"].values() for residue in chain["residues"].values()
-]
-for section in ("non_polymer", "water", "branched"):
-    entities.extend(model.get(section, {}).values())
-atom_serials = sorted(int(serial) for entity in entities for serial in entity.get("atoms", {}))
-protein_reactive_atom_index = atom_serials.index(protein_atom_serial)
-ligand_reactive_atom_index = atom_serials.index(ligand_atom_serial)
 
 workflow = rowan.submit_covalent_inhibitor_scan_workflow(
     protein=protein.uuid,
     protein_reactive_atom_index=protein_reactive_atom_index,
     ligand_reactive_atom_index=ligand_reactive_atom_index,
-    ligand_smiles=ligand_smiles,
-    settings=rowan.CovalentInhibitorScanSettings(scan_num=4),
+    reactant_smiles=ligand_smiles,
     name="BTK covalent inhibitor scan (Cys481, 4YHF)",
     folder=folder,
 )
@@ -55,5 +41,5 @@ print(
 result = workflow.result()
 print(result)
 
-for distance, energy in result.get_energies():
-    print(f"  distance={distance:.3f} Å  energy={energy}")
+for distance, free_energy in result.get_energies():
+    print(f"  distance={distance:.3f} Å  free_energy={free_energy} kcal/mol")

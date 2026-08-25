@@ -33,6 +33,7 @@ for i, conf in enumerate(result.conformers):
 
 - `solvents` (default hexane, octanol, chloroform, DMSO, and water): solvents to score conformers in, as a list of `rowan.Solvent` enum values. Scoring uses CPCM-X.
 - `conf_gen_settings`: conformer generation settings. When omitted, inherits the stjames default for this workflow (currently OpenConf). Other options: `rowan.ETKDGSettings`, `rowan.iMTDSettings`, `rowan.iMTDGCSettings`. The energy window lives on this object (e.g. `OpenConfSettings.energy_window_kcal`, default 10), not as a separate argument.
+- `final_correction`: final per-conformer solvent correction, `"COSMO_RS"` or `"CPCMX"`. Omitting it uses the stjames workflow default, currently `"CPCMX"`.
 
 ## Result fields
 
