@@ -1,6 +1,7 @@
 """MacropKa workflow - predict macroscopic pKa values."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import stjames
 
@@ -99,6 +100,7 @@ class MacropKaResult(WorkflowResult):
 
 def submit_macropka_workflow(
     initial_smiles: SMILES,
+    method: Literal["starling", "starling_ii"] = "starling",
     min_pH: int = 0,
     max_pH: int = 14,
     min_charge: int = -2,
@@ -119,6 +121,7 @@ def submit_macropka_workflow(
         a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
         or dict). The molecule must have a SMILES string associated with it, as macropKa
         models are 2D/SMILES-based and do not use 3D coordinates.
+    :param method: macroscopic pKa model to use.
     :param min_pH: Minimum pH to use in the macropka workflow.
     :param max_pH: Maximum pH to use in the macropka workflow.
     :param min_charge: Minimum charge to use in the macropka workflow.
@@ -142,6 +145,7 @@ def submit_macropka_workflow(
     initial_smiles = extract_smiles(initial_smiles)
     workflow = stjames.MacropKaWorkflow(
         initial_smiles=initial_smiles,
+        method=method,
         min_pH=min_pH,
         max_pH=max_pH,
         min_charge=min_charge,

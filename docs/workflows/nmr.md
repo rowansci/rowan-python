@@ -1,5 +1,8 @@
 # NMR
 
+Completed results expose both chemical shifts and typed J-coupling predictions through
+`result.predicted_couplings`.
+
 ::: rowan.workflows.nmr
     handler: python
     options:

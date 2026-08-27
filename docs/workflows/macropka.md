@@ -1,5 +1,7 @@
 # MacropKa
 
+Choose `method="starling"` (default) or `method="starling_ii"` when submitting the workflow.
+
 ::: rowan.workflows.macropka
     handler: python
     options:

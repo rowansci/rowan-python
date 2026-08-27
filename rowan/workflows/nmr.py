@@ -27,6 +27,28 @@ class NMRPeak:
     atom_indices: tuple[int, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class NMRCoupling:
+    """Predicted scalar coupling between symmetry-equivalent atom pairs.
+
+    :param nuclei: atomic numbers of the coupled nuclei.
+    :param atom_pairs: symmetry-equivalent pairs of 0-indexed atom indices.
+    :param bond_distance: number of bonds separating the nuclei.
+    :param coupling: predicted coupling constant, in Hz.
+    :param uncertainty: model uncertainty, in Hz.
+    :param conformer_deviation: standard deviation across conformers, in Hz.
+    :param model: model used for the prediction.
+    """
+
+    nuclei: tuple[int, int]
+    atom_pairs: tuple[tuple[int, int], ...]
+    bond_distance: int
+    coupling: float
+    uncertainty: float | None
+    conformer_deviation: float | None
+    model: str
+
+
 @register_result("nmr")
 class NMRResult(WorkflowResult):
     """Result from a Nuclear Magnetic Resonance (NMR) workflow."""
@@ -87,6 +109,22 @@ class NMRResult(WorkflowResult):
             ]
             for nucleus, peaks in self._workflow.predicted_peaks.items()
         }
+
+    @property
+    def predicted_couplings(self) -> list[NMRCoupling]:
+        """Predicted scalar coupling constants."""
+        return [
+            NMRCoupling(
+                nuclei=c.nuclei,
+                atom_pairs=tuple(c.atom_pairs),
+                bond_distance=c.bond_distance,
+                coupling=c.coupling_hz,
+                uncertainty=c.uncertainty_hz,
+                conformer_deviation=c.conformer_sd_hz,
+                model=c.model,
+            )
+            for c in self._workflow.predicted_couplings
+        ]
 
     @property
     def symmetry_equivalent_nuclei(self) -> list[list[int]]:

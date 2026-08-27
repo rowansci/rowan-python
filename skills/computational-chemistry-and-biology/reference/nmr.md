@@ -20,6 +20,8 @@ wf = rowan.submit_nmr_workflow(
 result = wf.result()
 for peak in result.predicted_peaks[1]:  # keyed by atomic number: 1 = hydrogen, 6 = carbon
     print(peak)
+for coupling in result.predicted_couplings:
+    print(coupling)
 ```
 
 ## Settings
@@ -27,3 +29,9 @@ for peak in result.predicted_peaks[1]:  # keyed by atomic number: 1 = hydrogen, 
 - `solvent` (default `"chloroform"`): solvent for the prediction. Must be one of the 11 NMR-supported solvents — chloroform, tetrahydrofuran, dichloromethane, acetone, acetonitrile, dimethylsulfoxide, methanol, water, benzene, toluene, chlorobenzene — anything else raises a `ValueError`.
 - `do_csearch` (default `False`): run a conformer search first. The prediction Boltzmann-averages over the conformers found, so enable it for flexible molecules where averaging meaningfully shifts the result; a rigid molecule can skip it. Requires `do_optimization=True` (the search conformers must be optimized before prediction); `do_csearch=True` with `do_optimization=False` raises a `ValueError`.
 - `do_optimization` (default `True`): optimize the structure before predicting.
+
+## Result fields
+
+- `predicted_peaks`: predicted peaks grouped by nucleus atomic number.
+- `predicted_couplings`: typed scalar J-coupling predictions, including nuclei, equivalent
+  atom pairs, bond distance, coupling and uncertainty in Hz, conformer deviation, and model.

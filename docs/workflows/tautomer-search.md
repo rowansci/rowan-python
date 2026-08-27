@@ -1,5 +1,8 @@
 # Tautomer Search
 
+Pass `final_correction="COSMO_RS"` to enable the optional higher-cost COSMO-RS correction.
+The default is no final correction.
+
 ::: rowan.workflows.tautomer_search
     handler: python
     options:

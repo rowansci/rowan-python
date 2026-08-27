@@ -1,5 +1,8 @@
 # Solvent-Dependent Conformers
 
+The default final correction is `"CPCMX"`. Pass `final_correction="COSMO_RS"` for the
+higher-cost COSMO-RS alternative.
+
 ::: rowan.workflows.solvent_dependent_conformers
     handler: python
     options:

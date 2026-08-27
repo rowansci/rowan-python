@@ -1,5 +1,8 @@
 # LogP
 
+Available methods include the default Chemprop model, Crippen, and the higher-cost
+`method="cosmors"` conformer-ensemble calculation.
+
 ::: rowan.workflows.logp
     handler: python
     options:

@@ -15,3 +15,7 @@ result = workflow.result()
 # print hydrogen peaks (atomic number 1 = hydrogen)
 for peak in result.predicted_peaks[1]:
     print(peak)
+
+# print predicted scalar J-couplings
+for coupling in result.predicted_couplings:
+    print(coupling)

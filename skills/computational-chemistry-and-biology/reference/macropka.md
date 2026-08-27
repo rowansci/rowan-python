@@ -23,6 +23,8 @@ print(result.pka_values)  # macroscopic pKa values; see Result fields for the re
 
 ## Settings
 
+- `method` (default `"starling"`): macroscopic pKa model. Pass `"starling_ii"` to use
+  Starling II.
 - `min_pH` (default `0`) and `max_pH` (default `14`): pH range over which microstate weights, logD, and solubility are computed.
 - `min_charge` (default `-2`) and `max_charge` (default `2`): range of net charges to enumerate microstates over. `min_charge` must be less than `max_charge`.
 - `compute_aqueous_solubility` (default `True`): predict pH-dependent aqueous solubility. Non-ideal behavior such as aggregation is not modeled.
@@ -39,4 +41,4 @@ print(result.pka_values)  # macroscopic pKa values; see Result fields for the re
 - `kpuu_probability`: probability that Kpuu is at least 0.3. Populated when `compute_solvation_energy=True`.
 - `solvation_energy`: solvation energy in kcal/mol.
 
-Macroscopic pKa values come from the Starling model (a retrained Uni-pKa model). On standard pKa benchmarks (SAMPL6/7/8 and the Novartis acid/base sets), its accuracy is comparable to state-of-the-art tools such as Uni-pKa, ChemAxon, and Epik, roughly 0.7 to 1.1 pKa units.
+By default, macroscopic pKa values come from the Starling model (a retrained Uni-pKa model); Starling II is available through the `method` setting. On standard pKa benchmarks (SAMPL6/7/8 and the Novartis acid/base sets), Starling's accuracy is comparable to state-of-the-art tools such as Uni-pKa, ChemAxon, and Epik, roughly 0.7 to 1.1 pKa units.
