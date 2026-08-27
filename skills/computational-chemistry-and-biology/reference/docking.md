@@ -70,12 +70,13 @@ every docking run or pose has an MM/GBSA value.
 - `do_optimization` (default `False`): run an AIMNet2 optimization on the input ligand before docking. Skip it if the input is already optimized, to save time.
 - `do_pose_refinement` (default `True`): run a constrained AIMNet2 optimization on the output poses (gently relieves clashes without erasing the binding mode).
 
-## gnina (noncovalent and covalent docking)
+## gnina docking
 
-Use covalent docking for ligands that bind to a specific residue (e.g. cysteine-targeting acrylamides)
-instead of binding noncovalently — standard docking can't form or break bonds at all.
+`GninaSettings` selects gnina, but does not by itself make the run covalent. With neither covalent
+atom index set, gnina performs standard noncovalent docking. Set both indices to form a bond between
+a known ligand atom and protein atom.
 
-Pass a `rowan.GninaSettings` object as `docking_settings` to dock with gnina instead of Vina:
+For noncovalent gnina docking with CNN scoring:
 
 ```python
 gnina_settings = rowan.GninaSettings(scoring_function="gnina_cnn", exhaustiveness=8, max_poses=4)
@@ -88,7 +89,49 @@ wf = rowan.submit_docking_workflow(
 )
 ```
 
+Use covalent docking for a ligand designed to bind a known residue, such as a cysteine-targeting
+acrylamide. Prepare the protein first and find the reactive protein atom in the prepared structure,
+because preparation can change atom ordering and residue numbering:
+
+Supply the ligand in its expected post-reaction, covalently bound topology; gnina does not infer the
+reaction. For a Michael acceptor `C=CC(=O)NR`, use the hydrogen-capped product `CCC(=O)NR` and
+select the terminal β-carbon as the covalent ligand atom.
+
+```python
+prepared_protein = preparation_workflow.result().get_prepared_protein()
+reactive_protein_atom_index = prepared_protein.get_atom_index(
+    chain="A", residue=reactive_residue, atom="SG"
+)
+gnina_settings = rowan.GninaSettings(
+    scoring_function="vina",
+    covalent_ligand_atom_index=reactive_ligand_atom_index,
+    covalent_protein_atom_index=reactive_protein_atom_index,
+)
+wf = rowan.submit_docking_workflow(
+    prepared_protein.uuid,
+    pocket=[center, size],
+    initial_molecule=ligand,
+    docking_settings=gnina_settings,
+    folder=folder,
+)
+```
+
+Both atom indices are zero-based and include hydrogens. The ligand index refers to the atom order in
+`initial_molecule`; the protein index refers to PDB atom-record order. For XYZ and SDF inputs, atom
+indices follow file order. For `Molecule.from_smiles`, heavy atoms follow SMILES parse order
+(`CCC(=O)N`: C(0)-C(1)-C(2)-O(3)-N(4)), with hydrogens appended afterward, so the reactive
+heavy-atom index can normally be counted directly. Only unusual SMILES containing explicit `[H]`
+atoms require verifying the index with RDKit's `GetIdx()`; bracket hydrogen counts such as `[C@H]`
+do not create separate atoms.
+
+Covalent mode requires `scoring_function="vina"`; `gnina_cnn` is available only for noncovalent
+gnina docking.
+PoseBusters validation is skipped for covalent poses, so `posebusters_valid` is `None` and means not
+evaluated rather than failed. Do not use it to reject covalent poses.
+
 - `scoring_function` (default `gnina_cnn`): `gnina_cnn` rescores poses with gnina's convolutional neural network; `vina` disables the CNN and uses standard Vina scoring.
 - `exhaustiveness` (default `8`): how many times gnina attempts to find a pose.
 - `max_poses` (default `4`): maximum number of poses generated per input conformer.
-- `covalent_ligand_atom_index` / `covalent_protein_atom_index`: 0-based, all-atom indices (including hydrogens) of the reacting ligand and protein atoms. Set both together to run covalent docking; leave both unset (the default) for standard noncovalent docking.
+- `covalent_ligand_atom_index` / `covalent_protein_atom_index`: 0-based, all-atom indices
+  (including hydrogens) of the reacting ligand and protein atoms. Set both together to run covalent
+  docking; leave both unset for noncovalent docking.

@@ -26,13 +26,14 @@ class DockingScore:
     """A docking pose with its scores.
 
     :param score: Docking score in kcal/mol.
+    :param posebusters_valid: PoseBusters validity, or `None` when not evaluated.
     :param mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol.
     """
 
     score: float
     pose: str | None = None
     complex_pdb: str | None = None
-    posebusters_valid: bool = False
+    posebusters_valid: bool | None = None
     strain: float | None = None
     rmsd: float | None = None
     mmgbsa_score: float | None = None
@@ -175,9 +176,10 @@ def submit_docking_workflow(
     :param protein: Protein to dock. Can be input as a uuid or a Protein object.
     :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
     :param initial_molecule: Initial molecule to be docked.
-    :param docking_settings: Settings controlling the docking engine, e.g. ``VinaSettings`` or
-        ``GninaSettings`` (for noncovalent or covalent gnina docking). If provided, the deprecated
-        ``executable``, ``scoring_function``, ``exhaustiveness``, and ``max_poses`` are ignored.
+    :param docking_settings: settings controlling the docking engine, such as `VinaSettings` or
+        `GninaSettings`. Set both `GninaSettings` covalent atom indices for covalent docking; leave
+        both unset for noncovalent gnina docking. If provided, the deprecated `executable`,
+        `scoring_function`, `exhaustiveness`, and `max_poses` are ignored.
     :param executable: Deprecated, use `docking_settings=VinaSettings(executable=...)` instead.
         Which Vina docking implementation to use.
     :param scoring_function: Deprecated, use `docking_settings=VinaSettings(scoring_function=...)`
