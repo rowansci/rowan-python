@@ -7,6 +7,7 @@ from ..protein import Protein
 from ..types import ProteinUUID
 from ..utils import api_client
 from .base import Workflow, WorkflowResult, register_result
+from .docking import DockingScore
 
 
 @register_result("batch_docking")
@@ -33,6 +34,29 @@ class BatchDockingResult(WorkflowResult):
         padded = list(scores) + [None] * (len(smiles_list) - len(scores))
         return dict(zip(smiles_list, padded, strict=True))
 
+    @property
+    def refined_scores(self) -> dict[str, DockingScore | None]:
+        """Saved docking results indexed by input SMILES."""
+        smiles_list = self._workflow.initial_smiles_list
+        scores = self._workflow.refined_scores or []
+        padded = list(scores) + [None] * (len(smiles_list) - len(scores))
+        return {
+            smiles: (
+                DockingScore(
+                    score=score.score,
+                    pose=score.pose,
+                    complex_pdb=score.complex_pdb,
+                    posebusters_valid=score.posebusters_valid,
+                    strain=score.strain,
+                    rmsd=score.rmsd,
+                    mmgbsa_score=score.mmgbsa_score,
+                )
+                if score is not None
+                else None
+            )
+            for smiles, score in zip(smiles_list, padded, strict=True)
+        }
+
 
 def submit_batch_docking_workflow(
     smiles_list: list[str],
@@ -41,6 +65,8 @@ def submit_batch_docking_workflow(
     executable: str = "vina",
     scoring_function: str = "vinardo",
     exhaustiveness: float = 8,
+    num_poses_to_save: int = 0,
+    run_mmgbsa: bool = False,
     name: str = "Batch Docking Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -57,6 +83,9 @@ def submit_batch_docking_workflow(
     :param executable: Which docking implementation to use.
     :param scoring_function: Which docking scoring function to use.
     :param exhaustiveness: Docking exhaustiveness parameter.
+    :param num_poses_to_save: Number of top-scoring compounds whose best pose to save.
+    :param run_mmgbsa: Whether to refine the saved poses with MM/GBSA. Ignored when
+        `num_poses_to_save` is zero.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -84,6 +113,8 @@ def submit_batch_docking_workflow(
         protein=protein,
         pocket=pocket,
         docking_settings=docking_settings,
+        num_poses_to_save=num_poses_to_save,
+        run_mmgbsa=run_mmgbsa,
     )
 
     data = {

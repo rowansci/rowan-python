@@ -191,7 +191,7 @@ def submit_analogue_docking_workflow(
     scoring_function: Literal["vina", "vinardo"] = "vinardo",
     exhaustiveness: int = 8,
     max_poses: int = 4,
-    num_conformers_per_analogue: int = 100,
+    num_conformers_per_analogue: int = 20,
     require_posebusters: bool = False,
     run_local_optimization: bool = False,
     name: str = "Analogue Docking Workflow",

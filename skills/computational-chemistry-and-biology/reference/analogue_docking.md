@@ -66,6 +66,6 @@ Each entry in `result.analogue_scores[smiles]` has the Vina `score` and an optio
 - `scoring_function` (default `vinardo`): scoring function, `vinardo` or `vina`. Vinardo is more accurate; Vina is faster.
 - `exhaustiveness` (default `8`): how many times Vina attempts to find a pose for each conformer. 8 is typical; 32 is relatively careful.
 - `max_poses` (default `4`): maximum number of poses generated per input conformer.
-- `num_conformers_per_analogue` (default `100`): maximum number of conformers generated per analogue. 10-50 is suitable for routine use. 100-1000 is recommended when preparing structures for free energy perturbation calculations.
+- `num_conformers_per_analogue` (default `20`): maximum number of conformers generated per analogue. The default is suitable for routine use; increase it for broader sampling when preparing structures for free energy perturbation calculations.
 - `require_posebusters` (default `False`): run PoseBusters validity checks and keep only poses that pass.
 - `run_local_optimization` (default `False`): optimize each pose within the binding pocket after generation and compute its MM/GBSA binding free energy estimate. Leaving this off is recommended when consistent template alignment is more important, since local optimization can move poses off the template; `mmgbsa_score` is `None` when it is off.
