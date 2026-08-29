@@ -44,7 +44,7 @@ print(result.trajectories[0].ligand_rmsd)  # ligand RMSD by frame
 ## Settings
 
 - `num_trajectories` (default `4`): number of independent replicas to run. More replicas give a more robust read on pose stability; reduce it for a quick, cheaper check.
-- `small_molecule_ff` (default `off_sage_2_3_0`): force field for the bound ligand. The OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 choices are available.
+- `small_molecule_ff` (default `off_sage_2_3_0`): force field for the bound ligand. `mango_1_0_0` generates ligand-specific parameters using machine learning. OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 are also available.
 - `protein_ff` (default `rowan.ProteinForceField.FF14SB`): force field for the protein. Pass a `rowan.ProteinForceField` value.
 - `water_ff` (default `rowan.WaterForceField.TIP3P`): force field for water. Pass a `rowan.WaterForceField` value compatible with the protein force field.
 - `equilibration_time_ns` (default `0.5`): equilibration time per trajectory, in ns.

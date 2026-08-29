@@ -235,7 +235,7 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     graph_result: RelativeBindingFreeEnergyGraphResult,
     protein: Protein | ProteinUUID,
     tmd_settings: Literal["fast", "recommended", "rigorous"] = "recommended",
-    forcefield: Literal["off_sage_2_0_0", "off_sage_2_2_1"] = "off_sage_2_0_0",
+    forcefield: Literal["off_sage_2_0_0", "off_sage_2_2_1", "mango_1_0_0"] = "off_sage_2_0_0",
     charge_method: Literal["amber_am1bcc", "nagl"] | None = None,
     n_eq_steps: int | None = None,
     n_frames: int | None = None,
@@ -275,8 +275,10 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     :param graph_result: Completed ``RelativeBindingFreeEnergyGraphResult``.
     :param protein: Protein target, as a UUID string or Protein object.
     :param tmd_settings: Starting settings profile. Individual params override this.
-    :param forcefield: Force field for the simulation (e.g. ``"off_sage_2_0_0"``).
-    :param charge_method: Method for computing partial charges.
+    :param forcefield: Force field for the simulation. Mango requires ``charge_method="nagl"``.
+    :param charge_method: Method for computing partial charges. The ``"recommended"`` and
+        ``"fast"`` profiles use NAGL by default; override the ``"rigorous"`` profile to NAGL
+        when using Mango.
     :param n_eq_steps: Equilibration steps per lambda window.
     :param n_frames: Production frames saved per lambda window.
     :param steps_per_frame: MD integration steps per saved frame.

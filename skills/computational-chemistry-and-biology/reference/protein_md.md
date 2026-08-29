@@ -40,7 +40,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 ## Settings
 
 - `num_trajectories` (default `4`): number of independent trajectories (replicates) to run. More replicates improve conformational sampling; reduce for a quick, cheaper run.
-- `small_molecule_ff` (default `off_sage_2_3_0`): force field for small molecules in the structure. The OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 choices are available.
+- `small_molecule_ff` (default `off_sage_2_3_0`): force field for small molecules in the structure. `mango_1_0_0` generates ligand-specific parameters using machine learning. OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 are also available.
 - `protein_ff` (default `rowan.ProteinForceField.FF14SB`): force field for the protein. Pass a `rowan.ProteinForceField` value.
 - `water_ff` (default `rowan.WaterForceField.TIP3P`): force field for water. Pass a `rowan.WaterForceField` value compatible with the protein force field.
 - `equilibration_time_ns` (default `0.5`): equilibration time per trajectory, in nanoseconds.

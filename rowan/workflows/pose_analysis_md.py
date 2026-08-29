@@ -110,7 +110,7 @@ def submit_pose_analysis_md_workflow(
     initial_smiles: str,
     num_trajectories: int = 4,
     small_molecule_ff: Literal[
-        "off_sage_2_0_0", "off_sage_2_2_1", "off_sage_2_3_0"
+        "off_sage_2_0_0", "off_sage_2_2_1", "off_sage_2_3_0", "mango_1_0_0"
     ] = "off_sage_2_3_0",
     protein_ff: ProteinForceField | str = ProteinForceField.FF14SB,
     water_ff: WaterForceField | str = WaterForceField.TIP3P,

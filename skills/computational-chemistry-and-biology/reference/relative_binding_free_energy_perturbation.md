@@ -67,7 +67,7 @@ The `tmd_settings` profile is the intended interface: it sets sensible defaults 
   - `recommended`: the default; uses local resampling to dramatically accelerate the calculation with minimal accuracy loss.
   - `rigorous`: disables local resampling, for careful benchmarking and apples-to-apples comparison with other FEP software.
 - `charge_method` (default profile-dependent): partial-charge method. `nagl` is much faster and is recommended whenever any ligand has more than ~50–70 atoms; `amber_am1bcc` is the choice for rigorous calculations.
-- `forcefield` (default `off_sage_2_0_0`): simulation force field, `off_sage_2_0_0` or `off_sage_2_2_1`.
+- `forcefield` (default `off_sage_2_0_0`): simulation force field. `mango_1_0_0` generates ligand-specific parameters using machine learning and requires `charge_method="nagl"`. The `recommended` and `fast` profiles already use NAGL; `rigorous` must be overridden explicitly. OpenFF Sage 2.0.0 and 2.2.1 are also available.
 - `legs` (default all): which thermodynamic-cycle legs to run, a subset of `vacuum`, `solvent`, `complex`.
 - `save_trajectories` (default `False`): save DCD trajectories.
 - `trajectory_save_interval` (default `1000`): when saving trajectories, save a frame every N production frames.
