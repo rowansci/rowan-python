@@ -1,16 +1,22 @@
 """Pose-analysis MD workflow - molecular dynamics simulations for ligand-protein complexes."""
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import Literal
 
 import stjames
-from stjames import GreedyClusteringSettings, KMeansClusteringSettings
+from stjames import (
+    GreedyClusteringSettings,
+    KMeansClusteringSettings,
+    ProteinForceField,
+    WaterForceField,
+)
 
 from ..folder import Folder
-from ..protein import Protein, retrieve_protein
+from ..protein import Protein
 from ..types import ProteinUUID
-from ..utils import api_client, download_file
-from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
+from ..utils import api_client
+from ._molecular_dynamics import _MolecularDynamicsResult
+from .base import Message, Workflow, parse_messages, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +36,8 @@ class TrajectoryResult:
         clustering is set).
     :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
         is set).
+    :param mean_structure_uuid: UUID of the coordinate-averaged structure.
+    :param median_structure_frame_index: Frame index of the medoid structure.
     """
 
     uuid: str
@@ -40,10 +48,12 @@ class TrajectoryResult:
     isotropic_radius_of_gyration: list[float]
     cluster_centroid_indices: list[int]
     cluster_indices_by_frame: list[int]
+    mean_structure_uuid: str | None = None
+    median_structure_frame_index: int | None = None
 
 
 @register_result("pose_analysis_md")
-class PoseAnalysisMDResult(WorkflowResult):
+class PoseAnalysisMDResult(_MolecularDynamicsResult):
     """Result from a Pose-Analysis Molecular Dynamics (MD) workflow."""
 
     _stjames_class = stjames.PoseAnalysisMolecularDynamicsWorkflow
@@ -70,6 +80,8 @@ class PoseAnalysisMDResult(WorkflowResult):
                 isotropic_radius_of_gyration=t.isotropic_radius_of_gyration,
                 cluster_centroid_indices=t.cluster_centroid_indices,
                 cluster_indices_by_frame=t.cluster_indices_by_frame,
+                mean_structure_uuid=t.mean_structure_uuid,
+                median_structure_frame_index=t.median_structure_frame_index,
             )
             for t in raw
         ]
@@ -88,100 +100,31 @@ class PoseAnalysisMDResult(WorkflowResult):
         ]
 
     @property
-    def minimized_protein_uuid(self) -> str | None:
-        """UUID of the energy-minimized protein structure."""
-        return getattr(self._workflow, "minimized_protein_uuid", None)
-
-    def get_minimized_protein(self) -> Protein | None:
-        """
-        Fetch the energy-minimized protein structure.
-
-        .. note::
-            Makes one API call on first access.
-            Results are cached. Call clear_cache() to refresh.
-
-        :returns: Protein object or None if not available.
-        """
-        if not (uuid := self.minimized_protein_uuid):
-            return None
-        if "minimized_protein" not in self._cache:
-            self._cache["minimized_protein"] = retrieve_protein(
-                uuid, workflow_uuid=self.workflow_uuid
-            )
-        return self._cache["minimized_protein"]
-
-    @property
     def messages(self) -> list[Message]:
         """Any messages or warnings from the workflow."""
         return parse_messages(self._workflow.messages)
-
-    def get_atom_distances(
-        self,
-        atom_pairs: list[tuple[int, int]],
-        replicate: int = 0,
-    ) -> list[list[float]]:
-        """
-        Fetch interatomic distances over the trajectory for specified atom pairs.
-
-        Atom indices can be found in the ``contacts`` field of each trajectory,
-        which provides ``ligand_atom_index`` and ``protein_atom_index`` for each contact.
-
-        :param atom_pairs: List of (atom_i, atom_j) index pairs (0-indexed).
-        :param replicate: Trajectory replicate index (default 0).
-        :returns: List of distance arrays, one per pair, over all frames (Angstrom).
-        :raises HTTPError: If the API request fails.
-        """
-        with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.workflow_uuid}/atom_trajectories",
-                params={"replicate": replicate},
-                json=atom_pairs,
-            )
-            response.raise_for_status()
-        return response.json()
-
-    def download_trajectories(
-        self,
-        replicates: list[int],
-        name: str | None = None,
-        path: Path | str | None = None,
-    ) -> Path:
-        """
-        Download DCD trajectory files for specified replicates.
-
-        :param replicates: List of replicate indices to download.
-        :param name: Custom name for the tar.gz file (without extension).
-        :param path: Directory to save the file to. Defaults to current directory.
-        :returns: Path to the downloaded tar.gz file.
-        :raises HTTPError: If the API request fails.
-        """
-        path = Path(path) if path is not None else Path.cwd()
-        path.mkdir(parents=True, exist_ok=True)
-
-        file_name = f"{name or 'trajectories'}.tar.gz"
-        file_path = path / file_name
-        return download_file(
-            file_path,
-            "POST",
-            f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
-            json=replicates,
-        )
 
 
 def submit_pose_analysis_md_workflow(
     protein: Protein | ProteinUUID,
     initial_smiles: str,
     num_trajectories: int = 4,
-    equilibration_time_ns: float = 1,
+    small_molecule_ff: Literal[
+        "off_sage_2_0_0", "off_sage_2_2_1", "off_sage_2_3_0"
+    ] = "off_sage_2_3_0",
+    protein_ff: ProteinForceField | str = ProteinForceField.FF14SB,
+    water_ff: WaterForceField | str = WaterForceField.TIP3P,
+    equilibration_time_ns: float = 0.5,
     simulation_time_ns: float = 10,
     temperature: float = 300,
     pressure_atm: float = 1.0,
     langevin_timescale_ps: float = 1.0,
-    timestep_fs: float = 2,
+    timestep_fs: float = 4,
+    hydrogen_mass: float = 3,
     constrain_hydrogens: bool = True,
     nonbonded_cutoff: float = 8.0,
     ionic_strength_M: float = 0.0,
-    water_buffer: float = 10.0,
+    water_buffer: float = 8.0,
     ligand_residue_name: str = "LIG",
     protein_restraint_cutoff: float | None = 7.0,
     protein_restraint_constant: float = 100,
@@ -204,12 +147,16 @@ def submit_pose_analysis_md_workflow(
         Can be input as a UUID or a Protein object.
     :param initial_smiles: SMILES for the ligand.
     :param num_trajectories: Number of trajectories to run.
+    :param small_molecule_ff: Force field for the ligand.
+    :param protein_ff: Force field for proteins.
+    :param water_ff: Force field for water.
     :param equilibration_time_ns: Equilibration time per trajectory, in ns.
     :param simulation_time_ns: Simulation time per trajectory, in ns.
     :param temperature: Temperature, in K.
     :param pressure_atm: Pressure, in atm.
     :param langevin_timescale_ps: Timescale for the Langevin integrator, in ps⁻¹.
     :param timestep_fs: Timestep, in femtoseconds.
+    :param hydrogen_mass: Hydrogen mass, in atomic mass units.
     :param ligand_residue_name: Name of the residue corresponding to the ligand.
     :param constrain_hydrogens: Whether to use SHAKE to freeze bonds to hydrogen.
     :param nonbonded_cutoff: Nonbonded cutoff for particle-mesh Ewald, in Å.
@@ -250,6 +197,9 @@ def submit_pose_analysis_md_workflow(
     workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
         protein=protein,
         initial_smiles=initial_smiles,
+        small_molecule_ff=small_molecule_ff,
+        protein_ff=protein_ff,
+        water_ff=water_ff,
         num_trajectories=num_trajectories,
         equilibration_time_ns=equilibration_time_ns,
         simulation_time_ns=simulation_time_ns,
@@ -257,6 +207,7 @@ def submit_pose_analysis_md_workflow(
         pressure_atm=pressure_atm,
         langevin_timescale_ps=langevin_timescale_ps,
         timestep_fs=timestep_fs,
+        hydrogen_mass=hydrogen_mass,
         ligand_residue_name=ligand_residue_name,
         constrain_hydrogens=constrain_hydrogens,
         nonbonded_cutoff=nonbonded_cutoff,

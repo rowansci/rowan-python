@@ -1,16 +1,23 @@
 """Protein MD workflow - molecular dynamics simulations for proteins."""
 
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, field
+from typing import Literal
 
 import stjames
-from stjames import Binder, GreedyClusteringSettings, KMeansClusteringSettings
+from stjames import (
+    Binder,
+    GreedyClusteringSettings,
+    KMeansClusteringSettings,
+    ProteinForceField,
+    WaterForceField,
+)
 
 from ..folder import Folder
-from ..protein import Protein, retrieve_protein
+from ..protein import Protein
 from ..types import ProteinUUID
-from ..utils import api_client, download_file
-from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
+from ..utils import api_client
+from ._molecular_dynamics import _MolecularDynamicsResult
+from .base import Message, Workflow, parse_messages, register_result
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +35,10 @@ class ProteinMDTrajectory:
         clustering is set).
     :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
         is set).
+    :param binder_rmsd: Per-frame binder RMSD, when the binder has one component.
+    :param mmgbsa_scores: Per-frame MM/GBSA score for the complete binder.
+    :param mean_structure_uuid: UUID of the coordinate-averaged structure.
+    :param median_structure_frame_index: Frame index of the medoid structure.
     """
 
     uuid: str
@@ -36,13 +47,29 @@ class ProteinMDTrajectory:
     isotropic_radius_of_gyration: list[float]
     cluster_centroid_indices: list[int]
     cluster_indices_by_frame: list[int]
+    binder_rmsd: list[float] = field(default_factory=list)
+    mmgbsa_scores: list[float | None] = field(default_factory=list)
+    mean_structure_uuid: str | None = None
+    median_structure_frame_index: int | None = None
 
 
 @register_result("protein_md")
-class ProteinMDResult(WorkflowResult):
+class ProteinMDResult(_MolecularDynamicsResult):
     """Result from a Protein Molecular Dynamics (MD) workflow."""
 
     _stjames_class = stjames.ProteinMolecularDynamicsWorkflow
+
+    def __post_init__(self) -> None:
+        """Normalize the pre-0.0.255 binder schema before parsing old workflows."""
+        binder = self.workflow_data.get("binder")
+        if isinstance(binder, dict) and "small_molecules" in binder:
+            small_molecules = binder.pop("small_molecules")
+            if isinstance(small_molecules, dict):
+                self.workflow_data.setdefault("small_molecules", small_molecules)
+                binder["small_molecule_residues"] = list(small_molecules)
+            elif isinstance(small_molecules, list):
+                binder["small_molecule_residues"] = small_molecules
+        super().__post_init__()
 
     def __repr__(self) -> str:
         n_traj = len(self.trajectory_uuids)
@@ -66,32 +93,13 @@ class ProteinMDResult(WorkflowResult):
                 isotropic_radius_of_gyration=t.isotropic_radius_of_gyration,
                 cluster_centroid_indices=t.cluster_centroid_indices,
                 cluster_indices_by_frame=t.cluster_indices_by_frame,
+                binder_rmsd=t.binder_rmsd,
+                mmgbsa_scores=t.mmgbsa_scores,
+                mean_structure_uuid=t.mean_structure_uuid,
+                median_structure_frame_index=t.median_structure_frame_index,
             )
             for t in raw
         ]
-
-    @property
-    def minimized_protein_uuid(self) -> str | None:
-        """UUID of the energy-minimized protein structure."""
-        return getattr(self._workflow, "minimized_protein_uuid", None)
-
-    def get_minimized_protein(self) -> Protein | None:
-        """
-        Fetch the energy-minimized protein structure.
-
-        .. note::
-            Makes one API call on first access.
-            Results are cached. Call clear_cache() to refresh.
-
-        :returns: Protein object or None if not available.
-        """
-        if not (uuid := self.minimized_protein_uuid):
-            return None
-        if "minimized_protein" not in self._cache:
-            self._cache["minimized_protein"] = retrieve_protein(
-                uuid, workflow_uuid=self.workflow_uuid
-            )
-        return self._cache["minimized_protein"]
 
     @property
     def bonds(self) -> list[tuple[int, int]]:
@@ -104,72 +112,29 @@ class ProteinMDResult(WorkflowResult):
         """Any messages or warnings from the workflow."""
         return parse_messages(getattr(self._workflow, "messages", None))
 
-    def get_atom_distances(
-        self,
-        atom_pairs: list[tuple[int, int]],
-        replicate: int = 0,
-    ) -> list[list[float]]:
-        """
-        Fetch interatomic distances over the trajectory for specified atom pairs.
-
-        :param atom_pairs: List of (atom_i, atom_j) index pairs (0-indexed).
-        :param replicate: Trajectory replicate index (default 0).
-        :returns: List of distance arrays, one per pair, over all frames (Angstrom).
-        :raises HTTPError: If the API request fails.
-        """
-        with api_client() as client:
-            response = client.post(
-                f"/trajectory/{self.workflow_uuid}/atom_trajectories",
-                params={"replicate": replicate},
-                json=atom_pairs,
-            )
-            response.raise_for_status()
-        return response.json()
-
-    def download_trajectories(
-        self,
-        replicates: list[int],
-        name: str | None = None,
-        path: Path | str | None = None,
-    ) -> Path:
-        """
-        Download DCD trajectory files for specified replicates.
-
-        :param replicates: List of replicate indices to download.
-        :param name: Custom name for the tar.gz file (without extension).
-        :param path: Directory to save the file to. Defaults to current directory.
-        :returns: Path to the downloaded tar.gz file.
-        :raises HTTPError: If the API request fails.
-        """
-        path = Path(path) if path is not None else Path.cwd()
-
-        path.mkdir(parents=True, exist_ok=True)
-
-        file_name = f"{name or 'trajectories'}.tar.gz"
-        file_path = path / file_name
-        return download_file(
-            file_path,
-            "POST",
-            f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
-            json=replicates,
-        )
-
 
 def submit_protein_md_workflow(
     protein: Protein | ProteinUUID,
     num_trajectories: int = 4,
-    equilibration_time_ns: float = 1,
+    small_molecule_ff: Literal[
+        "off_sage_2_0_0", "off_sage_2_2_1", "off_sage_2_3_0"
+    ] = "off_sage_2_3_0",
+    protein_ff: ProteinForceField | str = ProteinForceField.FF14SB,
+    water_ff: WaterForceField | str = WaterForceField.TIP3P,
+    equilibration_time_ns: float = 0.5,
     simulation_time_ns: float = 10,
     temperature: float = 300,
     pressure_atm: float = 1.0,
     langevin_timescale_ps: float = 1.0,
-    timestep_fs: float = 2,
+    timestep_fs: float = 4,
+    hydrogen_mass: float = 3,
     constrain_hydrogens: bool = True,
     nonbonded_cutoff: float = 8.0,
     ionic_strength_M: float = 0.0,
-    water_buffer: float = 10.0,
+    water_buffer: float = 8.0,
     save_solvent: bool = False,
     num_solvent_to_save: int | None = None,
+    small_molecules: dict[str | int, str | None] | None = None,
     binder: Binder | None = None,
     protein_restraint_cutoff: float | None = None,
     protein_restraint_constant: float = 100,
@@ -189,12 +154,16 @@ def submit_protein_md_workflow(
     :param protein: *holo* protein on which MD will be run.
         Can be input as a UUID or a Protein object.
     :param num_trajectories: Number of trajectories to run.
+    :param small_molecule_ff: Force field for small molecules.
+    :param protein_ff: Force field for proteins.
+    :param water_ff: Force field for water.
     :param equilibration_time_ns: how long to equilibrate trajectories for, in ns
     :param simulation_time_ns: how long to run trajectories for, in ns
     :param temperature: temperature, in K
     :param pressure_atm: pressure, in atm
     :param langevin_timescale_ps: timescale for the Langevin integrator, in ps^-1
     :param timestep_fs: timestep, in femtoseconds
+    :param hydrogen_mass: hydrogen mass, in atomic mass units
     :param constrain_hydrogens: whether or not to use SHAKE to freeze bonds to hydrogen
     :param nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in A
     :param ionic_strength_M: ionic strength of the solution, in M (molar)
@@ -202,6 +171,8 @@ def submit_protein_md_workflow(
     :param save_solvent: whether solvent should be saved
     :param num_solvent_to_save: keep this many solvent molecules nearest the binder, or all if None;
         only meaningful when save_solvent is True and a binder is present
+    :param small_molecules: SMILES by protein residue name or index for small molecules that
+        require separate parameterization. A None value uses an existing residue template.
     :param binder: optional binder specification (protein chains and/or small molecules).
         When set, per-frame MM/GBSA scores are computed against the whole binder.
         Per-frame binder RMSD is populated only when the binder is a single component
@@ -246,6 +217,9 @@ def submit_protein_md_workflow(
 
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein=protein,
+        small_molecule_ff=small_molecule_ff,
+        protein_ff=protein_ff,
+        water_ff=water_ff,
         num_trajectories=num_trajectories,
         equilibration_time_ns=equilibration_time_ns,
         simulation_time_ns=simulation_time_ns,
@@ -253,12 +227,14 @@ def submit_protein_md_workflow(
         pressure_atm=pressure_atm,
         langevin_timescale_ps=langevin_timescale_ps,
         timestep_fs=timestep_fs,
+        hydrogen_mass=hydrogen_mass,
         constrain_hydrogens=constrain_hydrogens,
         nonbonded_cutoff=nonbonded_cutoff,
         ionic_strength_M=ionic_strength_M,
         water_buffer=water_buffer,
         save_solvent=save_solvent,
         num_solvent_to_save=num_solvent_to_save,
+        small_molecules=small_molecules,
         binder=binder,
         protein_restraint_cutoff=protein_restraint_cutoff,
         protein_restraint_constant=protein_restraint_constant,

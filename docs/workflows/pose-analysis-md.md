@@ -1,5 +1,8 @@
 # Pose Analysis MD
 
+Pose-analysis MD accepts selectable small-molecule, protein, and water force fields. Mean and
+medoid structures are available through the same result helpers as protein MD.
+
 ::: rowan.workflows.pose_analysis_md
     handler: python
     options:

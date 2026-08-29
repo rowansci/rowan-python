@@ -40,18 +40,23 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 ## Settings
 
 - `num_trajectories` (default `4`): number of independent trajectories (replicates) to run. More replicates improve conformational sampling; reduce for a quick, cheaper run.
-- `equilibration_time_ns` (default `1`): equilibration time per trajectory, in nanoseconds.
+- `small_molecule_ff` (default `off_sage_2_3_0`): force field for small molecules in the structure. The OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 choices are available.
+- `protein_ff` (default `rowan.ProteinForceField.FF14SB`): force field for the protein. Pass a `rowan.ProteinForceField` value.
+- `water_ff` (default `rowan.WaterForceField.TIP3P`): force field for water. Pass a `rowan.WaterForceField` value compatible with the protein force field.
+- `equilibration_time_ns` (default `0.5`): equilibration time per trajectory, in nanoseconds.
 - `simulation_time_ns` (default `10`): production simulation time per trajectory, in nanoseconds.
 - `temperature` (default `300`): temperature, in kelvin.
 - `pressure_atm` (default `1.0`): pressure, in atmospheres.
 - `langevin_timescale_ps` (default `1.0`): timescale for the Langevin integrator, in inverse picoseconds.
-- `timestep_fs` (default `2`): integration timestep, in femtoseconds.
+- `timestep_fs` (default `4`): integration timestep, in femtoseconds.
+- `hydrogen_mass` (default `3`): hydrogen mass in atomic mass units, repartitioned to support the 4 fs timestep.
 - `constrain_hydrogens` (default `True`): use SHAKE to freeze bonds to hydrogen.
 - `nonbonded_cutoff` (default `8.0`): nonbonded cutoff for particle-mesh Ewald, in angstrom.
 - `ionic_strength_M` (default `0.0`): ionic strength of the solution, in molar.
-- `water_buffer` (default `10.0`): amount of water added around the protein, in angstrom.
+- `water_buffer` (default `8.0`): amount of water added around the protein, in angstrom.
 - `save_solvent` (default `False`): whether to save solvent atoms in the trajectories.
 - `num_solvent_to_save` (default `None`): when `save_solvent=True` and a `binder` is set, keep only the N solvent molecules nearest the binder each frame; `None` keeps all solvent. Ignored when `save_solvent=False` or no `binder`.
+- `small_molecules` (default `None`): SMILES keyed by non-polymer residue name or zero-based index. Use this to parameterize one or more small molecules in the protein; a `None` value selects an existing residue template.
 - `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecule_residues`, identified by residue-name string or 0-based non-polymer residue index), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
 - `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
 - `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
@@ -64,6 +69,8 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `trajectory_uuids`: UUIDs of the trajectory calculations, one per replicate.
 - `trajectories`: per-replicate results. Each exposes the radius of gyration per frame (`isotropic_radius_of_gyration`); `sasa` and `polar_sasa` when `analysis_interval_ps` is set; `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set; `mmgbsa_scores` (per-frame MM/GBSA binding-side interaction energy, kcal/mol) when a `binder` is set; and `binder_rmsd` (per-frame binder RMSD vs starting pose, Å — heavy-atom RMSD for a single small-molecule binder or backbone N/CA/C/O RMSD for a single binder chain; empty for multi-component binders) when a `binder` is set.
 - `minimized_protein_uuid` / `get_minimized_protein()`: the energy-minimized protein.
+- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate.
+- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure.
 - `bonds`: bond list for the simulated system.
 - `messages`: messages emitted during the run.
 - `download_trajectories(replicates, path=...)`: download DCD trajectory files for the given replicate indices as a `.tar.gz`.

@@ -30,6 +30,7 @@ from stjames import (
     PBCDFTSettings,
     PeriodicCell,
     ProteinSequence,
+    ProteinForceField,
     ScanSettings,
     Settings,
     Solvent,
@@ -39,6 +40,7 @@ from stjames import (
     UmbrellaSamplingScanSettings,
     VibrationalMode,
     VinaSettings,
+    WaterForceField,
 )
 from stjames.workflows.relative_binding_free_energy_perturbation import (
     RBFEGraph,

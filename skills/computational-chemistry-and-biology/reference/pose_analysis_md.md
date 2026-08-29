@@ -44,16 +44,20 @@ print(result.trajectories[0].ligand_rmsd)  # ligand RMSD by frame
 ## Settings
 
 - `num_trajectories` (default `4`): number of independent replicas to run. More replicas give a more robust read on pose stability; reduce it for a quick, cheaper check.
-- `equilibration_time_ns` (default `1`): equilibration time per trajectory, in ns.
+- `small_molecule_ff` (default `off_sage_2_3_0`): force field for the bound ligand. The OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 choices are available.
+- `protein_ff` (default `rowan.ProteinForceField.FF14SB`): force field for the protein. Pass a `rowan.ProteinForceField` value.
+- `water_ff` (default `rowan.WaterForceField.TIP3P`): force field for water. Pass a `rowan.WaterForceField` value compatible with the protein force field.
+- `equilibration_time_ns` (default `0.5`): equilibration time per trajectory, in ns.
 - `simulation_time_ns` (default `10`): production simulation time per trajectory, in ns.
 - `temperature` (default `300`): temperature, in K.
 - `pressure_atm` (default `1.0`): pressure, in atm.
 - `langevin_timescale_ps` (default `1.0`): Langevin integrator timescale, in ps^-1.
-- `timestep_fs` (default `2`): integration timestep, in femtoseconds.
+- `timestep_fs` (default `4`): integration timestep, in femtoseconds.
+- `hydrogen_mass` (default `3`): hydrogen mass in atomic mass units, repartitioned to support the 4 fs timestep.
 - `constrain_hydrogens` (default `True`): use SHAKE to freeze bonds to hydrogen.
 - `nonbonded_cutoff` (default `8.0`): nonbonded cutoff for particle-mesh Ewald, in angstroms.
 - `ionic_strength_M` (default `0.0`): ionic strength of the solution, in molar.
-- `water_buffer` (default `10.0`): water padding added around the protein, in angstroms.
+- `water_buffer` (default `8.0`): water padding added around the protein, in angstroms.
 - `ligand_residue_name` (default `LIG`): residue name of the ligand in the structure.
 - `protein_restraint_cutoff` (default `7.0`): distance from the ligand past which alpha-carbons are restrained, in angstroms. Residues within this cutoff of the pocket move freely. Set to `None` to apply no restraints.
 - `protein_restraint_constant` (default `100`): force constant for backbone restraints, in kcal/mol/angstrom^2.
@@ -69,6 +73,8 @@ print(result.trajectories[0].ligand_rmsd)  # ligand RMSD by frame
 - `hydration_sites`: list of `rowan.HydrationSite` objects identified across all trajectories. Each site has a `centroid` (x, y, z tuple in Å), `abs_occ` (absolute occupancy 0–1), `prot_only_abs_occ`, `lig_only_abs_occ`, `bridge_abs_occ`, `num_unique_waters`, and `bridge_residues` (list of `rowan.HydrationBridgeResidue` with `residue_index` and `bridge_occ`).
 - `average_rmsds`: average ligand RMSD per trajectory, in angstrom (a low value means the pose held).
 - `minimized_protein_uuid` / `get_minimized_protein()`: UUID and fetched `Protein` object of the energy-minimized structure.
+- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate.
+- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure.
 - `messages`: messages or warnings emitted during the run.
 - `get_atom_distances(atom_pairs, replicate=0)`: fetch per-frame interatomic distances (Angstrom) for a list of `(atom_i, atom_j)` index pairs over the trajectory. Atom indices appear in each trajectory's `contacts` field (`ligand_atom_index`, `protein_atom_index`). Returns one list of floats per pair.
 - `download_trajectories(replicates, path=...)`: download DCD trajectory files for the given replicate indices as a `.tar.gz`.
