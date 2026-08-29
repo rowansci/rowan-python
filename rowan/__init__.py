@@ -1,9 +1,11 @@
 # ruff: noqa
 from . import constants
 from stjames import (
+    AEVPLIGAffinitySettings,
     Atom,
     BandStructure,
     Binder,
+    BindingAffinitySettings,
     BindingPoseContact,
     HydrationBridgeResidue,
     HydrationSite,
@@ -16,6 +18,7 @@ from stjames import (
     DockingSettings,
     Engine,
     ETKDGSettings,
+    GninaAffinitySettings,
     GninaSettings,
     GreedyClusteringSettings,
     iMTDSettings,
@@ -24,6 +27,7 @@ from stjames import (
     Mode,
     MSAFormat,
     MultiStageOptSettings,
+    NessoAffinitySettings,
     NMR_SUPPORTED_SOLVENTS,
     OpenConfSettings,
     OptimizationSettings,

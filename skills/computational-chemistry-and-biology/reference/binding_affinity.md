@@ -2,17 +2,26 @@
 
 ## Input
 
-Two submission modes — choose based on whether the ligand is already in the protein PDB.
+Choose one input mode:
 
-**Mode 1 — holo protein:** the protein PDB already contains the bound ligand as a residue. Pass `ligand_residue_name` to identify which residue is the ligand; everything else is treated as receptor.
+**Holo protein:** pass a `protein` containing the bound ligand and use `ligand_residue_name` to identify it.
 
-**Mode 2 — apo protein + external poses:** the protein has no bound ligand. Pass `ligand_structures` with one or more molecules that are already in the protein's coordinate frame (e.g. from a prior docking run). When scoring multiple ligands, this mode is preferred over submitting separate workflows — all poses share the same pocket geometry.
+**Protein + external poses:** pass a `protein` and one or more aligned `ligand_structures`. For ML scoring, include each molecule's `smiles` when known so bond orders can be assigned reliably.
 
-- Protein: a `rowan.Protein` or its UUID. Get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code)`, or upload your own with `rowan.upload_protein(name, path)`.
-- `ligand_residue_name`: residue name of the bound ligand in a holo protein PDB (mode 1).
-- `ligand_structures`: list of `StructureInput` molecules with 3D coordinates, already aligned to the protein (mode 2). Load from an SDF with `rowan.load_named_ligands(path)`.
+**NESSO sequence/SMILES:** pass `protein_sequences` and `ligand_smiles` with `rowan.NessoAffinitySettings()`; no PDB is required.
 
-Binding affinity is computed using SQM energies (PM6-D3H4X: COSMO geometry optimization followed by COSMO2 single-point, in water by default) on a truncated pocket around the ligand. When scoring multiple ligands, submitting them together in one workflow is preferred over separate workflows — all poses share the same pocket environment, making scores directly comparable.
+NESSO also accepts the first two modes, but uses only the protein sequence from a PDB rather than its 3D coordinates.
+
+- Protein: a `rowan.Protein` or its UUID. Create one with `rowan.create_protein_from_pdb_id(...)` or `rowan.upload_protein(...)`.
+- `ligand_structures`: 3D molecules already aligned to the protein, commonly loaded with `rowan.load_named_ligands(...)`.
+- `protein_sequences` and `ligand_smiles`: PDB-free inputs supported only by NESSO.
+
+Four scoring methods, selected via `binding_affinity_settings`:
+
+- `rowan.SinglePointEnergySettings()` (default): SQM energies (PM6-D3H4X: COSMO geometry optimization followed by COSMO2 single-point, in water by default) on a truncated pocket around the ligand. Result in kcal/mol. Works in modes 1/2 only.
+- `rowan.GninaAffinitySettings()`: GNINA CNN affinity scoring. Result in log10(M). Works in modes 1/2.
+- `rowan.AEVPLIGAffinitySettings()`: AEV-PLIG affinity scoring. Result in log10(M). Works in modes 1/2.
+- `rowan.NessoAffinitySettings()`: NESSO affinity prediction. Result in log10(M). Works in modes 1/2/3 — the only method that supports mode 3.
 
 ## Example
 
@@ -35,15 +44,20 @@ workflow = rowan.submit_binding_affinity_workflow(
 
 result = workflow.result()
 for name, score in zip(ligands.keys(), result.scores):
+    if score is None:
+        print(f"{name}: scoring failed")
+        continue
     print(f"{name}: {score.binding_affinity:.2f} kcal/mol (strain: {score.strain})")
 ```
 
 ## Settings
 
-`binding_affinity_settings` accepts a `rowan.SinglePointEnergySettings` object:
+`binding_affinity_settings` accepts one of four settings objects:
 
-- `multistage_opt_settings` (default PM6-D3H4X/COSMO optimization + PM6-D3H4X/COSMO2 single-point in water): a `rowan.MultiStageOptSettings` controlling ligand geometry optimization and energy evaluation.
-- `truncation_radius` (default `6.0` Å): protein residues beyond this distance from the ligand are excluded from the calculation.
+- `rowan.SinglePointEnergySettings` (default):
+  - `multistage_opt_settings` (default PM6-D3H4X/COSMO optimization + PM6-D3H4X/COSMO2 single-point in water): a `rowan.MultiStageOptSettings` controlling ligand geometry optimization and energy evaluation.
+  - `truncation_radius` (default `6.0` Å): protein residues beyond this distance from the ligand are excluded from the calculation.
+- `rowan.GninaAffinitySettings`, `rowan.AEVPLIGAffinitySettings`, `rowan.NessoAffinitySettings`: no tunable parameters.
 
 ```python
 rowan.submit_binding_affinity_workflow(
@@ -51,11 +65,26 @@ rowan.submit_binding_affinity_workflow(
     ligand_residue_name="LIG",
     binding_affinity_settings=rowan.SinglePointEnergySettings(truncation_radius=8.0),
 )
+
+# GNINA / AEV-PLIG: same submission shape, no PDB-free mode.
+rowan.submit_binding_affinity_workflow(
+    protein=protein.uuid,
+    ligand_structures=list(ligands.values()),
+    binding_affinity_settings=rowan.GninaAffinitySettings(),
+)
+
+# NESSO: sequence/SMILES input, no PDB required.
+rowan.submit_binding_affinity_workflow(
+    protein_sequences=["ACDEFGHIK"],
+    ligand_smiles=["CCO"],
+    binding_affinity_settings=rowan.NessoAffinitySettings(),
+)
 ```
 
 ## Results
 
-`result.scores` is a list of `BindingAffinityScore` objects in the same order as the input ligands:
+`result.scores` is a list in the same order as the input ligands. Each entry is a
+`BindingAffinityScore`, or `None` when that input failed:
 
-- `binding_affinity`: binding affinity in kcal/mol (ΔE = E(complex) − E(protein_region) − E(ligand)).
-- `strain`: energy difference between the input pose and the SQM-optimized pose, in kcal/mol.
+- `binding_affinity`: binding affinity in kcal/mol (ΔE = E(complex) − E(protein_region) − E(ligand)) for `SinglePointEnergySettings`, or in log10(M) for `GninaAffinitySettings`, `AEVPLIGAffinitySettings`, and `NessoAffinitySettings`.
+- `strain`: energy difference between the input pose and the SQM-optimized pose, in kcal/mol. Only populated for `SinglePointEnergySettings`; `None` for the other three methods.

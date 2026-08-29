@@ -1,9 +1,10 @@
-"""Binding affinity workflow — SQM-based scoring of protein–ligand complexes."""
+"""Binding affinity workflow — SQM- and ML-based scoring of protein–ligand complexes."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import stjames
-from stjames import SinglePointEnergySettings
+from stjames import BindingAffinitySettings, ProteinSequence, SinglePointEnergySettings
 
 from ..folder import Folder
 from ..protein import Protein
@@ -23,9 +24,10 @@ from .base import (
 @dataclass(frozen=True, slots=True)
 class BindingAffinityScore:
     """
-    Binding affinity score for a single pose.
+    Binding affinity score for a single protein-ligand input.
 
-    :param binding_affinity: binding affinity in kcal/mol
+    :param binding_affinity: binding affinity in kcal/mol for SQM settings, or log10(M)
+        for GNINA, AEV-PLIG, and NESSO settings.
     :param strain: strain energy in kcal/mol, or None if not computed
     """
 
@@ -44,14 +46,18 @@ class BindingAffinityResult(WorkflowResult):
         return f"<BindingAffinityResult scores={n}>"
 
     @property
-    def scores(self) -> list[BindingAffinityScore]:
-        """Binding affinity scores for each scored pose."""
+    def scores(self) -> list[BindingAffinityScore | None]:
+        """Binding affinity scores in input order, with `None` for failed inputs."""
         return [
-            BindingAffinityScore(
-                binding_affinity=r.binding_affinity,
-                strain=r.strain,
+            (
+                BindingAffinityScore(
+                    binding_affinity=result.binding_affinity,
+                    strain=result.strain,
+                )
+                if result is not None
+                else None
             )
-            for r in (self._workflow.binding_affinity_results or [])
+            for result in (self._workflow.binding_affinity_results or [])
         ]
 
     @property
@@ -61,10 +67,12 @@ class BindingAffinityResult(WorkflowResult):
 
 
 def submit_binding_affinity_workflow(
-    protein: Protein | ProteinUUID,
+    protein: Protein | ProteinUUID | None = None,
     ligand_residue_name: str | None = None,
     ligand_structures: list[StructureInput] | None = None,
-    binding_affinity_settings: SinglePointEnergySettings | None = None,
+    protein_sequences: list[ProteinSequence] | list[str] | None = None,
+    ligand_smiles: list[str] | None = None,
+    binding_affinity_settings: BindingAffinitySettings | None = None,
     name: str = "Binding Affinity Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -75,7 +83,8 @@ def submit_binding_affinity_workflow(
     """
     Submits a binding affinity workflow to the API.
 
-    Scores ligand poses using SQM-based energies. Two submission modes:
+    Scores protein-ligand inputs using SQM energies, GNINA, AEV-PLIG, or NESSO. Three
+    input modes are supported:
 
     **Mode 1 — holo protein:** protein already contains the bound ligand. Pass
     ``ligand_residue_name`` to identify which residue is the ligand vs. the receptor.
@@ -83,17 +92,31 @@ def submit_binding_affinity_workflow(
 
     **Mode 2 — apo protein + external poses:** protein has no bound ligand. Pass
     ``ligand_structures`` with poses that are already in the protein's coordinate frame.
-    Do not pass ``ligand_residue_name``. When scoring multiple ligands, prefer this mode
-    over separate per-ligand workflows — all poses share the same pocket geometry.
+    Do not pass ``ligand_residue_name``.
 
-    :param protein: protein structure. Can be input as a UUID or a Protein object.
+    **Mode 3 — NESSO sequence/SMILES input:** NESSO-only (``binding_affinity_settings``
+    must be ``NessoAffinitySettings``); no PDB required. Pass ``protein_sequences`` instead
+    of ``protein``, and ``ligand_smiles`` instead of ``ligand_residue_name``/
+    ``ligand_structures``.
+
+    NESSO also accepts a ``protein`` PDB but uses only its protein sequence, not its 3D
+    coordinates.
+
+    :param protein: protein structure. Can be input as a UUID or a Protein object. Required
+        unless ``protein_sequences`` is set (mode 3).
     :param ligand_residue_name: residue name identifying the ligand in a holo protein PDB
         (mode 1 only).
     :param ligand_structures: external ligand poses to score, already in the protein's
         coordinate frame. Must have 3D coordinates (mode 2 only).
-    :param binding_affinity_settings: SQM settings controlling geometry optimization and
-        energy evaluation. Defaults to PM6-D3H4X/COSMO optimization followed by
-        PM6-D3H4X/COSMO2 single-point in water.
+    :param protein_sequences: protein sequences to score against, in place of ``protein``
+        (mode 3, NESSO only).
+    :param ligand_smiles: ligand SMILES to score, in place of ``ligand_residue_name``/
+        ``ligand_structures`` (mode 3, NESSO only).
+    :param binding_affinity_settings: settings controlling how binding affinity is
+        computed: ``SinglePointEnergySettings`` (SQM), ``GninaAffinitySettings``,
+        ``AEVPLIGAffinitySettings``, or ``NessoAffinitySettings``. Defaults to
+        ``SinglePointEnergySettings`` (PM6-D3H4X/COSMO optimization followed by
+        PM6-D3H4X/COSMO2 single-point in water).
     :param name: name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -102,6 +125,7 @@ def submit_binding_affinity_workflow(
     :param is_draft: if True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
     :raises ValueError: if folder arguments conflict.
+    :raises pydantic.ValidationError: if the protein/ligand input combination is invalid.
     :raises requests.HTTPError: if the request to the API fails.
     """
     if folder and folder_uuid:
@@ -111,7 +135,7 @@ def submit_binding_affinity_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    mol_dicts: list[dict] = []
+    mol_dicts: list[dict[str, Any]] = []
     if ligand_structures:
         for mol in ligand_structures:
             require_coordinates(mol)
@@ -121,6 +145,8 @@ def submit_binding_affinity_workflow(
         protein=protein,
         ligand_residue_name=ligand_residue_name,
         ligand_structures=mol_dicts or [],
+        protein_sequences=protein_sequences or [],
+        ligand_smiles=ligand_smiles or [],
         binding_affinity_settings=binding_affinity_settings or SinglePointEnergySettings(),
     )
 
