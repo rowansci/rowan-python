@@ -3,6 +3,16 @@
 The docking workflow supports Vina docking and both noncovalent and covalent gnina docking.
 Passing `GninaSettings` selects gnina; it does not by itself enable covalent docking.
 
+## Induced-fit docking
+
+Pass `rowan.InducedFitSettings()` to `induced_fit_settings` when nearby receptor side chains may
+need to relax around the ligand. Induced fit requires Vina or QVina2 and adds substantial work
+beyond rigid docking.
+
+Results contain both rigid and induced-receptor poses ranked by `induced_fit_score`. Use
+`get_induced_receptor()` or `get_induced_receptors()` to retrieve the relaxed receptors associated
+with induced poses. See `examples/induced_fit_docking.py` for a complete example.
+
 ## Covalent docking
 
 Set both covalent atom indices on `GninaSettings` to form a bond between a known ligand atom and

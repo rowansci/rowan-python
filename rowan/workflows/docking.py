@@ -4,6 +4,7 @@ import warnings
 from dataclasses import dataclass
 
 import stjames
+from stjames import InducedFitSettings
 
 from ..calculation import Calculation, retrieve_calculation
 from ..folder import Folder
@@ -28,6 +29,15 @@ class DockingScore:
     :param score: Docking score in kcal/mol.
     :param posebusters_valid: PoseBusters validity, or `None` when not evaluated.
     :param mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol.
+    :param receptor_strain: Induced receptor strain relative to its locally relaxed unbound
+        state, in kcal/mol. Only populated when induced-fit docking is enabled; zero for rigid
+        poses.
+    :param geometry_penalty: PoseBusters failure penalty used to rank induced-fit results: 0 for
+        a passing pose, 100 for a failing pose, and `None` when induced-fit docking is disabled.
+    :param induced_fit_score: Composite score used to rank rigid and induced-fit poses together,
+        in kcal/mol. Only populated when induced-fit docking is enabled.
+    :param induced_receptor_pdb: UUID of the relaxed receptor used for induced-fit redocking.
+        Only set for poses from an induced receptor.
     """
 
     score: float
@@ -37,6 +47,10 @@ class DockingScore:
     strain: float | None = None
     rmsd: float | None = None
     mmgbsa_score: float | None = None
+    receptor_strain: float | None = None
+    geometry_penalty: float | None = None
+    induced_fit_score: float | None = None
+    induced_receptor_pdb: ProteinUUID | None = None
 
 
 @register_result("docking")
@@ -47,7 +61,10 @@ class DockingResult(WorkflowResult):
 
     def __repr__(self) -> str:
         scores = self.scores
-        best = min((s.score for s in scores), default=None)
+        best = min(
+            (s.induced_fit_score if s.induced_fit_score is not None else s.score for s in scores),
+            default=None,
+        )
         return f"<DockingResult poses={len(scores)} best_score={best}>"
 
     def __post_init__(self) -> None:
@@ -68,6 +85,10 @@ class DockingResult(WorkflowResult):
                 strain=s.strain,
                 rmsd=s.rmsd,
                 mmgbsa_score=s.mmgbsa_score,
+                receptor_strain=s.receptor_strain,
+                geometry_penalty=s.geometry_penalty,
+                induced_fit_score=s.induced_fit_score,
+                induced_receptor_pdb=s.induced_receptor_pdb,
             )
             for s in self._workflow.scores
         ]
@@ -150,6 +171,44 @@ class DockingResult(WorkflowResult):
                 complexes.append(self.get_complex(i))
         return complexes
 
+    def get_induced_receptor(self, index: int = 0) -> Protein:
+        """
+        Fetch the relaxed receptor structure used for an induced-fit pose's redocking.
+
+        Only populated for poses produced by the induced-fit phase (see
+        ``DockingScore.induced_receptor_pdb``); rigid poses share the original receptor.
+
+        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
+        :returns: Protein object with the induced (relaxed) receptor structure.
+        :raises IndexError: If index is out of range.
+        :raises ValueError: If the pose has no induced receptor UUID.
+        """
+        scores = self.scores
+        if index < 0 or index >= len(scores):
+            raise IndexError(f"Pose index {index} out of range (0-{len(scores) - 1})")
+
+        uuid = scores[index].induced_receptor_pdb
+        if not uuid:
+            raise ValueError(f"Pose {index} has no induced receptor UUID")
+
+        cache_key = f"induced_receptor_{uuid}"
+        if cache_key not in self._cache:
+            self._cache[cache_key] = retrieve_protein(uuid, workflow_uuid=self.workflow_uuid)
+        return self._cache[cache_key]
+
+    def get_induced_receptors(self) -> list[Protein]:
+        """
+        Fetch all induced (relaxed) receptor structures.
+
+        :returns: List of Protein objects for each induced-fit pose's receptor (ordered by
+            score). Poses without an induced receptor are omitted.
+        """
+        receptors: list[Protein] = []
+        for i, score in enumerate(self.scores):
+            if score.induced_receptor_pdb:
+                receptors.append(self.get_induced_receptor(i))
+        return receptors
+
 
 def submit_docking_workflow(
     protein: Protein | ProteinUUID,
@@ -163,6 +222,7 @@ def submit_docking_workflow(
     do_csearch: bool = False,
     do_optimization: bool = False,
     do_pose_refinement: bool = True,
+    induced_fit_settings: InducedFitSettings | None = None,
     name: str = "Docking Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -191,6 +251,10 @@ def submit_docking_workflow(
     :param do_csearch: Whether to perform a conformational search on the ligand.
     :param do_optimization: Whether to perform an optimization on the ligand.
     :param do_pose_refinement: Whether or not to optimize output poses.
+    :param induced_fit_settings: Settings enabling induced-fit docking: soft-docks candidate
+        poses, relaxes the receptor around each with restrained local minimization, and redocks
+        into the relaxed receptor. ``None`` (default) disables it. Requires ``docking_settings``
+        to be ``VinaSettings`` with ``executable="vina"`` or ``"qvina2"``.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -239,6 +303,7 @@ def submit_docking_workflow(
         do_optimization=do_optimization,
         do_pose_refinement=do_pose_refinement,
         docking_settings=docking_settings,
+        induced_fit_settings=induced_fit_settings,
     )
 
     workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")

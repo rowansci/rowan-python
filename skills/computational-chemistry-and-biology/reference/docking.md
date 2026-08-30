@@ -69,6 +69,30 @@ every docking run or pose has an MM/GBSA value.
 - `do_csearch` (default `False`): run an OpenConf conformer search on the input before docking, generating an ensemble of starting poses rather than one arbitrary geometry. This is what enables the per-pose `strain` estimate, but it can significantly increase runtime for large systems.
 - `do_optimization` (default `False`): run an AIMNet2 optimization on the input ligand before docking. Skip it if the input is already optimized, to save time.
 - `do_pose_refinement` (default `True`): run a constrained AIMNet2 optimization on the output poses (gently relieves clashes without erasing the binding mode).
+- `induced_fit_settings` (default `None`): pass `rowan.InducedFitSettings()` to relax representative receptor structures and redock into them. Requires `rowan.VinaSettings` with the `vina` or `qvina2` executable and adds substantial cost relative to rigid docking.
+
+## Induced-fit docking
+
+Use induced-fit docking when binding-site side chains may reorganize around the ligand and rigid
+docking is unlikely to represent the bound receptor geometry. The workflow retains rigid poses,
+generates relaxed receptors from representative soft-docked poses, and redocks into them.
+
+```python
+wf = rowan.submit_docking_workflow(
+    protein.uuid,
+    pocket=[center, size],
+    initial_molecule=ligand,
+    docking_settings=rowan.VinaSettings(executable="vina"),
+    induced_fit_settings=rowan.InducedFitSettings(max_receptors=6),
+)
+```
+
+With induced fit enabled, `result.scores` is ranked by `induced_fit_score`, the sum of docking
+score, receptor strain, available ligand strain, and `geometry_penalty`. Despite its name,
+`geometry_penalty` is simply a PoseBusters failure penalty used for ranking: 0 for a passing pose
+and 100 for a failing pose. `induced_receptor_pdb` identifies poses produced from a relaxed receptor;
+`result.get_induced_receptor(index)` retrieves that receptor, while
+`result.get_induced_receptors()` retrieves all of them. Rigid poses have no induced receptor UUID.
 
 ## gnina docking
 

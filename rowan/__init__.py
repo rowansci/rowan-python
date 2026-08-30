@@ -22,6 +22,7 @@ from stjames import (
     GninaSettings,
     GreedyClusteringSettings,
     iMTDSettings,
+    InducedFitSettings,
     KMeansClusteringSettings,
     Method,
     Mode,
