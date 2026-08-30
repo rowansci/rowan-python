@@ -7,6 +7,7 @@ import stjames
 from stjames import ConformerGenSettingsUnion
 
 from ..folder import Folder
+from ..types import SMILES
 from ..utils import api_client
 from .base import (
     Solvent,
@@ -50,12 +51,14 @@ class SolventDependentConformer:
     :param relative_free_energy_by_solvent: Free energy relative to lowest conformer per solvent
         (kcal/mol).
     :param population_by_solvent: Boltzmann population per solvent (0-1).
+    :param smiles: Canonical SMILES identifying the conformer's tautomer.
     """
 
     calculation_uuid: str
     free_energy_by_solvent: dict[Solvent, float]
     relative_free_energy_by_solvent: dict[Solvent, float]
     population_by_solvent: dict[Solvent, float]
+    smiles: SMILES | None = None
 
 
 @register_result("solvent_dependent_conformers")
@@ -86,6 +89,7 @@ class SolventDependentConformersResult(WorkflowResult):
         return [
             SolventDependentConformer(
                 calculation_uuid=str(c.calculation),
+                smiles=c.smiles,
                 free_energy_by_solvent=dict(c.free_energy_by_solvent),
                 relative_free_energy_by_solvent=dict(c.relative_free_energy_by_solvent),
                 population_by_solvent=dict(c.population_by_solvent),
@@ -116,6 +120,7 @@ def submit_solvent_dependent_conformers_workflow(
     solvents: list[Solvent] | None = None,
     conf_gen_settings: ConformerGenSettingsUnion | None = None,
     final_correction: Literal["COSMO_RS", "CPCMX"] | None = None,
+    enumerate_tautomers: bool = False,
     name: str = "Solvent-Dependent Conformers",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -140,6 +145,8 @@ def submit_solvent_dependent_conformers_workflow(
         each type carries its own stjames default.
     :param final_correction: Solvent method used for the final per-conformer corrections,
         `COSMO_RS` or `CPCMX`.
+    :param enumerate_tautomers: Whether to enumerate and screen tautomers before generating
+        conformers.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -161,6 +168,7 @@ def submit_solvent_dependent_conformers_workflow(
     workflow = stjames.SolventDependentConformersWorkflow(
         initial_molecule=mol_dict,
         solvents=solvents if solvents is not None else _DEFAULT_SOLVENTS,
+        enumerate_tautomers=enumerate_tautomers,
         **({"conf_gen_settings": conf_gen_settings} if conf_gen_settings is not None else {}),
         **({"final_correction": final_correction} if final_correction is not None else {}),
     )

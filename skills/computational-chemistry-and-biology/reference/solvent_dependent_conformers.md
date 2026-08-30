@@ -34,9 +34,10 @@ for i, conf in enumerate(result.conformers):
 - `solvents` (default hexane, octanol, chloroform, DMSO, and water): solvents to score conformers in, as a list of `rowan.Solvent` enum values. Scoring uses CPCM-X.
 - `conf_gen_settings`: conformer generation settings. When omitted, inherits the stjames default for this workflow (currently OpenConf). Other options: `rowan.ETKDGSettings`, `rowan.iMTDSettings`, `rowan.iMTDGCSettings`. The energy window lives on this object (e.g. `OpenConfSettings.energy_window_kcal`, default 10), not as a separate argument.
 - `final_correction`: final per-conformer solvent correction, `"COSMO_RS"` or `"CPCMX"`. Omitting it uses the stjames workflow default, currently `"CPCMX"`.
+- `enumerate_tautomers` (default `False`): include solvent-competitive tautomers and same-net-charge zwitterions in the conformer ensemble. This adds a screening step before conformer generation.
 
 ## Result fields
 
 - `relative_free_energy_by_solvent`: transfer free energy per solvent, relative to the lowest (kcal/mol).
-- `conformers`: per-conformer results, each with `population_by_solvent` and `relative_free_energy_by_solvent`.
+- `conformers`: per-conformer results, each with its tautomer `smiles`, `population_by_solvent`, and `relative_free_energy_by_solvent`.
 - `per_solvent_properties`: per-solvent ensemble averages — `solvent_accessible_surface_area`, `polar_solvent_accessible_surface_area`, `radius_of_gyration`.
