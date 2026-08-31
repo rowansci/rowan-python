@@ -192,7 +192,6 @@ def submit_analogue_docking_workflow(
     exhaustiveness: int = 8,
     max_poses: int = 4,
     num_conformers_per_analogue: int = 20,
-    require_posebusters: bool = False,
     run_local_optimization: bool = False,
     name: str = "Analogue Docking Workflow",
     folder_uuid: str | None = None,
@@ -214,7 +213,6 @@ def submit_analogue_docking_workflow(
     :param exhaustiveness: How many times Vina attempts to find a pose for each conformer.
     :param max_poses: Maximum number of poses generated per input conformer.
     :param num_conformers_per_analogue: Maximum number of conformers to generate per analogue.
-    :param require_posebusters: Filter conformers based on PoseBusters validity before docking.
     :param run_local_optimization: Whether to run a local opt in docking pocket or just score.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
@@ -254,7 +252,6 @@ def submit_analogue_docking_workflow(
         protein=protein,
         docking_settings=docking_settings,
         num_conformers_per_analogue=num_conformers_per_analogue,
-        require_posebusters=require_posebusters,
         run_local_optimization=run_local_optimization,
     )
 

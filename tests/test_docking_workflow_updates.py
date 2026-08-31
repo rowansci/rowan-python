@@ -106,12 +106,12 @@ def test_batch_docking_results_align_with_input_smiles() -> None:
     assert result.refined_scores["CCCC"] is None
 
 
-def test_analogue_docking_default_matches_stjames() -> None:
-    """Keep the public analogue conformer default aligned with stjames."""
-    assert (
-        inspect.signature(analogue_docking_module.submit_analogue_docking_workflow)
-        .parameters["num_conformers_per_analogue"]
-        .default
-        == 20
-    )
+def test_analogue_docking_defaults_match_stjames() -> None:
+    """Keep public analogue controls aligned with StJames."""
+    parameters = inspect.signature(
+        analogue_docking_module.submit_analogue_docking_workflow
+    ).parameters
+    assert parameters["num_conformers_per_analogue"].default == 20
+    assert "require_posebusters" not in parameters
     assert stjames.AnalogueDockingWorkflow.model_fields["num_conformers_per_analogue"].default == 20
+    assert stjames.AnalogueDockingWorkflow.model_fields["require_posebusters"].default is False

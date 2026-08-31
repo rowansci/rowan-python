@@ -9,7 +9,7 @@ A protein, a reference ligand already bound in its pocket, and a list of analogu
 - `initial_molecule`: the reference bound pose, used as the template the analogues are aligned to. Read it from a file with `rowan.Molecule.from_xyz_file(path)`, or pass a `rowan.Molecule`.
 - Protein: any stored `rowan.Protein` or protein UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Protein preparation is recommended before docking; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
 
-This workflow generates conformers of each analogue in poses analogous to the bound reference ligand. Local optimization with the docking scoring function and PoseBusters validation are both opt-in (see Settings).
+This workflow generates conformers of each analogue in poses analogous to the bound reference ligand. Local optimization with the docking scoring function is optional (see Settings).
 
 ## Getting a bound reference pose
 
@@ -57,9 +57,9 @@ print(result)  # e.g. <AnalogueDockingResult analogues=3 best=(-8.30, 'CN(C)CCC.
 posed = {p.name: p for p in result.best_poses.values()}
 ```
 
-Each entry in `result.analogue_scores[smiles]` has the Vina `score` and an optional
-`mmgbsa_score`, both in kcal/mol. `mmgbsa_score` is populated only when
-`run_local_optimization=True`; otherwise it is `None`.
+Each entry in `result.analogue_scores[smiles]` has the Vina `score`, an optional
+`mmgbsa_score`, and `posebusters_valid` for the final pose. Scores are in kcal/mol;
+`mmgbsa_score` is populated only when `run_local_optimization=True`.
 
 ## Settings
 
@@ -67,5 +67,4 @@ Each entry in `result.analogue_scores[smiles]` has the Vina `score` and an optio
 - `exhaustiveness` (default `8`): how many times Vina attempts to find a pose for each conformer. 8 is typical; 32 is relatively careful.
 - `max_poses` (default `4`): maximum number of poses generated per input conformer.
 - `num_conformers_per_analogue` (default `20`): maximum number of conformers generated per analogue. The default is suitable for routine use; increase it for broader sampling when preparing structures for free energy perturbation calculations.
-- `require_posebusters` (default `False`): run PoseBusters validity checks and keep only poses that pass.
 - `run_local_optimization` (default `False`): optimize each pose within the binding pocket after generation and compute its MM/GBSA binding free energy estimate. Leaving this off is recommended when consistent template alignment is more important, since local optimization can move poses off the template; `mmgbsa_score` is `None` when it is off.
