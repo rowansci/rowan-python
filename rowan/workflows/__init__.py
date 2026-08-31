@@ -110,13 +110,19 @@ from .protein_binder_design import (
     submit_protein_binder_design_workflow,
 )
 from .protein_cofolding import (
+    BondConstraint,
     CofoldingModel,
     CofoldingResult,
     CofoldingTemplate,
     ConstraintTarget,
     ContactConstraint,
+    DNASequence,
+    NucleotideModification,
     PocketConstraint,
     ProteinCofoldingResult,
+    ProteinSequence,
+    ResidueModification,
+    RNASequence,
     submit_protein_cofolding_workflow,
 )
 from .protein_md import ProteinMDResult, submit_protein_md_workflow

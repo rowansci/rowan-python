@@ -4,12 +4,18 @@
 
 One or more biomolecule sequences, optionally with ligands, supplied directly as sequences and SMILES (no prepared `Protein` object needed). At least one protein, DNA, or RNA sequence is required; ligands alone are not enough, and submitting without a biomolecule sequence raises a `ValueError`.
 
-- `initial_protein_sequences`: a list of protein amino-acid sequences.
-- `initial_dna_sequences`, `initial_rna_sequences`: lists of nucleic-acid sequences.
+- `initial_protein_sequences`: a list of protein amino-acid sequences. Use
+  `rowan.ProteinSequence` entries to specify cyclic proteins or residue modifications.
+- `initial_dna_sequences`, `initial_rna_sequences`: lists of nucleic-acid sequences. Use
+  `rowan.DNASequence` or `rowan.RNASequence` entries to specify nucleotide modifications.
 - `initial_smiles_list`: a list of ligand SMILES, all co-folded together with the biomolecules in a single complex. One workflow is one prediction of the whole complex, not one job per ligand; to screen several ligands separately, submit one workflow per ligand.
 - `ligand_binding_affinity_index`: index into `initial_smiles_list` of the ligand to predict a binding affinity for.
 
-This workflow predicts 3D structures of biomolecules and protein-ligand complexes using AlphaFold 3-style models (Boltz-2, Boltz-2.1, Chai-1r, Boltz-1, OpenFold-3).
+Typed sequences accept `rowan.ResidueModification` or `rowan.NucleotideModification` entries.
+Modification positions are 0-based, and `ccd` is the modified residue's PDB Chemical Component
+Dictionary code.
+
+This workflow predicts 3D structures of biomolecules and protein-ligand complexes using AlphaFold 3-style models (Boltz-2, Boltz-2.1, Chai-1r, Boltz-1, OpenFold-3, DeCAF Boltz).
 
 ## Example
 
@@ -41,7 +47,7 @@ print(result)  # e.g. <ProteinCofoldingResult predictions=5 iptm=0.87>
 
 ## Settings
 
-- `model` (default `boltz_2`): co-folding model, one of `boltz_2`, `boltz_2_1`, `chai_1r`, `boltz_1`, `openfold_3`. The model changes which `affinity_score` fields are returned (see Result fields). `boltz_2_1` runs via Boltz's hosted API and is noticeably slower than the locally-run models.
+- `model` (default `boltz_2`): co-folding model, one of `boltz_2`, `boltz_2_1`, `chai_1r`, `boltz_1`, `openfold_3`, `decaf_boltz`. The model changes which `affinity_score` fields are returned (see Result fields). `boltz_2_1` runs via Boltz's hosted API and is noticeably slower than the locally-run models. DeCAF Boltz does not support DNA, RNA, structural templates, or binding-affinity prediction.
 - `use_msa_server` (default `True`): generate a multiple-sequence alignment, which improves co-folding accuracy. Queries run on a secure Rowan-hosted server.
 - `use_potentials` (default `False`): use physics-based potentials to steer predictions toward more physical poses (this is what distinguishes Boltz-2x from Boltz-2). Required when a constraint sets `force=True`.
 - `num_samples` (default model-dependent): number of predicted samples to generate.
@@ -52,7 +58,7 @@ print(result)  # e.g. <ProteinCofoldingResult predictions=5 iptm=0.87>
 
 ## Constraints
 
-Encode prior knowledge of where a ligand binds with `pocket_constraints` and `contact_constraints`. Targets are addressed with `rowan.ConstraintTarget(input_type, input_index, token_index)`, where `input_type` is `"protein"` or `"ligand"`, `input_index` selects which entry in the input lists, and `token_index` is the residue index for proteins or the atom index for ligands.
+Encode prior knowledge with pocket, contact, and covalent-bond constraints. Targets are addressed with `rowan.ConstraintTarget(input_type, input_index, token_index)`, where `input_type` is `"protein"`, `"dna"`, `"rna"`, or `"ligand"`, `input_index` selects an entry in the corresponding input list, and `token_index` is a 0-based residue or ligand-atom index.
 
 ```python
 his57 = rowan.ConstraintTarget(input_type="protein", input_index=0, token_index=39)
@@ -86,6 +92,7 @@ wf = rowan.submit_protein_cofolding_workflow(
 
 - `pocket_constraints`: a list of `rowan.PocketConstraint`, each placing one binder near a set of contact residues within `max_distance` angstroms.
 - `contact_constraints`: a list of `rowan.ContactConstraint`, each holding two targets within `max_distance` angstroms. Setting `force=True` enforces the contact and requires `use_potentials=True`.
+- `bond_constraints`: a list of `rowan.BondConstraint(atom_1=..., atom_2=...)` covalent bonds for Boltz-2. Set `atom_name` on protein, DNA, or RNA targets; ligand atoms are selected by `token_index`. Bond constraints cannot be combined with pose refinement or strain calculation.
 
 ## Result fields
 

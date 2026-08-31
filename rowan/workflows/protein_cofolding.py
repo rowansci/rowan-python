@@ -10,11 +10,17 @@ from ..utils import api_client
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
 CofoldingModel = stjames.CofoldingModel
+ProteinSequence = stjames.ProteinSequence
+DNASequence = stjames.DNASequence
+RNASequence = stjames.RNASequence
+ResidueModification = stjames.ResidueModification
+NucleotideModification = stjames.NucleotideModification
 # `ConstraintTarget` aliases stjames's `Token` - one position in an input
 # (a protein/nucleic-acid residue or a ligand atom) addressable by a constraint.
 ConstraintTarget = stjames.workflows.protein_cofolding.Token
 ContactConstraint = stjames.workflows.protein_cofolding.ContactConstraint
 PocketConstraint = stjames.workflows.protein_cofolding.PocketConstraint
+BondConstraint = stjames.workflows.protein_cofolding.BondConstraint
 CofoldingTemplate = stjames.workflows.protein_cofolding.CofoldingTemplate
 
 
@@ -269,15 +275,16 @@ class ProteinCofoldingResult(WorkflowResult):
 
 
 def submit_protein_cofolding_workflow(
-    initial_protein_sequences: list[str] | None = None,
-    initial_dna_sequences: list[str] | None = None,
-    initial_rna_sequences: list[str] | None = None,
+    initial_protein_sequences: list[str] | list[ProteinSequence] | None = None,
+    initial_dna_sequences: list[str | DNASequence] | None = None,
+    initial_rna_sequences: list[str | RNASequence] | None = None,
     initial_smiles_list: list[str] | None = None,
     ligand_binding_affinity_index: int | None = None,
     use_msa_server: bool = True,
     use_potentials: bool = False,
     contact_constraints: list[ContactConstraint] | None = None,
     pocket_constraints: list[PocketConstraint] | None = None,
+    bond_constraints: list[BondConstraint] | None = None,
     templates: list[CofoldingTemplate] | None = None,
     num_samples: int | None = None,
     compute_strain: bool = False,
@@ -310,6 +317,8 @@ def submit_protein_cofolding_workflow(
     :param use_potentials: Whether to use potentials (inference-time steering) with Boltz.
     :param contact_constraints: Boltz contact constraints between two tokens.
     :param pocket_constraints: Boltz pocket constraints between a binder and contact tokens.
+    :param bond_constraints: Boltz-2 covalent bond constraints between two atoms. Incompatible
+        with pose refinement and strain calculation.
     :param templates: Structural templates to guide prediction (Boltz-2/2.1 or OpenFold-3 only).
     :param num_samples: Number of diffusion samples to generate. If None, uses the model default.
     :param compute_strain: Whether to compute the strain of the pose. Requires do_pose_refinement.
@@ -318,7 +327,8 @@ def submit_protein_cofolding_workflow(
     :param name: Name of the workflow.
     :param model: Model to use for the computation. Boltz-2.1 runs via Boltz's
         hosted API (slower than the locally-run models) and reports a different
-        set of affinity metrics than Boltz-2 (see `AffinityScore`).
+        set of affinity metrics than Boltz-2 (see `AffinityScore`). DeCAF Boltz does not
+        support nucleic acids, templates, or binding-affinity prediction.
     :param folder_uuid: UUID of the folder to store the workflow in.
     :param folder: Folder object to store the workflow in.
     :param max_credits: Maximum number of credits to use for the workflow.
@@ -355,21 +365,28 @@ def submit_protein_cofolding_workflow(
         use_potentials=use_potentials,
         contact_constraints=contact_constraints or [],
         pocket_constraints=pocket_constraints or [],
+        bond_constraints=bond_constraints or [],
         templates=templates or [],
         num_samples=num_samples,
         model=model_str,
         ligand_binding_affinity_index=ligand_binding_affinity_index,
         initial_smiles_list=initial_smiles_list or [],
         initial_protein_sequences=initial_protein_sequences or [],
-        initial_dna_sequences=initial_dna_sequences or [],
-        initial_rna_sequences=initial_rna_sequences or [],
+        initial_dna_sequences=[
+            sequence if isinstance(sequence, DNASequence) else DNASequence(sequence=sequence)
+            for sequence in initial_dna_sequences or []
+        ],
+        initial_rna_sequences=[
+            sequence if isinstance(sequence, RNASequence) else RNASequence(sequence=sequence)
+            for sequence in initial_rna_sequences or []
+        ],
         do_pose_refinement=do_pose_refinement,
         compute_strain=compute_strain,
     )
 
     data = {
         "workflow_type": "protein_cofolding",
-        "workflow_data": workflow.model_dump(mode="json"),
+        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
