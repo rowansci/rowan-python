@@ -35,6 +35,9 @@ class ProteinMDTrajectory:
         clustering is set).
     :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
         is set).
+    :param protein_rmsd: Per-frame Cα RMSD from the first frame, in angstrom.
+    :param rmsf: Per-Cα RMSF from the mean structure, in angstrom.
+    :param potential_energy: Per-frame potential energy of the simulated system, in Hartree.
     :param binder_rmsd: Per-frame binder RMSD, when the binder has one component.
     :param mmgbsa_scores: Per-frame MM/GBSA score for the complete binder.
     :param mean_structure_uuid: UUID of the coordinate-averaged structure.
@@ -47,6 +50,9 @@ class ProteinMDTrajectory:
     isotropic_radius_of_gyration: list[float]
     cluster_centroid_indices: list[int]
     cluster_indices_by_frame: list[int]
+    protein_rmsd: list[float] = field(default_factory=list)
+    rmsf: list[float] = field(default_factory=list)
+    potential_energy: list[float] = field(default_factory=list)
     binder_rmsd: list[float] = field(default_factory=list)
     mmgbsa_scores: list[float | None] = field(default_factory=list)
     mean_structure_uuid: str | None = None
@@ -93,6 +99,9 @@ class ProteinMDResult(_MolecularDynamicsResult):
                 isotropic_radius_of_gyration=t.isotropic_radius_of_gyration,
                 cluster_centroid_indices=t.cluster_centroid_indices,
                 cluster_indices_by_frame=t.cluster_indices_by_frame,
+                protein_rmsd=t.protein_rmsd,
+                rmsf=t.rmsf,
+                potential_energy=t.potential_energy,
                 binder_rmsd=t.binder_rmsd,
                 mmgbsa_scores=t.mmgbsa_scores,
                 mean_structure_uuid=t.mean_structure_uuid,

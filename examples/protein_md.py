@@ -21,3 +21,7 @@ md_workflow = rowan.submit_protein_md_workflow(
 )
 
 print(f"View MD workflow privately at: https://labs.rowansci.com/protein-md/{md_workflow.uuid}")
+trajectory = md_workflow.result().trajectories[0]
+print(f"Protein RMSD: {trajectory.protein_rmsd}")
+print(f"Protein RMSF: {trajectory.rmsf}")
+print(f"Potential energy: {trajectory.potential_energy} Hartree")

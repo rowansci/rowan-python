@@ -45,5 +45,9 @@ print(
 )
 md_result = md_workflow.result()
 
-# print ligand RMSD by frame
-print(md_result.trajectories[0].ligand_rmsd)
+trajectory = md_result.trajectories[0]
+print(f"Ligand RMSD: {trajectory.ligand_rmsd}")
+print(f"Protein RMSD: {trajectory.protein_rmsd}")
+print(f"Protein RMSF: {trajectory.rmsf}")
+print(f"Potential energy: {trajectory.potential_energy} Hartree")
+print(f"MM/GBSA scores: {trajectory.mmgbsa_scores} kcal/mol")

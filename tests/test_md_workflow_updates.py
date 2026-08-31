@@ -78,8 +78,15 @@ def test_md_trajectory_constructors_preserve_their_previous_signatures() -> None
 
     assert protein_trajectory.binder_rmsd == []
     assert protein_trajectory.mmgbsa_scores == []
+    assert protein_trajectory.protein_rmsd == []
+    assert protein_trajectory.rmsf == []
+    assert protein_trajectory.potential_energy == []
     assert protein_trajectory.mean_structure_uuid is None
     assert protein_trajectory.median_structure_frame_index is None
+    assert pose_trajectory.protein_rmsd == []
+    assert pose_trajectory.rmsf == []
+    assert pose_trajectory.potential_energy == []
+    assert pose_trajectory.mmgbsa_scores == []
     assert pose_trajectory.mean_structure_uuid is None
     assert pose_trajectory.median_structure_frame_index is None
 
@@ -112,6 +119,9 @@ def test_protein_md_exposes_binder_and_representative_structure_results(
         trajectories=[
             {
                 "uuid": "trajectory-uuid",
+                "protein_rmsd": [0.0, 0.4],
+                "rmsf": [0.2, 0.3],
+                "potential_energy": [-1.1, -1.2],
                 "binder_rmsd": [1.0, 1.2],
                 "mmgbsa_scores": [-20.0, None],
                 "mean_structure_uuid": "mean-uuid",
@@ -125,6 +135,9 @@ def test_protein_md_exposes_binder_and_representative_structure_results(
         workflow_uuid="workflow-uuid",
     )
     trajectory = result.trajectories[0]
+    assert trajectory.protein_rmsd == [0.0, 0.4]
+    assert trajectory.rmsf == [0.2, 0.3]
+    assert trajectory.potential_energy == [-1.1, -1.2]
     assert trajectory.binder_rmsd == [1.0, 1.2]
     assert trajectory.mmgbsa_scores == [-20.0, None]
     assert trajectory.mean_structure_uuid == "mean-uuid"
@@ -215,8 +228,8 @@ def test_pose_analysis_md_uses_new_defaults_and_forcefields(monkeypatch: MonkeyP
     assert payload["water_buffer"] == 8
 
 
-def test_pose_analysis_md_exposes_representative_structure_results() -> None:
-    """Expose representative-structure metadata for new and old results."""
+def test_pose_analysis_md_exposes_trajectory_analysis_results() -> None:
+    """Expose trajectory analyses and representative structures for new and old results."""
 
     workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
         protein="protein-uuid",
@@ -224,6 +237,10 @@ def test_pose_analysis_md_exposes_representative_structure_results() -> None:
         trajectories=[
             {
                 "uuid": "trajectory-uuid",
+                "protein_rmsd": [0.0, 0.5],
+                "rmsf": [0.1, 0.2],
+                "potential_energy": [-1.3, -1.4],
+                "mmgbsa_scores": [-20.0, None],
                 "mean_structure_uuid": "mean-uuid",
                 "median_structure_frame_index": 3,
             }
@@ -234,8 +251,13 @@ def test_pose_analysis_md_exposes_representative_structure_results() -> None:
         workflow_type="pose_analysis_md",
         workflow_uuid="workflow-uuid",
     )
-    assert result.trajectories[0].mean_structure_uuid == "mean-uuid"
-    assert result.trajectories[0].median_structure_frame_index == 3
+    trajectory = result.trajectories[0]
+    assert trajectory.protein_rmsd == [0.0, 0.5]
+    assert trajectory.rmsf == [0.1, 0.2]
+    assert trajectory.potential_energy == [-1.3, -1.4]
+    assert trajectory.mmgbsa_scores == [-20.0, None]
+    assert trajectory.mean_structure_uuid == "mean-uuid"
+    assert trajectory.median_structure_frame_index == 3
 
     old_workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
         protein="protein-uuid",
@@ -247,6 +269,10 @@ def test_pose_analysis_md_exposes_representative_structure_results() -> None:
         workflow_type="pose_analysis_md",
         workflow_uuid="old-workflow",
     )
+    assert old_result.trajectories[0].protein_rmsd == []
+    assert old_result.trajectories[0].rmsf == []
+    assert old_result.trajectories[0].potential_energy == []
+    assert old_result.trajectories[0].mmgbsa_scores == []
     assert old_result.trajectories[0].mean_structure_uuid is None
     assert old_result.trajectories[0].median_structure_frame_index is None
 

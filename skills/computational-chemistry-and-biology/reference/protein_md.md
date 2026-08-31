@@ -67,7 +67,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 ## Result fields
 
 - `trajectory_uuids`: UUIDs of the trajectory calculations, one per replicate.
-- `trajectories`: per-replicate results. Each exposes the radius of gyration per frame (`isotropic_radius_of_gyration`); `sasa` and `polar_sasa` when `analysis_interval_ps` is set; `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set; `mmgbsa_scores` (per-frame MM/GBSA binding-side interaction energy, kcal/mol) when a `binder` is set; and `binder_rmsd` (per-frame binder RMSD vs starting pose, Å — heavy-atom RMSD for a single small-molecule binder or backbone N/CA/C/O RMSD for a single binder chain; empty for multi-component binders) when a `binder` is set.
+- `trajectories`: per-replicate results. Each exposes `protein_rmsd` (per-frame Cα RMSD from frame 0, Å), `rmsf` (per-Cα RMSF from the mean structure, Å), `potential_energy` (per-frame whole-system potential energy, Hartree), and the radius of gyration per frame (`isotropic_radius_of_gyration`). `sasa` and `polar_sasa` are populated when `analysis_interval_ps` is set; `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set; and `mmgbsa_scores` (per-frame MM/GBSA binding-side interaction energy, kcal/mol) plus `binder_rmsd` when a `binder` is set.
 - `minimized_protein_uuid` / `get_minimized_protein()`: the energy-minimized protein.
 - `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate.
 - `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure.
