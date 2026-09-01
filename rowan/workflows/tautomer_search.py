@@ -109,6 +109,7 @@ def submit_tautomer_search_workflow(
     conf_gen_settings: stjames.ConformerGenSettingsUnion | None = None,
     multistage_opt_settings: stjames.MultiStageOptSettings | None = None,
     final_correction: Literal["COSMO_RS"] | None = None,
+    screening_window: float = 10.0,
     name: str = "Tautomer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -127,6 +128,8 @@ def submit_tautomer_search_workflow(
         CPCMx(water) singlepoint.
     :param final_correction: if `COSMO_RS`, applies an additional, more expensive COSMO-RS
         solvent correction to the final tautomer energies
+    :param screening_window: Maximum predicted relative energy retained during initial screening,
+        in kcal/mol.
     :param name: Name of the workflow.
     :param folder_uuid: UUID of the folder to place the workflow in.
     :param folder: Folder object to store the workflow in.
@@ -143,7 +146,10 @@ def submit_tautomer_search_workflow(
         folder_uuid = folder.uuid
     mol_dict = molecule_to_dict(initial_molecule)
 
-    workflow_kwargs: dict[str, Any] = {"initial_molecule": mol_dict}
+    workflow_kwargs: dict[str, Any] = {
+        "initial_molecule": mol_dict,
+        "screening_window": screening_window,
+    }
     if conf_gen_settings is not None:
         workflow_kwargs["conf_gen_settings"] = conf_gen_settings
     if multistage_opt_settings is not None:

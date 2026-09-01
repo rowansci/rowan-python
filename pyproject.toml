@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "httpx",
-    "stjames>=0.0.257",
+    "stjames>=0.0.261",
     "setuptools",
     "rdkit",
     "nest-asyncio",
