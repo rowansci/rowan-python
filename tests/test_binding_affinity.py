@@ -121,4 +121,4 @@ def test_binding_affinity_results_preserve_failed_inputs() -> None:
         workflow_uuid="workflow-uuid",
     )
 
-    assert result.scores == [BindingAffinityScore(binding_affinity=-6.5, strain=None), None]
+    assert result.scores == [BindingAffinityScore(binding_affinity=-6.5), None]

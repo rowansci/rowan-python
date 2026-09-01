@@ -47,7 +47,7 @@ for name, score in zip(ligands.keys(), result.scores):
     if score is None:
         print(f"{name}: scoring failed")
         continue
-    print(f"{name}: {score.binding_affinity:.2f} kcal/mol (strain: {score.strain})")
+    print(f"{name}: {score.binding_affinity:.2f} kcal/mol")
 ```
 
 ## Settings
@@ -87,4 +87,3 @@ rowan.submit_binding_affinity_workflow(
 `BindingAffinityScore`, or `None` when that input failed:
 
 - `binding_affinity`: binding affinity in kcal/mol (ΔE = E(complex) − E(protein_region) − E(ligand)) for `SinglePointEnergySettings`, or in log10(M) for `GninaAffinitySettings`, `AEVPLIGAffinitySettings`, and `NessoAffinitySettings`.
-- `strain`: energy difference between the input pose and the SQM-optimized pose, in kcal/mol. Only populated for `SinglePointEnergySettings`; `None` for the other three methods.

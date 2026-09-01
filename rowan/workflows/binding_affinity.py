@@ -28,11 +28,9 @@ class BindingAffinityScore:
 
     :param binding_affinity: binding affinity in kcal/mol for SQM settings, or log10(M)
         for GNINA, AEV-PLIG, and NESSO settings.
-    :param strain: strain energy in kcal/mol, or None if not computed
     """
 
     binding_affinity: float
-    strain: float | None
 
 
 @register_result("binding_affinity")
@@ -50,10 +48,7 @@ class BindingAffinityResult(WorkflowResult):
         """Binding affinity scores in input order, with `None` for failed inputs."""
         return [
             (
-                BindingAffinityScore(
-                    binding_affinity=result.binding_affinity,
-                    strain=result.strain,
-                )
+                BindingAffinityScore(binding_affinity=result.binding_affinity)
                 if result is not None
                 else None
             )

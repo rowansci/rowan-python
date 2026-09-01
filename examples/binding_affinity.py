@@ -25,4 +25,4 @@ for name, score in zip(ligands.keys(), result.scores, strict=False):
     if score is None:
         print(f"{name}: scoring failed")
         continue
-    print(f"{name}: {score.binding_affinity:.2f} kcal/mol (strain: {score.strain})")
+    print(f"{name}: {score.binding_affinity:.2f} kcal/mol")
