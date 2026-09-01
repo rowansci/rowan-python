@@ -49,6 +49,26 @@ result = wf.result()
 - **Partial or progress:** `wf.result(wait=False)` returns what is ready now. `for result in wf.stream_result():` yields partial results and then the final result.
 - **Fire-and-forget:** preserve `wf.uuid`, then reconnect later with `rowan.retrieve_workflow(uuid).result()`. `rowan.list_workflows()` lists recent runs. The UUID from `labs.rowansci.com/calculation/<uuid>` is a workflow UUID; use `retrieve_workflow`, not `retrieve_calculation`.
 
+When a workflow fails or stops, no typed result is available. The backend log provides diagnostic
+context that may explain the failure; do not parse it as a substitute for workflow result values.
+Inspect the log carried by the exception:
+
+```python
+try:
+    result = wf.result()
+except rowan.WorkflowError as exc:
+    print(exc)
+    if exc.logfile:
+        print(exc.logfile)
+```
+
+To investigate a failure later, retrieve the workflow by UUID to get its latest diagnostic log:
+
+```python
+failed_workflow = rowan.retrieve_workflow(workflow_uuid)
+print(failed_workflow.logfile)
+```
+
 Use inline submit-and-wait for quick questions or one result. For long-running or multi-step experiments, write a reproducible script and prefer fire-and-forget retrieval or a webhook over blocking the session.
 
 **Estimate before committing:**

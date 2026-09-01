@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, call
 
+import pytest
+import stjames
 from pytest import MonkeyPatch
 
 from rowan.workflows import base
@@ -116,3 +118,30 @@ def test_retrieve_workflows_uses_bounded_batches(monkeypatch: MonkeyPatch) -> No
             json={"uuids": uuids[100:]},
         ),
     ]
+
+
+@pytest.mark.parametrize("status", [stjames.Status.FAILED, stjames.Status.STOPPED])
+def test_workflow_result_includes_log_for_unsuccessful_workflow(
+    monkeypatch: MonkeyPatch,
+    status: stjames.Status,
+) -> None:
+    """Include the refreshed workflow log in failed and stopped result errors."""
+    logfile = "Calculation failed because the input was invalid."
+
+    def add_logfile(workflow: base.Workflow, in_place: bool = True) -> base.Workflow:
+        assert in_place
+        workflow.logfile = logfile
+        return workflow
+
+    monkeypatch.setattr(base.Workflow, "fetch_latest", add_logfile)
+    response = _workflow_response(1) | {"object_status": status}
+    workflow = base.Workflow.model_validate(response)
+
+    with pytest.raises(base.WorkflowError) as error_info:
+        workflow.result(wait=False)
+
+    assert error_info.value.logfile == logfile
+    assert str(error_info.value) == (
+        f"Workflow 'workflow-1' {status.name.lower()} (uuid=workflow-uuid-1). "
+        "See WorkflowError.logfile for diagnostic details."
+    )

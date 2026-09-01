@@ -75,9 +75,19 @@ class DispatchInfo:
 
 
 class WorkflowError(Exception):
-    """Raised when a workflow fails or is stopped."""
+    """Raised when a workflow cannot return a result.
 
-    pass
+    The complete backend log is available through :attr:`logfile` rather than being included in
+    the exception text. It provides diagnostic context only and is not a source of workflow result
+    values.
+
+    :param message: error summary
+    :param logfile: workflow log returned by the API, when available
+    """
+
+    def __init__(self, message: str, *, logfile: str = "") -> None:
+        self.logfile = logfile
+        super().__init__(message)
 
 
 @dataclass(slots=True, repr=False)
@@ -350,7 +360,8 @@ Workflow:  {self.name}
             If False, return immediately with whatever data is available.
         :param poll_interval: Seconds between status checks while waiting.
         :returns: WorkflowResult subclass with typed access to results.
-        :raises WorkflowError: If the workflow failed or was stopped.
+        :raises WorkflowError: If the workflow failed or was stopped. Inspect the exception's
+            `logfile` attribute for the backend log.
         """
         if self.status == stjames.Status.DRAFT:
             raise WorkflowError(
@@ -365,7 +376,13 @@ Workflow:  {self.name}
 
         if self.status in {stjames.Status.FAILED, stjames.Status.STOPPED}:
             status = self.status.name.lower()
-            raise WorkflowError(f"Workflow '{self.name}' {status} (uuid={self.uuid})")
+            message = f"Workflow '{self.name}' {status} (uuid={self.uuid})"
+            if self.logfile:
+                message += ". See WorkflowError.logfile for diagnostic details."
+            raise WorkflowError(
+                message,
+                logfile=self.logfile,
+            )
 
         if not self.data:
             status = self.status.name.lower() if self.status else "unknown"
