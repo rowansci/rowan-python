@@ -1,6 +1,7 @@
 """Tests for workflow submission requests."""
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock, call
 
@@ -145,3 +146,49 @@ def test_workflow_result_includes_log_for_unsuccessful_workflow(
         f"Workflow 'workflow-1' {status.name.lower()} (uuid=workflow-uuid-1). "
         "See WorkflowError.logfile for diagnostic details."
     )
+
+
+def test_workflow_temporary_sharing_lifecycle(monkeypatch: MonkeyPatch) -> None:
+    """Start and end temporary workflow sharing."""
+    client = MagicMock()
+    public_until = "2099-07-17T01:30:00Z"
+    share_response = MagicMock()
+    share_response.json.return_value = _workflow_response(1) | {
+        "public_until": public_until,
+        "is_temporarily_public": True,
+    }
+    end_response = MagicMock()
+    end_response.json.return_value = _workflow_response(1) | {
+        "public_until": None,
+        "is_temporarily_public": False,
+    }
+    client.post.side_effect = [share_response, end_response]
+
+    @contextmanager
+    def mock_api_client():
+        yield client
+
+    monkeypatch.setattr(base, "api_client", mock_api_client)
+    workflow = base.Workflow.model_validate(_workflow_response(1))
+
+    shared_workflow = workflow.temporarily_share(90)
+
+    assert workflow.public_until is None
+    assert not workflow.is_temporarily_public
+    assert shared_workflow.public_until == datetime(2099, 7, 17, 1, 30, tzinfo=timezone.utc)
+    assert shared_workflow.is_temporarily_public
+
+    returned_workflow = shared_workflow.end_temporary_share(in_place=True)
+
+    assert client.post.call_args_list == [
+        call(
+            "/workflow/workflow-uuid-1/temporarily_share",
+            params={"duration_minutes": 90},
+        ),
+        call("/workflow/workflow-uuid-1/end_temporary_share"),
+    ]
+    share_response.raise_for_status.assert_called_once_with()
+    end_response.raise_for_status.assert_called_once_with()
+    assert returned_workflow is shared_workflow
+    assert shared_workflow.public_until is None
+    assert not shared_workflow.is_temporarily_public
