@@ -205,6 +205,8 @@ class Workflow(BaseModel):
     :param notes: Workflow notes.
     :param starred: Whether the workflow is starred.
     :param public: Whether the workflow is public.
+    :param public_until: Date and time until which the workflow is temporarily public.
+    :param is_temporarily_public: Whether temporary public access is currently active.
     :param workflow_type: Type of the workflow.
     :param data: Data of the workflow.
     :param email_when_complete: Whether to send an email when the workflow completes.
@@ -227,6 +229,8 @@ class Workflow(BaseModel):
     notes: str
     starred: bool
     public: bool
+    public_until: datetime | None = None
+    is_temporarily_public: bool = False
     workflow_type: str = Field(alias="object_type")
     data: dict[str, Any] | None = Field(default=None, alias="object_data")
     email_when_complete: bool
@@ -330,6 +334,58 @@ Workflow:  {self.name}
 
         updated_workflow = self.model_validate(data)
 
+        for field_name in type(self).model_fields:
+            setattr(self, field_name, getattr(updated_workflow, field_name))
+
+        return self
+
+    def temporarily_share(self, duration_minutes: int, in_place: bool = False) -> Self:
+        """Temporarily make the workflow publicly accessible.
+
+        Temporary sharing does not change :attr:`public`. The returned workflow instead records
+        the expiration in :attr:`public_until` and reports the active state through
+        :attr:`is_temporarily_public`.
+
+        :param duration_minutes: Number of minutes to share the workflow, up to 120.
+        :param in_place: Whether to update the current instance in-place.
+        :returns: Workflow with the temporary sharing state returned by the API.
+        :raises HTTPError: If the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(
+                f"/workflow/{self.uuid}/temporarily_share",
+                params={"duration_minutes": duration_minutes},
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        if not in_place:
+            return type(self).model_validate(data)
+
+        updated_workflow = self.model_validate(data)
+        for field_name in type(self).model_fields:
+            setattr(self, field_name, getattr(updated_workflow, field_name))
+
+        return self
+
+    def end_temporary_share(self, in_place: bool = False) -> Self:
+        """End temporary public access to the workflow.
+
+        Permanent public access through :attr:`public` is unaffected.
+
+        :param in_place: Whether to update the current instance in-place.
+        :returns: Workflow with the temporary sharing state returned by the API.
+        :raises HTTPError: If the API request fails.
+        """
+        with api_client() as client:
+            response = client.post(f"/workflow/{self.uuid}/end_temporary_share")
+            response.raise_for_status()
+            data = response.json()
+
+        if not in_place:
+            return type(self).model_validate(data)
+
+        updated_workflow = self.model_validate(data)
         for field_name in type(self).model_fields:
             setattr(self, field_name, getattr(updated_workflow, field_name))
 
