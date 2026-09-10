@@ -17,7 +17,9 @@ folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_electronic_properties_workflow(
     initial_molecule=rowan.Molecule.from_smiles("C=O"),  # formaldehyde
-    method="b97_3c",  # default: lightweight DFT
+    method="r2scan",
+    basis_set="def2-svp",
+    engine="gpu4pyscf",
     compute_density_cube=True,
     compute_electrostatic_potential_cube=True,
     compute_num_occupied_orbitals=3,  # HOMO, HOMO-1, HOMO-2

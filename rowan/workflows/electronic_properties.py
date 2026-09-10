@@ -1,11 +1,12 @@
 """Electronic properties workflow - calculate electronic properties."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 import stjames
 from pydantic import ValidationError
-from stjames import ENGINE_METHODS, Engine, Method
+from stjames import Engine, Method
 
 from ..folder import Folder
 from ..utils import api_client
@@ -149,8 +150,9 @@ class ElectronicPropertiesResult(WorkflowResult):
 
 def submit_electronic_properties_workflow(
     initial_molecule: StructureInput,
-    method: stjames.Method | str = "b97_3c",
+    method: Method | str = "b97_3c",
     basis_set: str | None = None,
+    engine: Engine | str | None = None,
     compute_density_cube: bool = True,
     compute_electrostatic_potential_cube: bool = True,
     compute_num_occupied_orbitals: int = 1,
@@ -168,6 +170,7 @@ def submit_electronic_properties_workflow(
     :param initial_molecule: Molecule to calculate electronic properties for.
     :param method: Method to use for the calculation.
     :param basis_set: Basis set to use (if any).
+    :param engine: Compute engine, see `Engine`. Auto-selected from method if not specified.
     :param compute_density_cube: Whether to compute the density cube.
     :param compute_electrostatic_potential_cube: Whether to compute the electrostatic
         potential cube.
@@ -180,7 +183,7 @@ def submit_electronic_properties_workflow(
     :param webhook_url: URL that Rowan will POST to when the workflow completes.
     :param is_draft: If True, submit the workflow as a draft without starting execution.
     :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If the method is not supported by the psi4 engine.
+    :raises ValueError: If the method is not supported by the engine.
     :raises requests.HTTPError: if the request to the API fails.
     """
     require_coordinates(initial_molecule)
@@ -192,16 +195,14 @@ def submit_electronic_properties_workflow(
 
     if isinstance(method, str):
         method = Method(method)
+    if isinstance(engine, str):
+        engine = Engine(engine)
 
-    supported_methods = ENGINE_METHODS[Engine.PSI4]
-    if method not in supported_methods:
-        supported_names = sorted(m.value for m in supported_methods)
-        raise ValueError(
-            f"Method '{method.value}' is not supported by the psi4 engine. "
-            f"Supported methods: {', '.join(supported_names)}"
-        )
-
-    settings = stjames.Settings(method=method, basis_set=basis_set)
+    # stjames validates method/engine compatibility and auto-selects the engine if None
+    settings_kwargs: dict[str, Any] = {"method": method, "basis_set": basis_set}
+    if engine is not None:
+        settings_kwargs["engine"] = engine
+    settings = stjames.Settings(**settings_kwargs)
 
     workflow = stjames.ElectronicPropertiesWorkflow(
         initial_molecule=mol_dict,
