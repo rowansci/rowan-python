@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal, Self
 
 from pydantic import BaseModel, PrivateAttr
-from stjames.pdb import PDB, pdb_object_to_pdb_filestring
+from stjames.pdb import PDB, pdb_object_to_mmcif_filestring, pdb_object_to_pdb_filestring
 
 from .project import Project
 from .utils import api_client
@@ -367,6 +367,48 @@ class Protein(BaseModel):
             )
             response.raise_for_status()
 
+    def download_structure(
+        self,
+        path: Path | str | None = None,
+        name: str | None = None,
+        workflow_uuid: str | None = None,
+        *,
+        file_format: Literal["mmcif", "pdb"] = "mmcif",
+    ) -> Path:
+        """Download a protein structure, defaulting to mmCIF.
+
+        :param path: output directory; defaults to the current directory
+        :param name: filename without an extension; defaults to protein name or UUID
+        :param workflow_uuid: UUID of a readable workflow referencing this protein
+        :param file_format: output format; mmCIF avoids PDB's fixed-width identifier limits
+        :returns: saved `.cif` or `.pdb` path
+        :raises ValueError: if the file format is unsupported
+        :raises httpx.HTTPStatusError: if the API request fails
+        """
+        if file_format not in {"mmcif", "pdb"}:
+            raise ValueError(f"Unsupported structure file format: {file_format!r}")
+        if self.data is None or "models" not in self.data:
+            self.refresh(workflow_uuid=workflow_uuid)
+        structure = PDB.model_validate(self.data)
+        if file_format == "mmcif":
+            contents = pdb_object_to_mmcif_filestring(_structure_for_mmcif(structure))
+            extension = "cif"
+        else:
+            contents = pdb_object_to_pdb_filestring(
+                pdb=structure,
+                header=True,
+                source=True,
+                keyword=True,
+                crystallography=True,
+                remark=False,
+            )
+            extension = "pdb"
+        directory = Path(path) if path is not None else Path.cwd()
+        directory.mkdir(parents=True, exist_ok=True)
+        file_path = directory / f"{name or self.name or self.uuid}.{extension}"
+        file_path.write_text(contents)
+        return file_path
+
     def download_pdb_file(
         self,
         path: Path | str | None = None,
@@ -385,26 +427,46 @@ class Protein(BaseModel):
             only through a workflow you can read. Not needed for proteins from a workflow result.
         :raises requests.HTTPError: if the request to the API fails
         """
-        path = Path(path) if path is not None else Path.cwd()
+        self.download_structure(path, name, workflow_uuid, file_format="pdb")
 
-        path.mkdir(parents=True, exist_ok=True)
 
-        if self.data is None:
-            self.refresh(workflow_uuid=workflow_uuid)
+def _structure_for_mmcif(structure: PDB) -> PDB:
+    """Separate mmCIF entity labels that legacy PDB structures share across chains.
 
-        pdb_object = PDB.model_validate(self.data)
-        pdb_string = pdb_object_to_pdb_filestring(
-            pdb=pdb_object,
-            header=True,
-            source=True,
-            keyword=True,
-            crystallography=True,
-            remark=False,
-        )
-
-        file_path = path / f"{name or self.name or self.uuid}.pdb"
-        with open(file_path, "w") as f:
-            f.write(pdb_string)
+    Preserve author chain IDs and atom serials while assigning distinct label-asym IDs
+    to non-polymer residues and waters on a copy of the structure.
+    """
+    structure = structure.model_copy(deep=True)
+    labels: dict[tuple[str, str], str] = {}
+    reserved = {
+        polymer.internal_id or chain_id
+        for model in structure.models
+        for chain_id, polymer in model.polymer.items()
+    }
+    reserved.update(
+        residue.internal_id
+        for model in structure.models
+        for residues in (model.non_polymer, model.water)
+        for residue in residues.values()
+        if residue.internal_id
+    )
+    next_label = 1
+    for model in structure.models:
+        used = {polymer.internal_id or chain_id for chain_id, polymer in model.polymer.items()}
+        for kind, residues in (("non_polymer", model.non_polymer), ("water", model.water)):
+            for residue_id, residue in residues.items():
+                key = (kind, residue_id)
+                if key not in labels:
+                    label = residue.internal_id or ""
+                    if not label or label in used:
+                        while (label := f"{kind}_{next_label}") in reserved:
+                            next_label += 1
+                        reserved.add(label)
+                        next_label += 1
+                    labels[key] = label
+                residue.internal_id = labels[key]
+                used.add(labels[key])
+    return structure
 
 
 def retrieve_protein(uuid: str, workflow_uuid: str | None = None) -> Protein:
@@ -463,10 +525,10 @@ def upload_protein(
     name: str, file_path: str | Path, project_uuid: str | Project | None = None
 ) -> Protein:
     """
-    Uploads a protein from a PDB file to the API.
+    Upload a protein from an mmCIF or PDB file to the API.
 
     :param name: Name of the protein to create
-    :param file_path: Path to the PDB file to upload
+    :param file_path: path to an mmCIF (`.cif` or `.mmcif`) or PDB file
     :param project_uuid: UUID of the project to create the protein in
     :returns: Protein object representing the uploaded protein
     :raises requests.HTTPError: if the request to the API fails
@@ -476,7 +538,10 @@ def upload_protein(
         project_uuid = project_uuid.uuid
     with api_client() as client:
         conversion_payload = {"name": name, "text": file_path.read_text()}
-        conversion_response = client.post("/convert/pdb_file_to_protein", json=conversion_payload)
+        file_format = "mmcif" if file_path.suffix.lower() in {".cif", ".mmcif"} else "pdb"
+        conversion_response = client.post(
+            f"/convert/{file_format}_file_to_protein", json=conversion_payload
+        )
         conversion_response.raise_for_status()
 
         protein_data = conversion_response.json()

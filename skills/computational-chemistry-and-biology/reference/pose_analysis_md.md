@@ -21,7 +21,7 @@ folder = rowan.get_folder("examples")
 ligand = "CCC(C)(C)NC1=NCC2(CCC(=O)C2C)N1"
 
 # Load a docked protein-ligand complex and retain its LIG residue during preparation.
-protein = rowan.upload_protein("complex", "complex.pdb")
+protein = rowan.upload_protein("complex", "complex.cif")
 preparation_workflow = rowan.submit_protein_preparation_workflow(
     protein=protein.uuid,
     retain_non_polymer={"LIG": ligand},
@@ -73,8 +73,8 @@ print(result.trajectories[0].ligand_rmsd)  # ligand RMSD by frame
 - `hydration_sites`: list of `rowan.HydrationSite` objects identified across all trajectories. Each site has a `centroid` (x, y, z tuple in Å), `abs_occ` (absolute occupancy 0–1), `prot_only_abs_occ`, `lig_only_abs_occ`, `bridge_abs_occ`, `num_unique_waters`, and `bridge_residues` (list of `rowan.HydrationBridgeResidue` with `residue_index` and `bridge_occ`).
 - `average_rmsds`: average ligand RMSD per trajectory, in angstrom (a low value means the pose held).
 - `minimized_protein_uuid` / `get_minimized_protein()`: UUID and fetched `Protein` object of the energy-minimized structure.
-- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate.
-- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure.
+- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate; downloads default to mmCIF (`file_format="pdb"` selects PDB).
+- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure, with the same format options.
 - `messages`: messages or warnings emitted during the run.
 - `get_atom_distances(atom_pairs, replicate=0)`: fetch per-frame interatomic distances (Angstrom) for a list of `(atom_i, atom_j)` index pairs over the trajectory. Atom indices appear in each trajectory's `contacts` field (`ligand_atom_index`, `protein_atom_index`). Returns one list of floats per pair.
 - `download_trajectories(replicates, path=...)`: download DCD trajectory files for the given replicate indices as a `.tar.gz`.

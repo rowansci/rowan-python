@@ -37,7 +37,7 @@ print(result)
 for i, score in enumerate(result.scores):
     print(f"  Pose {i}: score={score.score:.3f}  posebusters_valid={score.posebusters_valid}")
 
-# Download the top-scoring protein–ligand complex as a PDB
+# Download the top-scoring protein–ligand complex as mmCIF
 complex_protein = result.get_complex(0)
-complex_protein.download_pdb_file(name="dasatinib_2GQG_complex")
-print("Saved dasatinib_2GQG_complex.pdb")
+complex_protein.download_structure(name="dasatinib_2GQG_complex")
+print("Saved dasatinib_2GQG_complex.cif")

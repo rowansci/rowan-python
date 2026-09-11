@@ -3,9 +3,9 @@
 import struct
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
-from stjames.pdb import PDB, pdb_object_to_pdb_filestring
+from stjames.pdb import PDB
 
 from ..protein import Protein, retrieve_protein
 from ..utils import api_client, download_file
@@ -75,12 +75,15 @@ class _MolecularDynamicsResult(WorkflowResult):
         replicate: int = 0,
         path: Path | str | None = None,
         name: str | None = None,
+        *,
+        file_format: Literal["mmcif", "pdb"] = "mmcif",
     ) -> Path | None:
-        """Download the coordinate-averaged structure for a replicate as PDB.
+        """Download the coordinate-averaged structure for a replicate, defaulting to mmCIF.
 
         :param replicate: zero-based trajectory replicate index
         :param path: output directory; defaults to the current directory
-        :param name: filename without the `.pdb` extension
+        :param name: filename without an extension
+        :param file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
         :returns: downloaded path, or `None` when no mean structure is available
         :raises IndexError: if `replicate` is out of range
         """
@@ -89,27 +92,33 @@ class _MolecularDynamicsResult(WorkflowResult):
             return None
         directory = Path(path) if path is not None else Path.cwd()
         file_name = name or f"mean_structure_{replicate}"
-        protein.download_pdb_file(
+        return protein.download_structure(
             path=directory,
             name=file_name,
             workflow_uuid=self.workflow_uuid,
+            file_format=file_format,
         )
-        return directory / f"{file_name}.pdb"
 
     def download_medoid_structure(
         self,
         replicate: int = 0,
         path: Path | str | None = None,
         name: str | None = None,
+        *,
+        file_format: Literal["mmcif", "pdb"] = "mmcif",
     ) -> Path | None:
-        """Download the medoid trajectory frame for a replicate as PDB.
+        """Download the medoid trajectory frame for a replicate, defaulting to mmCIF.
+
+        Use the minimized topology's first model without modifying cached coordinates.
 
         :param replicate: zero-based trajectory replicate index
         :param path: output directory; defaults to the current directory
-        :param name: filename without the `.pdb` extension
+        :param name: filename without an extension
+        :param file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
         :returns: downloaded path, or `None` when no medoid frame is available
         :raises IndexError: if `replicate` is out of range
-        :raises ValueError: if topology and trajectory data are inconsistent
+        :raises ValueError: if topology and trajectory data are inconsistent, the topology
+            has no models, or it contains unsupported branched entities
         """
         trajectory = self._trajectory(replicate)
         if trajectory.median_structure_frame_index is None:
@@ -122,15 +131,14 @@ class _MolecularDynamicsResult(WorkflowResult):
         if minimized.data is None:
             raise ValueError("Minimized protein response did not include structure data.")
 
-        pdb_string = pdb_object_to_pdb_filestring(
-            pdb=PDB.model_validate(minimized.data),
-            header=True,
-            source=True,
-            keyword=True,
-            crystallography=True,
-            remark=False,
-        )
-        atom_count = sum(line.startswith(("ATOM  ", "HETATM")) for line in pdb_string.splitlines())
+        structure = PDB.model_validate(minimized.data).model_copy(deep=True)
+        if not structure.models:
+            raise ValueError("Minimized protein structure has no models.")
+        structure.models = structure.models[:1]
+        if file_format == "mmcif" and structure.models[0].branched:
+            raise ValueError("Medoid mmCIF export does not support branched entities.")
+        records = structure.models[0]._atom_records()
+        atom_count = len(records)
         with api_client() as client:
             response = client.get(
                 f"/trajectory/{self.workflow_uuid}/compressed_stream",
@@ -154,18 +162,16 @@ class _MolecularDynamicsResult(WorkflowResult):
             raise ValueError("Trajectory response did not contain one complete coordinate frame.")
         coordinates = iter(struct.unpack(f"<{coordinate_count}d", coordinate_bytes))
 
-        output_lines: list[str] = []
-        for line in pdb_string.splitlines():
-            if line.startswith(("ATOM  ", "HETATM")):
-                x, y, z = next(coordinates), next(coordinates), next(coordinates)
-                line = f"{line[:30]}{x:8.3f}{y:8.3f}{z:8.3f}{line[54:]}"
-            output_lines.append(line)
+        for record in records:
+            record.atom.x = next(coordinates)
+            record.atom.y = next(coordinates)
+            record.atom.z = next(coordinates)
 
-        directory = Path(path) if path is not None else Path.cwd()
-        directory.mkdir(parents=True, exist_ok=True)
-        file_path = directory / f"{name or f'medoid_structure_{replicate}'}.pdb"
-        file_path.write_text("\n".join(output_lines) + "\n")
-        return file_path
+        return Protein(uuid=minimized.uuid, data=structure.model_dump()).download_structure(
+            path=path,
+            name=name or f"medoid_structure_{replicate}",
+            file_format=file_format,
+        )
 
     def get_atom_distances(
         self,

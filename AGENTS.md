@@ -46,6 +46,12 @@ pixi run python examples/basic_calculation.py
 
 ## Code conventions
 
+### Documentation updates
+
+- Treat requests to check or update docs as keeping existing descriptions, examples, docstrings, and skill references accurate.
+- Make corrections where the relevant behavior is already documented. Don't add feature announcements, introductory callouts, or new sections just because a feature changed.
+- If a document doesn't discuss the affected behavior, usually leave it alone. Preserve its existing scope and emphasis unless the user asks for expanded documentation.
+
 ### Docstrings
 
 Format: reStructuredText-style. No types in docstrings, no leading articles.
@@ -100,7 +106,9 @@ Via ruff:
 
 ## Git authorization policy
 
-**Do not run `git commit`, `git push`, or any other git write commands without explicit permission from the user.**
+- Prepare changes on a local feature branch. Local commits are allowed as part of authorized development work.
+- The user handles pushing and opening PRs. Do not push branches, create PRs, or change remote branches unless the user explicitly requests that specific remote action.
+- A request to get changes ready for a PR means prepare the local branch, not publish it or open a PR.
 
 **Never add yourself as a commit author or co-author.** Do not include `Co-Authored-By:`, `Author:`, or any similar trailer that attributes the commit to an AI model or tool. Commits are attributed solely to the human developer.
 

@@ -5,7 +5,7 @@
 A `rowan.Protein` (or its UUID string). Proteins are not SMILES. Load one and prepare it before submitting:
 
 - From a PDB ID: `rowan.create_protein_from_pdb_id("1CRN", name="crambin")`.
-- From a local PDB file: `rowan.upload_protein("my protein", "path/to/file.pdb")`.
+- From a local mmCIF or PDB file: `rowan.upload_protein("my protein", "path/to/file.cif")`.
 
 Protein MD accepts any stored `rowan.Protein` or protein UUID. Protein preparation is recommended before submission; when chaining from it, passing `prepared_protein_uuid` avoids an unnecessary structure fetch.
 
@@ -69,8 +69,8 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `trajectory_uuids`: UUIDs of the trajectory calculations, one per replicate.
 - `trajectories`: per-replicate results. Each exposes `protein_rmsd` (per-frame Cα RMSD from frame 0, Å), `rmsf` (per-Cα RMSF from the mean structure, Å), `potential_energy` (per-frame whole-system potential energy, Hartree), and the radius of gyration per frame (`isotropic_radius_of_gyration`). `sasa` and `polar_sasa` are populated when `analysis_interval_ps` is set; `cluster_centroid_indices` / `cluster_indices_by_frame` when `clustering` is set; and `mmgbsa_scores` (per-frame MM/GBSA binding-side interaction energy, kcal/mol) plus `binder_rmsd` when a `binder` is set.
 - `minimized_protein_uuid` / `get_minimized_protein()`: the energy-minimized protein.
-- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate.
-- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure.
+- `get_mean_structure(replicate=0)` / `download_mean_structure(...)`: retrieve or download the coordinate-averaged structure for one replicate; downloads default to mmCIF (`file_format="pdb"` selects PDB).
+- `download_medoid_structure(replicate=0, ...)`: download the actual trajectory frame closest to the replicate's average structure, with the same format options.
 - `bonds`: bond list for the simulated system.
 - `messages`: messages emitted during the run.
 - `download_trajectories(replicates, path=...)`: download DCD trajectory files for the given replicate indices as a `.tar.gz`.

@@ -50,12 +50,12 @@ for i, score in enumerate(result.scores):
         f"score={score.score:.3f}  receptor_strain={score.receptor_strain}"
     )
 
-# Download the top-scoring complex and best-ranked relaxed receptor as PDBs
+# Download the top-scoring complex and best-ranked relaxed receptor as mmCIF files
 complex_protein = result.get_complex(0)
-complex_protein.download_pdb_file(name="dasatinib_2GQG_induced_complex")
-print("Saved dasatinib_2GQG_induced_complex.pdb")
+complex_protein.download_structure(name="dasatinib_2GQG_induced_complex")
+print("Saved dasatinib_2GQG_induced_complex.cif")
 
 induced_receptors = result.get_induced_receptors()
 if induced_receptors:
-    induced_receptors[0].download_pdb_file(name="dasatinib_2GQG_induced_receptor")
-    print("Saved dasatinib_2GQG_induced_receptor.pdb")
+    induced_receptors[0].download_structure(name="dasatinib_2GQG_induced_receptor")
+    print("Saved dasatinib_2GQG_induced_receptor.cif")

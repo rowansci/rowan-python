@@ -8,4 +8,8 @@ import rowan
 proteins = rowan.list_proteins()
 for protein in proteins:
     print(protein.name)
-    protein.download_pdb_file(name=protein.name, path=Path("pdb_files"))
+    protein.download_structure(
+        name=protein.name,
+        path=Path("protein_files"),
+        file_format="mmcif",  # Default; use "pdb" for PDB files
+    )

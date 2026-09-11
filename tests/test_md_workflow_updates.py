@@ -4,11 +4,13 @@ import struct
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Literal
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
 from pytest import MonkeyPatch
-from stjames.pdb import pdb_from_pdb_filestring
+from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 import rowan
 from rowan.protein import Protein
@@ -277,15 +279,41 @@ def test_pose_analysis_md_exposes_trajectory_analysis_results() -> None:
     assert old_result.trajectories[0].median_structure_frame_index is None
 
 
+@pytest.mark.parametrize(
+    "file_format,response_error",
+    [("mmcif", None), ("mmcif", "atom_count"), ("mmcif", "truncated"), ("pdb", None)],
+)
 def test_medoid_structure_download_combines_frame_and_topology(
-    monkeypatch: MonkeyPatch, tmp_path: Path
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    file_format: Literal["mmcif", "pdb"],
+    response_error: str | None,
 ) -> None:
-    """Write one compressed-stream frame as PDB without an MDAnalysis dependency."""
+    """Write a frame as mmCIF without losing large identifiers or changing cached data."""
     pdb = pdb_from_pdb_filestring(
         "ATOM      1  N   ALA A   1       0.000   0.000   0.000  1.00  0.00           N  \n"
         "ATOM      2  CA  ALA A   1       1.000   1.000   1.000  1.00  0.00           C  \n"
+        "TER\n"
+        "HETATM    3  O   HOH W   2       0.000   0.000   0.000  1.00  0.00           O\n"
+        "HETATM    4 NA    NA W   3       0.000   0.000   0.000  1.00  0.00          NA\n"
+        "HETATM    5  C1  COF B   1       0.000   0.000   0.000  1.00  0.00           C\n"
+        "HETATM    6  O1  COF B   1       0.000   0.000   0.000  1.00  0.00           O\n"
         "TER\nEND\n"
     )
+    # Prepared structures can reuse the protein chain label for cofactors and water.
+    pdb.models[0].non_polymer["B.1"].internal_id = "A"
+    pdb.models[0].water["W.2"].internal_id = "A"
+    if file_format == "mmcif":
+        residue = pdb.models[0].polymer["A"].residues.pop("A.1")
+        residue.atoms[100_000] = residue.atoms.pop(2)
+        water = pdb.models[0].water["W.2"]
+        water.atoms[100_001] = water.atoms.pop(3)
+        ion = pdb.models[0].non_polymer["W.3"]
+        ion.atoms[100_002] = ion.atoms.pop(4)
+        cofactor = pdb.models[0].non_polymer["B.1"]
+        cofactor.atoms = {100_004: cofactor.atoms[6], 100_003: cofactor.atoms[5]}
+        pdb.models[0].polymer["A"].residues["A.10000"] = residue
+    original = pdb.model_dump(mode="json")
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein="protein-uuid",
         minimized_protein_uuid="minimized-uuid",
@@ -301,8 +329,8 @@ def test_medoid_structure_download_combines_frame_and_topology(
     )
 
     response = MagicMock()
-    response.headers = {"X-Box-Size-Bytes": "48", "X-Num-Atoms": "2"}
-    response.content = bytes(48) + struct.pack("<6d", 2.0, 3.0, 4.0, 5.0, 6.0, 7.0)
+    response.headers = {"X-Box-Size-Bytes": "48", "X-Num-Atoms": "6"}
+    response.content = bytes(48) + struct.pack("<18d", *range(2, 20))
     client = MagicMock()
     client.get.return_value = response
 
@@ -311,11 +339,41 @@ def test_medoid_structure_download_combines_frame_and_topology(
         yield client
 
     monkeypatch.setattr("rowan.workflows._molecular_dynamics.api_client", mock_api_client)
-    path = result.download_medoid_structure(0, tmp_path, "medoid")
+    if response_error is not None:
+        if response_error == "atom_count":
+            response.headers["X-Num-Atoms"] = "7"
+            message = "Trajectory has 7 atoms but minimized topology has 6"
+        else:
+            response.content = response.content[:-8]
+            message = "did not contain one complete coordinate frame"
+        with pytest.raises(ValueError, match=message):
+            result.download_medoid_structure(0, tmp_path, "medoid", file_format=file_format)
+        assert not (tmp_path / "medoid.cif").exists()
+        assert result._cache["minimized_protein"].data == original
+        return
+    path = result.download_medoid_structure(0, tmp_path, "medoid", file_format=file_format)
     assert path is not None
-    atom_lines = [line for line in path.read_text().splitlines() if line.startswith("ATOM")]
-    assert atom_lines[0][30:54] == "   2.000   3.000   4.000"
-    assert atom_lines[1][30:54] == "   5.000   6.000   7.000"
+    if file_format == "mmcif":
+        assert path.suffix == ".cif"
+        exported = pdb_from_mmcif_filestring(path.read_text())
+    else:
+        assert path.suffix == ".pdb"
+        exported = pdb_from_pdb_filestring(path.read_text())
+    records = exported.models[0]._atom_records()
+    assert [(r.atom.x, r.atom.y, r.atom.z) for r in records] == [
+        (2.0, 3.0, 4.0),
+        (5.0, 6.0, 7.0),
+        (8.0, 9.0, 10.0),
+        (11.0, 12.0, 13.0),
+        (14.0, 15.0, 16.0),
+        (17.0, 18.0, 19.0),
+    ]
+    assert [r.atom.element for r in records] == ["N", "C", "O", "NA", "C", "O"]
+    cofactor = next(r for r in exported.models[0].non_polymer.values() if r.name == "COF")
+    assert {atom.name: atom.x for atom in cofactor.atoms.values()} == {"C1": 14.0, "O1": 17.0}
+    assert records[1].serial == (100_000 if file_format == "mmcif" else 2)
+    assert records[1].residue_number == ("10000" if file_format == "mmcif" else "1")
+    assert result._cache["minimized_protein"].data == original
     client.get.assert_called_once_with(
         "/trajectory/workflow-uuid/compressed_stream",
         params={"replicate": 0, "start_frame": 4, "num_frames": 1},
