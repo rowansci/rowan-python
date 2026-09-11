@@ -4,6 +4,8 @@ from stjames import (
     AEVPLIGAffinitySettings,
     Atom,
     BandStructure,
+    BasisSet,
+    BasisSetOverride,
     Binder,
     BindingAffinitySettings,
     BindingPoseContact,
