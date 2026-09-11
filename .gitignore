@@ -1,5 +1,10 @@
 # Ignore environment file with ROWAN_API_KEY
 .env
+# Variant env files (.env.test, .env.single-tenant, ...); .envrc is tracked for direnv
+.env.*
+
+# macOS
+.DS_Store
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
