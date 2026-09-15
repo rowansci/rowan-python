@@ -56,13 +56,15 @@ class ConformerSearchResult(WorkflowResult):
         return self._workflow.conformer_uuids
 
     def get_energies(self, relative: bool = False) -> list[float]:
-        """
-        Get conformer energies.
+        """Get conformer energies.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy conformer). If False (default), return absolute
-            energies in Hartree.
-        :returns: List of conformer energies ordered by energy (lowest first).
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy conformer). If False (default), return absolute
+                energies in Hartree
+
+        Returns:
+            list of conformer energies ordered by energy (lowest first)
         """
         energies: list[float] = list(self._workflow.energies)
         return to_relative_kcal(energies) if relative else energies
@@ -85,14 +87,16 @@ class ConformerSearchResult(WorkflowResult):
         ]
 
     def get_conformers(self, n: int | None = None) -> list[Molecule]:
-        """
-        Fetch conformer molecules.
+        """Fetch conformer molecules.
 
-        :param n: Number of conformers to fetch (default: all). Conformers are
-            ordered by energy, so n=5 returns the 5 lowest-energy conformers.
-        :returns: List of Molecule objects.
+        Args:
+            n: number of conformers to fetch (default: all). Conformers are
+                ordered by energy, so n=5 returns the 5 lowest-energy conformers
 
-        .. note::
+        Returns:
+            molecules
+
+        Note:
             Makes one API call per conformer.
         """
         uuids = self._workflow.conformer_uuids
@@ -105,18 +109,22 @@ class ConformerSearchResult(WorkflowResult):
         return molecules
 
     def get_conformer(self, index: int, stage: int = -1) -> Calculation:
-        """
-        Fetch a conformer's calculation data by index.
+        """Fetch a conformer's calculation data by index.
 
-        .. note::
+        Note:
             Makes one API call per conformer on first access.
             Results are cached. Call clear_cache() to refresh.
 
-        :param index: Conformer index (0-based).
-        :param stage: Optimization stage (-1 for final stage).
-        :returns: Calculation object with molecule and energy data.
-        :raises IndexError: If the index is out of range.
-        :raises ValueError: If the conformer UUID is None.
+        Args:
+            index: conformer index (0-based)
+            stage: optimization stage (-1 for final stage)
+
+        Returns:
+            calculation object with molecule and energy data
+
+        Raises:
+            IndexError: index is out of range
+            ValueError: conformer UUID is None
         """
         uuids = self._workflow.conformer_uuids
         if index < 0 or index >= len(uuids):
@@ -147,9 +155,10 @@ def _mso_for_final_method(
     solvent: SolventInput = None,
     transition_state: bool = False,
 ) -> MultiStageOptSettings:
-    """Build a `MultiStageOptSettings` for `final_method` matching tinbergen's
-    conformer-search MSO presets. Falls back to a single opt stage at
-    `final_method` for methods without a named preset.
+    """Build optimization settings for the final method.
+
+    Use conformer-search presets, or a single optimization stage for methods
+    without a named preset.
 
     `solvent` and `transition_state` are merged into each stage's `Settings`
     when supplied; the named preset itself is independent of them (mirrors how
@@ -204,62 +213,66 @@ def submit_conformer_search_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a conformer-search workflow to the API.
+    """Submits a conformer-search workflow to the API.
 
     Runs in one of two modes:
 
     - **Generate** (default): build conformers from `initial_molecule` using
       `conf_gen_settings`, then optimize, deduplicate, and rank them.
     - **Screen-only**: pass `initial_conformers` (and leave `conf_gen_settings` as
-      ``None``) to skip generation and run only optimize / deduplicate / rank on
+      `None`) to skip generation and run only optimize / deduplicate / rank on
       conformers you already have. Useful when geometries come from another tool
       (RDKit, CREST, OMEGA), a crystal or MD ensemble, or a previous workflow, and
       you want consistent optimized energies and a deduplicated ranked ensemble.
 
-    :param initial_molecule: Molecule to perform the conformer search on (omit when using
-        `initial_conformers`). A 3D structure for any generator; a SMILES string is also
-        accepted when `conf_gen_settings` is ``ETKDGSettings`` or ``OpenConfSettings``
-        (which build geometry from topology).
-    :param conf_gen_settings: Conformer generation method and settings. Defaults to
-        ``OpenConfSettings()``. Available options (importable directly from ``rowan``):
+    Args:
+        initial_molecule: molecule to perform the conformer search on (omit when using
+            `initial_conformers`). A 3D structure for any generator; a SMILES string is also
+            accepted when `conf_gen_settings` is `ETKDGSettings` or `OpenConfSettings`
+            (which build geometry from topology)
+        conf_gen_settings: conformer generation method and settings. Defaults to
+            `OpenConfSettings()`. Available options (importable directly from `rowan`):
 
-        - ``ETKDGSettings``  -- RDKit ETKDG, fast, good for most small molecules (SMILES ok)
-        - ``OpenConfSettings``  -- OpenConf generator (SMILES ok)
-        - ``iMTDGCSettings``  -- CREST iMTD-GC metadynamics, more thorough (3D structure only)
-        - ``MonteCarloMultipleMinimumSettings``  -- MCMM conformer search (3D structure only)
-    :param final_method: Method to use for the final optimization. Ignored if
-        `multistage_opt_settings` is provided.
-    :param solvent: Solvent to use for the final optimization. Ignored if
-        `multistage_opt_settings` is provided.
-    :param transition_state: Whether to optimize the transition state. Ignored
-        if `multistage_opt_settings` is provided.
-    :param multistage_opt_settings: Optimization stages and singlepoint settings
-        for ranking conformers. When provided, takes precedence over
-        `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
-        built from those three params.
-    :param conformer_clustering_settings: Cluster the generated ensemble (ReSCoSS k-means on
-        3D-shape descriptors) and keep only representative conformers for downstream
-        optimization. Not supported with `initial_conformers`.
-    :param initial_conformers: Pre-generated 3D conformers to optimize, deduplicate, and
-        rank directly, skipping conformer generation (screen-only mode). Requirements
-        (all enforced):
+            - `ETKDGSettings`  -- RDKit ETKDG, fast, good for most small molecules (SMILES ok)
+            - `OpenConfSettings`  -- OpenConf generator (SMILES ok)
+            - `iMTDGCSettings`  -- CREST iMTD-GC metadynamics, more thorough (3D structure only)
+            - `MonteCarloMultipleMinimumSettings`  -- MCMM conformer search (3D structure only)
+        final_method: method to use for the final optimization. Ignored if
+            `multistage_opt_settings` is provided
+        solvent: solvent to use for the final optimization. Ignored if
+            `multistage_opt_settings` is provided
+        transition_state: whether to optimize the transition state. Ignored
+            if `multistage_opt_settings` is provided
+        multistage_opt_settings: optimization stages and singlepoint settings
+            for ranking conformers. When provided, takes precedence over
+            `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
+            built from those three params
+        conformer_clustering_settings: cluster the generated ensemble (ReSCoSS k-means on
+            3D-shape descriptors) and keep only representative conformers for downstream
+            optimization. Not supported with `initial_conformers`
+        initial_conformers: pre-generated 3D conformers to optimize, deduplicate, and
+            rank directly, skipping conformer generation (screen-only mode). Requirements
+            (all enforced):
 
-        - mutually exclusive with `initial_molecule`
-        - `conf_gen_settings` must be ``None``
-        - every conformer must be a real 3D structure (no SMILES)
-        - every conformer must be the same molecule with **identical atom ordering** --
-          conformers are compared atom-by-atom during deduplication, so atom *i* must be
-          the same atom in every conformer. Read them from one multi-conformer source
-          (one RDKit mol, an SDF, an MD trajectory) rather than assembling them separately.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+            - mutually exclusive with `initial_molecule`
+            - `conf_gen_settings` must be `None`
+            - every conformer must be a real 3D structure (no SMILES)
+            - every conformer must be the same molecule with **identical atom ordering** --
+              conformers are compared atom-by-atom during deduplication, so atom *i* must be
+              the same atom in every conformer. Read them from one multi-conformer source
+              (one RDKit mol, an SDF, an MD trajectory) rather than assembling them separately
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

@@ -1,5 +1,4 @@
-"""
-Perform a multistage geometry optimization using the Rowan API.
+"""Perform a multistage geometry optimization using the Rowan API.
 
 Each entry of `optimization_settings` runs in order; `singlepoint_settings`
 runs last on the final geometry.

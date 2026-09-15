@@ -13,16 +13,16 @@ from .base import Workflow, WorkflowResult, register_result
 
 @dataclass(frozen=True, slots=True)
 class Pocket:
-    """
-    A detected binding pocket.
+    """A detected binding pocket.
 
-    :param sphere_centers: centers of detected spheres, in Å
-    :param sphere_radii: radii of detected spheres, in Å
-    :param volume: pocket volume, in Å³
-    :param score: druggability/quality score; larger is better
-    :param pocket_center: center of axis-aligned bounding box, in Å
-    :param pocket_sides: side lengths of axis-aligned bounding box, in Å
-    :param residue_numbers: residue numbers lining the pocket
+    Attributes:
+        sphere_centers: centers of detected spheres, in Å
+        sphere_radii: radii of detected spheres, in Å
+        volume: pocket volume, in Å³
+        score: druggability/quality score; larger is better
+        pocket_center: center of axis-aligned bounding box, in Å
+        pocket_sides: side lengths of axis-aligned bounding box, in Å
+        residue_numbers: residue numbers lining the pocket
     """
 
     sphere_centers: tuple[tuple[float, float, float], ...]
@@ -71,19 +71,23 @@ def submit_pocket_detection_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a pocket-detection workflow to the API.
+    """Submits a pocket-detection workflow to the API.
 
-    :param protein: protein to analyze. Can be a UUID or a Protein object.
-    :param merge_distance: distance for merging pocket spheres, in Å
-    :param name: name of the workflow
-    :param folder_uuid: UUID of the folder to place the workflow in
-    :param folder: Folder object to store the workflow in
-    :param max_credits: maximum number of credits to use for the workflow
-    :param webhook_url: URL that Rowan will POST to when the workflow completes
-    :param is_draft: if True, submit the workflow as a draft without starting execution
-    :returns: Workflow object representing the submitted workflow
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        protein: protein to analyze. Can be a UUID or a Protein object
+        merge_distance: distance for merging pocket spheres, in Å
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        workflow object representing the submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

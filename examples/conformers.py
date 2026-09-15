@@ -1,5 +1,4 @@
-"""
-Calculate the conformers of a molecule using the Rowan API.
+"""Calculate the conformers of a molecule using the Rowan API.
 
 Conformer generation defaults to OpenConf; pass `conf_gen_settings=` to choose a
 different generator (ETKDG, iMTD-GC, MCMM).

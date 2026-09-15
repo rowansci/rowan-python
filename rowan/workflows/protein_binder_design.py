@@ -15,26 +15,26 @@ BinderProtocol = stjames.BoltzGenProtocol
 
 @dataclass(frozen=True, slots=True)
 class BinderScores:
-    """
-    Scores for a generated protein binder design.
+    """Scores for a generated protein binder design.
 
-    :param iptm: Interface predicted TM-score (0-1, higher is better).
-    :param design_ptm: Predicted TM-score for the designed binder (0-1).
-    :param quality_score: Overall quality score (0-1, higher is better).
-    :param bb_rmsd: Backbone RMSD compared to initial structure (Angstrom).
-    :param loop: Fraction of residues in loop conformation.
-    :param helix: Fraction of residues in helix conformation.
-    :param sheet: Fraction of residues in sheet conformation.
-    :param liability_score: Liability score (lower is better).
-    :param liability_num_violations: Number of liability violations.
-    :param liability_high_severity_violations: Number of high-severity liability violations.
-    :param min_interaction_pae: Minimum predicted aligned error at the interface.
-    :param delta_sasa_refolded: Change in solvent-accessible surface area upon binding (A^2).
-    :param plip_hbonds_refolded: Number of hydrogen bonds at the interface.
-    :param plip_saltbridge_refolded: Number of salt bridges at the interface.
-    :param num_tokens: Number of tokens in the design.
-    :param design_hydrophobicity: Hydrophobicity of the designed binder.
-    :param num_filters_passed: Number of quality filters passed.
+    Attributes:
+        iptm: interface predicted TM-score (0-1, higher is better)
+        design_ptm: predicted TM-score for the designed binder (0-1)
+        quality_score: overall quality score (0-1, higher is better)
+        bb_rmsd: backbone RMSD compared to initial structure (Angstrom)
+        loop: fraction of residues in loop conformation
+        helix: fraction of residues in helix conformation
+        sheet: fraction of residues in sheet conformation
+        liability_score: liability score (lower is better)
+        liability_num_violations: number of liability violations
+        liability_high_severity_violations: number of high-severity liability violations
+        min_interaction_pae: minimum predicted aligned error at the interface
+        delta_sasa_refolded: change in solvent-accessible surface area upon binding (A^2)
+        plip_hbonds_refolded: number of hydrogen bonds at the interface
+        plip_saltbridge_refolded: number of salt bridges at the interface
+        num_tokens: number of tokens in the design
+        design_hydrophobicity: hydrophobicity of the designed binder
+        num_filters_passed: number of quality filters passed
     """
 
     iptm: float | None = None
@@ -58,12 +58,12 @@ class BinderScores:
 
 @dataclass(frozen=True, slots=True)
 class ProteinBinder:
-    """
-    Generated protein binder design.
+    """Generated protein binder design.
 
-    :param bound_structure_uuid: UUID of the bound structure (binder + target complex).
-    :param sequence: Amino acid sequence of the designed binder.
-    :param scores: Detailed scores for the binder design.
+    Attributes:
+        bound_structure_uuid: UUID of the bound structure (binder + target complex)
+        sequence: amino acid sequence of the designed binder
+        scores: detailed scores for the binder design
     """
 
     bound_structure_uuid: str | None = None
@@ -151,27 +151,31 @@ def submit_protein_binder_design_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a protein-binder-design workflow to the API.
+    """Submits a protein-binder-design workflow to the API.
 
-    :param binder_design_input: Input specification for the binder design (BoltzGenInput format).
-    :param protocol: Design protocol to use. Options:
-        - PROTEIN_ANYTHING: Design a protein binder
-        - PEPTIDE_ANYTHING: Design a peptide binder
-        - PROTEIN_SMALL_MOLECULE: Design a protein that binds a small molecule
-        - NANOBODY_ANYTHING: Design a nanobody binder
-    :param num_designs: Number of designs to generate.
-    :param budget: Number of designs to return in the final diversity-optimized set.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If protocol is not a valid BinderProtocol, or if no protein_entities
-        sequence contains a designable region.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        binder_design_input: input specification for the binder design (BoltzGenInput format)
+        protocol: design protocol to use. Options:
+            - PROTEIN_ANYTHING: Design a protein binder
+            - PEPTIDE_ANYTHING: Design a peptide binder
+            - PROTEIN_SMALL_MOLECULE: Design a protein that binds a small molecule
+            - NANOBODY_ANYTHING: Design a nanobody binder
+        num_designs: number of designs to generate
+        budget: number of designs to return in the final diversity-optimized set
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: protocol is not a valid BinderProtocol, or if no protein_entities
+            sequence contains a designable region
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

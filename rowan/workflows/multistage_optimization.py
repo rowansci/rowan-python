@@ -47,8 +47,7 @@ class MultiStageOptResult(WorkflowResult):
 
     @property
     def calculations(self) -> list[Calculation]:
-        """
-        All optimization stage calculations (lazily fetched).
+        """All optimization stage calculations (lazily fetched).
 
         Typically includes xTB pre-optimization, DFT optimization, and final
         single-point. Access `final_calculation` for just the last stage.
@@ -75,17 +74,17 @@ class MultiStageOptResult(WorkflowResult):
         return self._cache.get("final_calculation")
 
     def get_stage_energies(self) -> list[tuple[str, float | None]]:
-        """
-        Fetch energies for all completed stages.
+        """Fetch energies for all completed stages.
 
-        Useful for polling partial results — call this on each poll to see which
+        Useful for polling partial results – call this on each poll to see which
         stages have completed and their energies.
 
-        :returns: List of (calculation_uuid, energy_in_hartree) for each completed stage.
+        Returns:
+            list of (calculation_uuid, energy_in_hartree) for each completed stage
 
-        .. note::
+        Note:
             Makes one API call per completed stage. Results are not cached since
-            this is intended for use during polling with ``result(wait=False)``.
+            this is intended for use during polling with `result(wait=False)`.
         """
         results = []
         for uuid in self.calculation_uuids:
@@ -132,26 +131,30 @@ def submit_multistage_optimization_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a multistage-optimization workflow to the API.
+    """Submits a multistage-optimization workflow to the API.
 
     Defaults to a `r2scan_3c//gfn2_xtb` stack (GFN2-xTB optimization, r2SCAN-3c single point).
 
-    :param initial_molecule: Molecule to optimize.
-    :param optimization_settings: Optimization stages to apply in order.
-    :param singlepoint_settings: Final singlepoint settings, applied after the
-        last optimization stage.
-    :param frequencies: Whether to calculate frequencies on the last optimization step.
-    :param transition_state: Optimize to a transition state rather than a minimum. Applies to
-        every optimization stage, so a transition-state guess is not relaxed to a minimum.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to optimize
+        optimization_settings: optimization stages to apply in order
+        singlepoint_settings: final singlepoint settings, applied after the
+            last optimization stage
+        frequencies: whether to calculate frequencies on the last optimization step
+        transition_state: optimize to a transition state rather than a minimum. Applies to
+            every optimization stage, so a transition-state guess is not relaxed to a minimum
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

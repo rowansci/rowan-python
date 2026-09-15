@@ -72,7 +72,6 @@ def test_batch_docking_submission_controls(monkeypatch: MonkeyPatch) -> None:
 
 def test_batch_docking_results_align_with_input_smiles() -> None:
     """Align partial raw and refined scores with their input SMILES."""
-
     workflow = stjames.BatchDockingWorkflow(
         protein="protein-uuid",
         target="protein-uuid",

@@ -1,5 +1,4 @@
-"""
-Resubmit a completed workflow with a perturbed structure.
+"""Resubmit a completed workflow with a perturbed structure.
 
 Two strategies: random noise to break symmetry, or displacement along a
 vibrational mode to follow a reaction coordinate or escape a stuck geometry.

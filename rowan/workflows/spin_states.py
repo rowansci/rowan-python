@@ -26,14 +26,16 @@ from .constants import to_relative_kcal
 
 
 def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
-    """
-    Validate that a spin multiplicity is compatible with the molecule.
+    """Validate that a spin multiplicity is compatible with the molecule.
 
     Uses stjames.Molecule.check_electron_sanity() for validation.
 
-    :param mol_dict: Molecule dict with atomic_numbers and charge.
-    :param multiplicity: Spin multiplicity to validate.
-    :raises ValueError: If multiplicity is invalid for this molecule.
+    Args:
+        mol_dict: molecule dict with atomic_numbers and charge
+        multiplicity: spin multiplicity to validate
+
+    Raises:
+        ValueError: multiplicity is invalid for this molecule
     """
     # Create a copy with the test multiplicity and validate using stjames
     test_dict = {**mol_dict, "multiplicity": multiplicity}
@@ -43,12 +45,12 @@ def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
 
 @dataclass(frozen=True, slots=True)
 class SpinState:
-    """
-    Spin state result.
+    """Spin state result.
 
-    :param multiplicity: Spin multiplicity (1=singlet, 2=doublet, 3=triplet, etc.).
-    :param energy: Energy in Hartree.
-    :param calculation_uuids: UUIDs for each optimization stage (for multistage optimization).
+    Attributes:
+        multiplicity: spin multiplicity (1=singlet, 2=doublet, 3=triplet, etc.)
+        energy: energy in Hartree
+        calculation_uuids: UUIDs for each optimization stage (for multistage optimization)
     """
 
     multiplicity: int
@@ -88,17 +90,21 @@ class SpinStatesResult(WorkflowResult):
         return parse_messages(getattr(self._workflow, "messages", None))
 
     def get_calculation(self, multiplicity: int, stage: int = -1) -> Calculation:
-        """
-        Fetch the calculation for a specific spin state.
+        """Fetch the calculation for a specific spin state.
 
-        .. note::
+        Note:
             Makes one API call per spin state on first access.
             Results are cached. Call clear_cache() to refresh.
 
-        :param multiplicity: Spin multiplicity to fetch.
-        :param stage: Optimization stage (-1 for final stage).
-        :returns: Calculation object with molecule and energy data.
-        :raises ValueError: If the multiplicity is not found or has no calculation.
+        Args:
+            multiplicity: spin multiplicity to fetch
+            stage: optimization stage (-1 for final stage)
+
+        Returns:
+            calculation object with molecule and energy data
+
+        Raises:
+            ValueError: multiplicity is not found or has no calculation
         """
         for state in self.spin_states:
             if state.multiplicity == multiplicity:
@@ -118,13 +124,15 @@ class SpinStatesResult(WorkflowResult):
         raise ValueError(f"Spin state with multiplicity {multiplicity} not found")
 
     def get_energies(self, relative: bool = False) -> list[float]:
-        """
-        Get energies for each spin state.
+        """Get energies for each spin state.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the ground state / lowest energy spin state). If False (default),
-            return absolute energies in Hartree.
-        :returns: List of energies for each spin state.
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the ground state / lowest energy spin state). If False (default),
+                return absolute energies in Hartree
+
+        Returns:
+            list of energies for each spin state
         """
         energies: list[float] = [s.energy for s in self.spin_states]
         return to_relative_kcal(energies) if relative else energies
@@ -144,31 +152,35 @@ def submit_spin_states_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a spin-states workflow to the API.
+    """Submits a spin-states workflow to the API.
 
     Defaults to a `r2scan_3c//gfn2_xtb` stack. Pass an explicit
     `MultiStageOptSettings(...)` to override.
 
-    :param initial_molecule: Molecule to calculate spin states for.
-    :param states: List of multiplicities to calculate
-        (e.g., [1, 3, 5] for singlet, triplet, quintet). Defaults to [1, 3, 5]
-        for even-electron molecules and [2, 4, 6] for odd-electron molecules.
-    :param multistage_opt_settings: Optimization stages and singlepoint settings
-        describing the method stack.
-    :param frequencies: if True, compute frequencies on the final optimization of each state.
-    :param transition_state: if True, optimize each state to a transition state.
-    :param constraints: geometric constraints held fixed during every state's optimization,
-        see `Constraint`.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If any multiplicity is incompatible with the molecule.
-    :raises requests.HTTPError: If the request to the API fails.
+    Args:
+        initial_molecule: molecule to calculate spin states for
+        states: list of multiplicities to calculate
+            (e.g., [1, 3, 5] for singlet, triplet, quintet). Defaults to [1, 3, 5]
+            for even-electron molecules and [2, 4, 6] for odd-electron molecules
+        multistage_opt_settings: optimization stages and singlepoint settings
+            describing the method stack
+        frequencies: compute frequencies on the final optimization of each state
+        transition_state: optimize each state to a transition state
+        constraints: geometric constraints held fixed during every state's optimization,
+            see `Constraint`
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: any multiplicity is incompatible with the molecule
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

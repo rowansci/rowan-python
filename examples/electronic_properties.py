@@ -1,5 +1,4 @@
-"""
-Calculate electronic properties (orbitals, density, ESP) using the Rowan API.
+"""Calculate electronic properties (orbitals, density, ESP) using the Rowan API.
 
 This workflow computes molecular orbitals, electron density, electrostatic potential,
 atom-centered charges, bond orders, and multipole moments.

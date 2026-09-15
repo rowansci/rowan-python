@@ -9,7 +9,7 @@ Shared development conventions live in `.agents/skills/`. Read `write-code`,
 These files and this guide are tracked development resources, excluded from Python distributions.
 Keep personal guidance in global agent settings or locally excluded files.
 
-The cookiecutter migration is staged: keep existing docstrings and lint exceptions;
+The cookiecutter migration is staged: use Google-style docstrings and keep existing lint exceptions;
 use mypy until the ty migration. Markdown checks and Codecov uploads remain disabled.
 Do not apply the deferred conventions as a repository-wide cleanup.
 
@@ -70,17 +70,8 @@ uv run python examples/basic_calculation.py
 
 ### Docstrings
 
-Format: reStructuredText-style. No types in docstrings, no leading articles.
-
-```python
-def process_data(input_data: list[str], threshold: int = 10) -> dict[str, int]:
-    """Process input data and return summary statistics.
-
-    :param input_data: strings to process
-    :param threshold: minimum count threshold for inclusion
-    :returns: mapping of categories to counts
-    """
-```
+Follow the [docstring skill](.agents/skills/write-docstrings/SKILL.md) for Google-style
+formatting and description conventions.
 
 ### Type annotations
 

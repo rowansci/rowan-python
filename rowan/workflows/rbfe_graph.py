@@ -107,38 +107,42 @@ def submit_relative_binding_free_energy_graph_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits an RBFE graph construction workflow to the API.
+    """Submits an RBFE graph construction workflow to the API.
 
     Builds a perturbation graph connecting ligands for relative binding free
     energy (RBFE) calculations.
 
-    :param ligands: Dictionary mapping ligand identifiers to molecules.
-    :param mode: Graph construction strategy: ``"greedy"`` or ``"star_map"``.
-    :param hub_compound_id: Ligand identifier for the hub when ``mode="star_map"``.
-    :param greedy_scoring: Edge scoring heuristic for greedy mode:
-        ``"best"``, ``"jaccard"``, or ``"dummy_atoms"``.
-    :param greedy_k_min_cut: Target edge-connectivity for greedy augmentation. Must be > 0.
-    :param refine_cutoff: Optional MCS similarity cutoff for graph refinement.
-    :param seed_graph: RBFE graph from a prior run to extend, as returned by a
-        completed result's ``graph``. Its existing edges (and any computed results)
-        are preserved, and only edges for newly added ligands are built.
-    :param generate_intermediate_ligands: Generate virtual intermediate ligands to make
-        difficult edges easier.
-    :param intermediate_max_dummy_atoms: An edge with more dummy atoms than this is split
-        when a generated intermediate brings both resulting legs back to at most this value.
-    :param intermediate_min_dummy_atom_improvement: Minimum reduction in the worst leg's
-        dummy-atom count required for a generated intermediate to be accepted.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If both folder and folder_uuid are provided, if any ligand has
-        no defined charge, or if the ligands do not all share the same formal charge.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        ligands: dictionary mapping ligand identifiers to molecules
+        mode: graph construction strategy: `"greedy"` or `"star_map"`
+        hub_compound_id: ligand identifier for the hub when `mode="star_map"`
+        greedy_scoring: edge scoring heuristic for greedy mode:
+            `"best"`, `"jaccard"`, or `"dummy_atoms"`
+        greedy_k_min_cut: target edge-connectivity for greedy augmentation. Must be > 0
+        refine_cutoff: optional MCS similarity cutoff for graph refinement
+        seed_graph: RBFE graph from a prior run to extend, as returned by a
+            completed result's `graph`. Its existing edges (and any computed results)
+            are preserved, and only edges for newly added ligands are built
+        generate_intermediate_ligands: generate virtual intermediate ligands to make
+            difficult edges easier
+        intermediate_max_dummy_atoms: edge with more dummy atoms than this is split
+            when a generated intermediate brings both resulting legs back to at most this value
+        intermediate_min_dummy_atom_improvement: minimum reduction in the worst leg's
+            dummy-atom count required for a generated intermediate to be accepted
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: both folder and folder_uuid are provided, if any ligand has
+            no defined charge, or if the ligands do not all share the same formal charge
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

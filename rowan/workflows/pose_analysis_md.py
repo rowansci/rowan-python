@@ -21,27 +21,27 @@ from .base import Message, Workflow, parse_messages, register_result
 
 @dataclass(frozen=True, slots=True)
 class TrajectoryResult:
-    """
-    Results from a single MD trajectory replicate.
+    """Results from a single MD trajectory replicate.
 
-    :param uuid: UUID of the trajectory calculation.
-    :param ligand_rmsd: Ligand RMSD values over time (Angstrom).
-    :param contacts: Ligand-protein contacts with occupancy over the trajectory.
-    :param sasa: Solvent-accessible surface area per analyzed frame (populated when
-        analysis_interval_ps is set).
-    :param polar_sasa: Polar solvent-accessible surface area per analyzed frame (populated when
-        analysis_interval_ps is set).
-    :param isotropic_radius_of_gyration: Radius of gyration per analyzed frame.
-    :param cluster_centroid_indices: Frame indices of the cluster centroids (populated when
-        clustering is set).
-    :param cluster_indices_by_frame: Cluster assignment for each frame (populated when clustering
-        is set).
-    :param protein_rmsd: Per-frame Cα RMSD from the first frame, in angstrom.
-    :param rmsf: Per-Cα RMSF from the mean structure, in angstrom.
-    :param potential_energy: Per-frame potential energy of the simulated system, in Hartree.
-    :param mmgbsa_scores: Per-frame MM/GBSA interaction energy, in kcal/mol.
-    :param mean_structure_uuid: UUID of the coordinate-averaged structure.
-    :param median_structure_frame_index: Frame index of the medoid structure.
+    Attributes:
+        uuid: UUID of the trajectory calculation
+        ligand_rmsd: ligand RMSD values over time (Angstrom)
+        contacts: ligand-protein contacts with occupancy over the trajectory
+        sasa: solvent-accessible surface area per analyzed frame (populated when
+            analysis_interval_ps is set)
+        polar_sasa: polar solvent-accessible surface area per analyzed frame (populated when
+            analysis_interval_ps is set)
+        isotropic_radius_of_gyration: radius of gyration per analyzed frame
+        cluster_centroid_indices: frame indices of the cluster centroids (populated when
+            clustering is set)
+        cluster_indices_by_frame: cluster assignment for each frame (populated when clustering
+            is set)
+        protein_rmsd: per-frame Cα RMSD from the first frame, in angstrom
+        rmsf: per-Cα RMSF from the mean structure, in angstrom
+        potential_energy: per-frame potential energy of the simulated system, in Hartree
+        mmgbsa_scores: per-frame MM/GBSA interaction energy, in kcal/mol
+        mean_structure_uuid: UUID of the coordinate-averaged structure
+        median_structure_frame_index: frame index of the medoid structure
     """
 
     uuid: str
@@ -72,8 +72,7 @@ class PoseAnalysisMDResult(_MolecularDynamicsResult):
 
     @property
     def trajectories(self) -> list[TrajectoryResult]:
-        """
-        Results from each trajectory replicate.
+        """Results from each trajectory replicate.
 
         Each trajectory contains RMSD values, contact analysis, and cluster assignments.
         """
@@ -152,49 +151,53 @@ def submit_pose_analysis_md_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
+    """Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
 
-    :param protein: *Holo* protein on which MD will be run.
-        Can be input as a UUID or a Protein object.
-    :param initial_smiles: SMILES for the ligand.
-    :param num_trajectories: Number of trajectories to run.
-    :param small_molecule_ff: Force field for the ligand.
-    :param protein_ff: Force field for proteins.
-    :param water_ff: Force field for water.
-    :param equilibration_time_ns: Equilibration time per trajectory, in ns.
-    :param simulation_time_ns: Simulation time per trajectory, in ns.
-    :param temperature: Temperature, in K.
-    :param pressure_atm: Pressure, in atm.
-    :param langevin_timescale_ps: Timescale for the Langevin integrator, in ps⁻¹.
-    :param timestep_fs: Timestep, in femtoseconds.
-    :param hydrogen_mass: Hydrogen mass, in atomic mass units.
-    :param ligand_residue_name: Name of the residue corresponding to the ligand.
-    :param constrain_hydrogens: Whether to use SHAKE to freeze bonds to hydrogen.
-    :param nonbonded_cutoff: Nonbonded cutoff for particle-mesh Ewald, in Å.
-    :param ionic_strength_M: Ionic strength of the solution, in M (molar).
-    :param water_buffer: Amount of water to add around the protein, in Å.
-    :param protein_restraint_cutoff: Cutoff past which alpha-carbons will be constrained, in Å,
-        measured from the ligand. None applies no restraints.
-    :param protein_restraint_constant: Force constant for backbone restraints, in kcal/mol/Å².
-    :param save_solvent: Whether to save solvent molecules.
-    :param num_solvent_to_save: Number of solvent molecules to save (the N nearest the ligand each
-        frame). None saves all solvent when save_solvent is True.
-    :param analysis_interval_ps: Interval at which to compute per-frame SASA and polar SASA, in ps.
-        None disables those analyses.
-    :param clustering: How to cluster trajectory frames. None disables clustering; pass a
-        KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom).
-    :param validate_forcefield: if True (default), validate the protein forcefield
-        compatibility before submitting. Raises an error early if the protein cannot
-        be parameterized or has clashing residues.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        protein: *Holo* protein on which MD will be run.
+            Can be input as a UUID or a Protein object
+        initial_smiles: SMILES for the ligand
+        num_trajectories: number of trajectories to run
+        small_molecule_ff: force field for the ligand
+        protein_ff: force field for proteins
+        water_ff: force field for water
+        equilibration_time_ns: equilibration time per trajectory, in ns
+        simulation_time_ns: simulation time per trajectory, in ns
+        temperature: temperature, in K
+        pressure_atm: pressure, in atm
+        langevin_timescale_ps: timescale for the Langevin integrator, in ps⁻¹
+        timestep_fs: timestep, in femtoseconds
+        hydrogen_mass: hydrogen mass, in atomic mass units
+        ligand_residue_name: name of the residue corresponding to the ligand
+        constrain_hydrogens: whether to use SHAKE to freeze bonds to hydrogen
+        nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in Å
+        ionic_strength_M: ionic strength of the solution, in M (molar)
+        water_buffer: amount of water to add around the protein, in Å
+        protein_restraint_cutoff: cutoff past which alpha-carbons will be constrained, in Å,
+            measured from the ligand. None applies no restraints
+        protein_restraint_constant: force constant for backbone restraints, in kcal/mol/Å²
+        save_solvent: whether to save solvent molecules
+        num_solvent_to_save: number of solvent molecules to save (the N nearest the ligand each
+            frame). None saves all solvent when save_solvent is True
+        analysis_interval_ps: interval at which to compute per-frame SASA and polar SASA, in ps.
+            None disables those analyses
+        clustering: how to cluster trajectory frames. None disables clustering; pass a
+            KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom)
+        validate_forcefield: validate the protein forcefield
+            compatibility before submitting. Raises an error early if the protein cannot
+            be parameterized or has clashing residues
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

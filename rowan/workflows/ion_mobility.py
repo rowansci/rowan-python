@@ -59,24 +59,27 @@ def submit_ion_mobility_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits an ion-mobility workflow to the API.
+    """Submits an ion-mobility workflow to the API.
 
-    :param initial_molecule: Molecule used in the scan.
-    :param temperature: Temperature at which to predict CCS values (K).
-    :param protonate: Whether or not to automatically detect protonation site.
-        If `True`, every basic site will be protonated and values returned for the most stable.
-    :param do_csearch: Whether to perform a conformational search on the molecule.
-        Requires do_optimization.
-    :param do_optimization: Whether to perform an optimization on the molecule.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule used in the scan
+        temperature: temperature at which to predict CCS values (K)
+        protonate: protonate each basic site and return values for the most stable form
+        do_csearch: whether to perform a conformational search on the molecule.
+            Requires do_optimization
+        do_optimization: whether to perform an optimization on the molecule
+        name: name of the workflow
+        folder_uuid: UUID of the folder to store the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if do_csearch and not do_optimization:

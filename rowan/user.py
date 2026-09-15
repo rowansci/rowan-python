@@ -8,12 +8,12 @@ from .utils import api_client
 
 
 class Organization(BaseModel):
-    """
-    A Rowan organization
+    """A Rowan organization.
 
-    :ivar name: Name of the organization.
-    :ivar weekly_credits: Weekly credits of the organization.
-    :ivar credits: Credits of the organization.
+    Attributes:
+        name: name of the organization
+        weekly_credits: weekly credits of the organization
+        credits: credits of the organization
     """
 
     name: str
@@ -22,56 +22,56 @@ class Organization(BaseModel):
 
 
 class OrganizationRole(BaseModel):
-    """
-    A Rowan organization role
+    """A Rowan organization role.
 
-    :ivar name: Name of the organization role.
+    Attributes:
+        name: name of the organization role
     """
 
     name: str
 
 
 class SubscriptionPlan(BaseModel):
-    """
-    A Rowan subscription plan
+    """A Rowan subscription plan.
 
-    :ivar name: Name of the subscription plan.
+    Attributes:
+        name: name of the subscription plan
     """
 
     name: str
 
 
 class IndividualSubscription(BaseModel):
-    """
-    A Rowan individual subscription
+    """A Rowan individual subscription.
 
-    :ivar subscription_plan: Subscription plan of the individual subscription.
+    Attributes:
+        subscription_plan: subscription plan of the individual subscription
     """
 
     subscription_plan: SubscriptionPlan
 
 
 class User(BaseModel):
-    """
-    A Rowan user
+    """A Rowan user.
 
-    :ivar uuid: UUID of the user.
-    :ivar username: Username of the user.
-    :ivar email: Email of the user.
-    :ivar firstname: First name of the user.
-    :ivar lastname: Last name of the user.
-    :ivar weekly_credits: Weekly credits of the user.
-    :ivar credits: Credits of the user.
-    :ivar billing_name: Billing name of the user.
-    :ivar billing_address: Billing address of the user.
-    :ivar credit_balance_warning: Credit balance warning of the user.
-    :ivar organization: Organization of the user.
-    :ivar organization_role: Organization role of the user.
-    :ivar individual_subscription: Individual subscription of the user.
-    :ivar enabled_workflows: Workflow types this account may submit, as backend slugs that
-        mostly match the ``submit_<slug>_workflow`` names (note ``molecular_dynamics`` is
-        protein MD).
-    :ivar feature_list: Feature flags enabled for this account.
+    Attributes:
+        uuid: UUID of the user
+        username: username of the user
+        email: email of the user
+        firstname: first name of the user
+        lastname: last name of the user
+        weekly_credits: weekly credits of the user
+        credits: credits of the user
+        billing_name: billing name of the user
+        billing_address: billing address of the user
+        credit_balance_warning: credit balance warning of the user
+        organization: organization of the user
+        organization_role: organization role of the user
+        individual_subscription: individual subscription of the user
+        enabled_workflows: workflow types this account may submit, as backend slugs that
+            mostly match the `submit_<slug>_workflow` names (note `molecular_dynamics` is
+            protein MD)
+        feature_list: feature flags enabled for this account
     """
 
     uuid: str
@@ -119,10 +119,10 @@ class User(BaseModel):
         )
 
     def credits_available_string(self) -> str:
-        """
-        Returns a string showing available credits, including organization credits if applicable
+        """Returns a string showing available credits, including organization credits if applicable.
 
-        :returns: String showing available credits
+        Returns:
+            string showing available credits
         """
         individual_credits = f"Weekly Credits: {self.weekly_credits}\nCredits: {self.credits}"
         if self.organization is not None:
@@ -136,10 +136,7 @@ class User(BaseModel):
 
 
 def whoami() -> User:
-    """
-    Returns the current user
-    """
-
+    """Returns the current user."""
     with api_client() as client:
         response = client.get("/user/me")
         response.raise_for_status()
@@ -179,12 +176,15 @@ def verify_webhook_secret(
 ) -> bool:
     """Verify an incoming webhook request from Rowan.
 
-    :param raw_body: Raw (unparsed) request body bytes.
-    :param signature_header: Value of the X-Rowan-Signature header.
-    :param secret: Your webhook secret (from :func:`create_webhook_secret` or
-        :func:`rotate_webhook_secret`).
-    :param max_age_seconds: Reject requests older than this many seconds (default 5 min).
-    :returns: True if the signature is valid and the request is fresh.
+    Args:
+        raw_body: raw (unparsed) request body bytes
+        signature_header: value of the X-Rowan-Signature header
+        secret: your webhook secret (from `create_webhook_secret` or
+            `rotate_webhook_secret`)
+        max_age_seconds: reject requests older than this many seconds (default 5 min)
+
+    Returns:
+        true if the signature is valid and the request is fresh
     """
     try:
         parts = dict(part.split("=", 1) for part in signature_header.split(","))

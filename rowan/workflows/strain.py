@@ -65,7 +65,7 @@ class StrainResult(WorkflowResult):
     def conformers(self) -> list[Calculation]:
         """All conformer calculations.
 
-        .. note::
+        Note:
             Makes one API call per conformer on first access.
             Results are cached. Call clear_cache() to refresh.
         """
@@ -88,11 +88,13 @@ class StrainResult(WorkflowResult):
         return [c.molecule for c in self.conformers if c.molecule]
 
     def get_boltzmann_weights(self, temperature: float = 300.0) -> list[float]:
-        """
-        Compute Boltzmann weights for conformers.
+        """Compute Boltzmann weights for conformers.
 
-        :param temperature: Temperature in Kelvin (default: 300K).
-        :returns: List of weights (sum to 1.0), excluding failed conformers.
+        Args:
+            temperature: temperature in Kelvin (default: 300K)
+
+        Returns:
+            list of weights (sum to 1.0), excluding failed conformers
         """
         energies = self.conformer_energies
         valid_energies = [e for e in energies if e is not None]
@@ -123,26 +125,30 @@ def submit_strain_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a strain workflow to the API.
+    """Submits a strain workflow to the API.
 
-    :param initial_molecule: Molecule to calculate strain for.
-    :param harmonic_constraint_spring_constant: Spring constant for harmonic
-        constraints (kcal/mol/A). Default 5.0.
-    :param constrain_hydrogens: Whether to constrain hydrogen positions. Default False.
-    :param conf_gen_settings: Conformer generation settings. Defaults to
-        OpenConf with max 200 conformers.
-    :param multistage_opt_settings: Optimization settings for conformer ranking.
-        Defaults to GFN2-xTB optimization in water (ALPB) with a g-xTB singlepoint
-        in water (CPCMx).
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: If the request to the API fails.
+    Args:
+        initial_molecule: molecule to calculate strain for
+        harmonic_constraint_spring_constant: spring constant for harmonic
+            constraints (kcal/mol/A). Default 5.0
+        constrain_hydrogens: whether to constrain hydrogen positions. Default False
+        conf_gen_settings: conformer generation settings. Defaults to
+            OpenConf with max 200 conformers
+        multistage_opt_settings: optimization settings for conformer ranking.
+            Defaults to GFN2-xTB optimization in water (ALPB) with a g-xTB singlepoint
+            in water (CPCMx)
+        name: name of the workflow
+        folder_uuid: UUID of the folder to store the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

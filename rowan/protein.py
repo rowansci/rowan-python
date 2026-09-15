@@ -12,20 +12,20 @@ from .utils import api_client
 
 
 class Protein(BaseModel):
-    """
-    A Rowan protein.
+    """A Rowan protein.
 
     Data is not loaded by default to avoid unnecessary downloads that could impact performance.
     Call `load_data()` to fetch and attach the protein data to this `Protein` object.
 
-    :ivar uuid: UUID of the protein
-    :ivar created_at: Creation date of the protein
-    :ivar used_in_workflow: Whether the protein is used in a workflow
-    :ivar ancestor_uuid: UUID of the ancestor protein
-    :ivar sanitized: Whether the protein is sanitized
-    :ivar name: Name of the protein
-    :ivar data: Data of the protein
-    :ivar public: Whether the protein is public
+    Attributes:
+        uuid: UUID of the protein
+        created_at: creation date of the protein
+        used_in_workflow: whether the protein is used in a workflow
+        ancestor_uuid: UUID of the ancestor protein
+        sanitized: whether the protein is sanitized
+        name: name of the protein
+        data: data of the protein
+        public: whether the protein is public
     """
 
     uuid: str
@@ -67,13 +67,18 @@ class Protein(BaseModel):
     ) -> int:
         """Return an atom's zero-based position in PDB atom-record order.
 
-        :param chain: chain ID
-        :param residue: residue number, optionally including an insertion code
-        :param atom: atom name, such as `SG` or `C1`
-        :param entity_type: entity collection to search
-        :param model_index: zero-based model index
-        :returns: atom index in PDB record order
-        :raises ValueError: if protein data is not loaded or the atom cannot be found
+        Args:
+            chain: chain ID
+            residue: residue number, optionally including an insertion code
+            atom: atom name, such as `SG` or `C1`
+            entity_type: entity collection to search
+            model_index: zero-based model index
+
+        Returns:
+            atom index in PDB record order
+
+        Raises:
+            ValueError: protein data is not loaded or the atom cannot be found
         """
         if not self.data:
             raise ValueError("Protein data not loaded: call refresh() first.")
@@ -87,13 +92,17 @@ class Protein(BaseModel):
         )
 
     def select_chains(self, chains: list[str]) -> "Protein":
-        """
-        Create a new protein record containing only the specified chains.
+        """Create a new protein record containing only the specified chains.
 
-        :param chains: Chain IDs to keep (e.g. ``["A"]``).
-        :returns: New Protein object with only the selected chains.
-        :raises ValueError: If any requested chain is not present.
-        :raises requests.HTTPError: If the API request fails.
+        Args:
+            chains: chain IDs to keep (e.g. `["A"]`)
+
+        Returns:
+            new Protein object with only the selected chains
+
+        Raises:
+            ValueError: any requested chain is not present
+            httpx.HTTPStatusError: API request fails
         """
         if not self.data:
             raise ValueError("Protein data not loaded — call refresh() first.")
@@ -153,12 +162,16 @@ class Protein(BaseModel):
             return Protein(**response.json())
 
     def refresh(self, in_place: bool = True, workflow_uuid: str | None = None) -> Self:
-        """
-        Loads protein data
+        """Loads protein data.
 
-        :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
-            only through a workflow you can read. Not needed for proteins from a workflow result.
-        :returns: protein with loaded data
+        Args:
+            in_place: whether to update this protein or return a refreshed copy
+            workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+                only through a workflow you can read. Not needed for proteins from a workflow
+                result
+
+        Returns:
+            protein with loaded data
         """
         workflow_uuid = workflow_uuid or self._workflow_uuid
         params = {"workflow_uuid": workflow_uuid} if workflow_uuid else None
@@ -187,14 +200,16 @@ class Protein(BaseModel):
         public: bool | None = None,
         pocket: list[list[float]] | None = None,
     ) -> Self:
-        """
-        Updates protein data
+        """Updates protein data.
 
-        :param name: New name of the protein
-        :param data: New data of the protein
-        :param public: Whether the protein is public
-        :param pocket: New pocket of the protein
-        :returns: Updated protein object
+        Args:
+            name: new name of the protein
+            data: new data of the protein
+            public: whether the protein is public
+            pocket: new pocket of the protein
+
+        Returns:
+            updated protein object
         """
         # Use current values unless new ones are passed in
         updated_payload = {
@@ -217,27 +232,29 @@ class Protein(BaseModel):
         return self
 
     def delete(self) -> None:
-        """
-        Deletes a protein
+        """Deletes a protein.
 
-        :raises requests.HTTPError: if the request to the API fails
+        Raises:
+            httpx.HTTPStatusError: request to the API fails
         """
         with api_client() as client:
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
 
     def sanitize(self, poll_interval: float = 10.0, timeout: float = 300.0) -> None:
-        """
-        Sanitizes a protein and waits for the process to complete.
+        """Sanitizes a protein and waits for the process to complete.
 
         Protein sanitization runs asynchronously on the server. This method
         submits the request then polls until sanitization succeeds, fails, or
         times out.
 
-        :param poll_interval: Seconds between status checks (default 10).
-        :param timeout: Maximum seconds to wait before raising (default 300).
-        :raises RuntimeError: if sanitization fails, is stopped, or times out.
-        :raises requests.HTTPError: if any API request fails.
+        Args:
+            poll_interval: seconds between status checks (default 10)
+            timeout: maximum seconds to wait before raising (default 300)
+
+        Raises:
+            RuntimeError: sanitization fails, is stopped, or times out
+            httpx.HTTPStatusError: any API request fails
         """
         with api_client() as client:
             response = client.post(f"/protein/sanitize/{self.uuid}")
@@ -276,29 +293,31 @@ class Protein(BaseModel):
         poll_interval: float = 10.0,
         timeout: float = 300.0,
     ) -> None:
-        """
-        Quickly prepare a protein in place using PDBFixer and OpenMM.
+        """Quickly prepare a protein in place using PDBFixer and OpenMM.
 
         Runs PDBFixer to fix nonstandard residues, add missing atoms/hydrogens,
         and optionally optimizes hydrogen positions with OpenMM. This is the fast
         preparation option and typically finishes in about a minute or less. Use
-        ``submit_protein_preparation_workflow`` for the full protein preparation workflow,
+        `submit_protein_preparation_workflow` for the full protein preparation workflow,
         which can take around ten minutes but includes Boltz-2 missing-structure modeling,
         terminal capping, selectable protonation methods, and retained non-polymers.
 
-        :param find_missing_residues: Identify and model missing residues.
-        :param add_missing_atoms: Add missing heavy atoms to residues.
-        :param remove_heterogens: Remove ligands, salts, and other heterogens.
-        :param keep_waters: Preserve water molecules when removing heterogens.
-        :param remove_hydrogens: Remove all existing hydrogens before adding new ones.
-        :param remove_invalid_hydrogens: Remove hydrogens not matching the forcefield template.
-        :param add_hydrogens: Add missing hydrogen atoms.
-        :param add_hydrogen_ph: pH used to determine protonation states when adding hydrogens.
-        :param optimize_hydrogens: Optimize hydrogen positions with OpenMM energy minimization.
-        :param poll_interval: Seconds between status checks (default 10).
-        :param timeout: Maximum seconds to wait before raising (default 300).
-        :raises RuntimeError: If preparation fails, is stopped, or times out.
-        :raises requests.HTTPError: If any API request fails.
+        Args:
+            find_missing_residues: identify and model missing residues
+            add_missing_atoms: add missing heavy atoms to residues
+            remove_heterogens: remove ligands, salts, and other heterogens
+            keep_waters: preserve water molecules when removing heterogens
+            remove_hydrogens: remove all existing hydrogens before adding new ones
+            remove_invalid_hydrogens: remove hydrogens not matching the forcefield template
+            add_hydrogens: add missing hydrogen atoms
+            add_hydrogen_ph: pH used to determine protonation states when adding hydrogens
+            optimize_hydrogens: optimize hydrogen positions with OpenMM energy minimization
+            poll_interval: seconds between status checks (default 10)
+            timeout: maximum seconds to wait before raising (default 300)
+
+        Raises:
+            RuntimeError: preparation fails, is stopped, or times out
+            httpx.HTTPStatusError: any API request fails
         """
         params = {
             "find_missing_residues": find_missing_residues,
@@ -335,14 +354,13 @@ class Protein(BaseModel):
         raise RuntimeError(f"Protein preparation timed out after {timeout:.0f}s for {self.uuid}.")
 
     def validate_protein_forcefield(self, exclude_residues: list[str | int] | None = None) -> None:
-        """
-        Validate that this protein can be parameterized with the MD forcefield.
+        """Validate that this protein can be parameterized with the MD forcefield.
 
         Calls the server-side validation which checks that all residues are
         recognized by OpenMM and that there are no clashing atoms. Call this
         before submitting any MD workflow to catch preparation issues early.
 
-        Ligand residues (`LIG`) are always excluded — they are parameterized
+        Ligand residues (`LIG`) are always excluded – they are parameterized
         separately by the MD workflow from the provided SMILES. Pass a binder's
         `small_molecule_residues` to exclude those as well.
 
@@ -351,11 +369,14 @@ class Protein(BaseModel):
         0-based indices into the protein's sorted non-polymer records, and reference
         a record without naming it.
 
-        Run validation on the structure returned by ``submit_protein_preparation_workflow``.
+        Run validation on the structure returned by `submit_protein_preparation_workflow`.
         The preparation workflow strips and reassigns hydrogens before returning the structure.
 
-        :param exclude_residues: additional residue names and/or 0-based non-polymer indices to skip
-        :raises requests.HTTPError: if validation fails or the API request fails.
+        Args:
+            exclude_residues: additional residue names and/or 0-based non-polymer indices to skip
+
+        Raises:
+            httpx.HTTPStatusError: validation fails or the API request fails
         """
         entries: list[str | int] = ["LIG"]
         entries += [r.upper() if isinstance(r, str) else r for r in exclude_residues or []]
@@ -377,13 +398,18 @@ class Protein(BaseModel):
     ) -> Path:
         """Download a protein structure, defaulting to mmCIF.
 
-        :param path: output directory; defaults to the current directory
-        :param name: filename without an extension; defaults to protein name or UUID
-        :param workflow_uuid: UUID of a readable workflow referencing this protein
-        :param file_format: output format; mmCIF avoids PDB's fixed-width identifier limits
-        :returns: saved `.cif` or `.pdb` path
-        :raises ValueError: if the file format is unsupported
-        :raises httpx.HTTPStatusError: if the API request fails
+        Args:
+            path: output directory; defaults to the current directory
+            name: filename without an extension; defaults to protein name or UUID
+            workflow_uuid: UUID of a readable workflow referencing this protein
+            file_format: output format; mmCIF avoids PDB's fixed-width identifier limits
+
+        Returns:
+            saved `.cif` or `.pdb` path
+
+        Raises:
+            ValueError: file format is unsupported
+            httpx.HTTPStatusError: API request fails
         """
         if file_format not in {"mmcif", "pdb"}:
             raise ValueError(f"Unsupported structure file format: {file_format!r}")
@@ -415,17 +441,20 @@ class Protein(BaseModel):
         name: str | None = None,
         workflow_uuid: str | None = None,
     ) -> None:
-        """
-        Downloads the PDB file for a protein.
+        """Downloads the PDB file for a protein.
 
         Builds the file locally from this protein's data, calling `refresh()` if needed, so it
-        works anywhere `refresh()` does — including proteins reachable only through a workflow.
+        works anywhere `refresh()` does – including proteins reachable only through a workflow.
 
-        :param path: Directory to save the file to (defaults to current directory)
-        :param name: Optional custom name for the file (defaults to protein name)
-        :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
-            only through a workflow you can read. Not needed for proteins from a workflow result.
-        :raises requests.HTTPError: if the request to the API fails
+        Args:
+            path: directory to save the file to (defaults to current directory)
+            name: optional custom name for the file (defaults to protein name)
+            workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+                only through a workflow you can read. Not needed for proteins from a workflow
+                result
+
+        Raises:
+            httpx.HTTPStatusError: request to the API fails
         """
         self.download_structure(path, name, workflow_uuid, file_format="pdb")
 
@@ -470,14 +499,18 @@ def _structure_for_mmcif(structure: PDB) -> PDB:
 
 
 def retrieve_protein(uuid: str, workflow_uuid: str | None = None) -> Protein:
-    """
-    Retrieves a protein from the API using its UUID.
+    """Retrieves a protein from the API using its UUID.
 
-    :param uuid: UUID of the protein to retrieve.
-    :param workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
-        only through a workflow you can read. Not needed for proteins from a workflow result.
-    :returns: Protein object representing the retrieved protein.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        uuid: UUID of the protein to retrieve
+        workflow_uuid: UUID of a workflow referencing this protein, for proteins reachable
+            only through a workflow you can read. Not needed for proteins from a workflow result
+
+    Returns:
+        protein object representing the retrieved protein
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     params = {"workflow_uuid": workflow_uuid} if workflow_uuid else None
 
@@ -497,15 +530,19 @@ def list_proteins(
     page: int = 0,
     size: int = 20,
 ) -> list[Protein]:
-    """
-    List proteins
+    """List proteins.
 
-    :param ancestor_uuid: UUID of the ancestor protein to filter by
-    :param name_contains: Substring to search for in protein names
-    :param page: Page number to retrieve
-    :param size: Number of items per page
-    :returns: List of Protein objects that match the search criteria
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        ancestor_uuid: UUID of the ancestor protein to filter by
+        name_contains: substring to search for in protein names
+        page: page number to retrieve
+        size: number of items per page
+
+    Returns:
+        proteins that match the search criteria
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     params: dict[str, Any] = {"page": page, "size": size}
     if ancestor_uuid is not None:
@@ -524,14 +561,18 @@ def list_proteins(
 def upload_protein(
     name: str, file_path: str | Path, project_uuid: str | Project | None = None
 ) -> Protein:
-    """
-    Upload a protein from an mmCIF or PDB file to the API.
+    """Upload a protein from an mmCIF or PDB file to the API.
 
-    :param name: Name of the protein to create
-    :param file_path: path to an mmCIF (`.cif` or `.mmcif`) or PDB file
-    :param project_uuid: UUID of the project to create the protein in
-    :returns: Protein object representing the uploaded protein
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        name: name of the protein to create
+        file_path: path to an mmCIF (`.cif` or `.mmcif`) or PDB file
+        project_uuid: UUID of the project to create the protein in
+
+    Returns:
+        protein object representing the uploaded protein
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     file_path = Path(file_path)
     if isinstance(project_uuid, Project):
@@ -560,14 +601,18 @@ def upload_protein(
 def create_protein_from_pdb_id(
     code: str, name: str | None = None, project_uuid: str | Project | None = None
 ) -> Protein:
-    """
-    Creates a protein from a PDB ID.
+    """Creates a protein from a PDB ID.
 
-    :param code: PDB ID of the protein to create
-    :param name: Name of the protein. Defaults to the PDB ID.
-    :param project_uuid: UUID of the project to create the protein in
-    :returns: Protein object representing the created protein
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        code: PDB ID of the protein to create
+        name: name of the protein. Defaults to the PDB ID
+        project_uuid: UUID of the project to create the protein in
+
+    Returns:
+        protein object representing the created protein
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if isinstance(project_uuid, Project):
         project_uuid = project_uuid.uuid

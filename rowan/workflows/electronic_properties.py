@@ -24,9 +24,10 @@ from .base import (
 class MolecularOrbital:
     """Molecular orbital with cube data.
 
-    :param points: Cube data as (x, y, z, value) points (Bohr).
-    :param occupation: Occupation number (0, 1, or 2).
-    :param energy: Orbital energy (Hartree).
+    Attributes:
+        points: cube data as (x, y, z, value) points (Bohr)
+        occupation: occupation number (0, 1, or 2)
+        energy: orbital energy (Hartree)
     """
 
     points: tuple[tuple[float, float, float, float], ...]
@@ -164,27 +165,31 @@ def submit_electronic_properties_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits an electronic-properties workflow to the API.
+    """Submits an electronic-properties workflow to the API.
 
-    :param initial_molecule: Molecule to calculate electronic properties for.
-    :param method: Method to use for the calculation.
-    :param basis_set: Basis set to use (if any).
-    :param engine: Compute engine, see `Engine`. Auto-selected from method if not specified.
-    :param compute_density_cube: Whether to compute the density cube.
-    :param compute_electrostatic_potential_cube: Whether to compute the electrostatic
-        potential cube.
-    :param compute_num_occupied_orbitals: Number of occupied orbitals to save.
-    :param compute_num_virtual_orbitals: Number of virtual orbitals to save.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If the method is not supported by the engine.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to calculate electronic properties for
+        method: method to use for the calculation
+        basis_set: basis set to use (if any)
+        engine: compute engine, see `Engine`. Auto-selected from method if not specified
+        compute_density_cube: whether to compute the density cube
+        compute_electrostatic_potential_cube: whether to compute the electrostatic
+            potential cube
+        compute_num_occupied_orbitals: number of occupied orbitals to save
+        compute_num_virtual_orbitals: number of virtual orbitals to save
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: method is not supported by the engine
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

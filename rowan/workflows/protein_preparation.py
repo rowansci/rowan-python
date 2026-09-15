@@ -32,15 +32,17 @@ class ProteinPreparationResult(WorkflowResult):
         return getattr(self._workflow, "prepared_protein", None)
 
     def get_prepared_protein(self) -> Protein:
-        """
-        Fetch the prepared protein structure.
+        """Fetch the prepared protein structure.
 
-        .. note::
+        Note:
             Makes one API call on first access.
             Results are cached. Call clear_cache() to refresh.
 
-        :returns: prepared Protein object
-        :raises ValueError: if the workflow has not produced a prepared protein
+        Returns:
+            prepared Protein object
+
+        Raises:
+            ValueError: workflow has not produced a prepared protein
         """
         if not (uuid := self.prepared_protein_uuid):
             raise ValueError("Protein preparation has no prepared protein UUID")
@@ -69,33 +71,38 @@ def submit_protein_preparation_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submit a protein-preparation workflow to the API.
+    """Submit a protein-preparation workflow to the API.
 
     Full protein preparation can take around ten minutes, depending on the structure and
-    settings. For a faster PDBFixer/OpenMM-only path, use ``Protein.prepare()``.
+    settings. For a faster PDBFixer/OpenMM-only path, use `Protein.prepare()`.
 
-    :param protein: protein to prepare, as a UUID or Protein object
-    :param add_missing_method: method for adding missing atoms and residues before protonation;
-        None skips this step
-    :param cap_residues: terminal-residue capping method; ``"ace_nme"`` requires an
-        add-missing method and is incompatible with ``"protonate_utils"``; None disables capping
-    :param protonation_method: method for adding hydrogens
-    :param pH: pH used to determine protonation states
-    :param retain_protonation: whether to retain existing protonation states
-    :param retain_non_polymer: non-polymer residues to retain, keyed by residue name or 0-based
-        residue index. Values are SMILES strings used for parameterization. Known ions and waters
-        may map to None; other residues require a SMILES string. None removes all non-polymer
-        residues.
-    :param name: name of the workflow
-    :param folder_uuid: UUID of the folder to place the workflow in
-    :param folder: Folder object to store the workflow in
-    :param max_credits: maximum number of credits to use for the workflow
-    :param webhook_url: URL that Rowan will POST to when the workflow completes
-    :param is_draft: if True, submit the workflow as a draft without starting execution
-    :returns: Workflow object representing the submitted workflow
-    :raises ValueError: if settings are incompatible or a retained residue mapping is invalid
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        protein: protein to prepare, as a UUID or Protein object
+        add_missing_method: method for adding missing atoms and residues before protonation;
+            None skips this step
+        cap_residues: terminal-residue capping method; `"ace_nme"` requires an
+            add-missing method and is incompatible with `"protonate_utils"`; None disables capping
+        protonation_method: method for adding hydrogens
+        pH: pH used to determine protonation states
+        retain_protonation: whether to retain existing protonation states
+        retain_non_polymer: non-polymer residues to retain, keyed by residue name or 0-based
+            residue index. Values are SMILES strings used for parameterization. Known ions and
+            waters
+            may map to None; other residues require a SMILES string. None removes all non-polymer
+            residues
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        workflow object representing the submitted workflow
+
+    Raises:
+        ValueError: settings are incompatible or a retained residue mapping is invalid
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

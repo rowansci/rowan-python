@@ -88,18 +88,14 @@ ignore = [
     "PLC0415",
     # "PT013",  # Incorrect import of pytest (enable with PT rules)
 
-    # Existing exceptions retained until the style migration.
+    # Missing-docstring checks deferred until documentation coverage is complete.
     "D100",
     "D101",
     "D102",
     "D103",
     "D104",
     "D105",
-    "D200",
-    "D202",
-    "D205",
-    "D400",
-    "D401",
+    # Naming and environment-variable checks deferred until the code-style migration.
     "N801",
     "N802",
     "N803",
@@ -110,8 +106,7 @@ ignore = [
 "__init__.py" = ["F401", "F403"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "numpy"
-# convention = "google"  # Enable after converting the existing docstrings.
+convention = "google"
 
 [tool.mypy]
 exclude = ["examples"]

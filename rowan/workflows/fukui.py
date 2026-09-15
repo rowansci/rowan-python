@@ -57,29 +57,33 @@ def submit_fukui_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a Fukui workflow to the API.
+    """Submits a Fukui workflow to the API.
 
-    :param initial_molecule: Molecule to calculate the Fukui indices of.
-    :param optimization_method: Method to use for the optimization.
-    :param fukui_method: Method to use for the Fukui calculation.
-    :param solvent_settings: Optional implicit solvent for the Fukui calculation. A dict
-        with two keys:
+    Args:
+        initial_molecule: molecule to calculate the Fukui indices of
+        optimization_method: method to use for the optimization
+        fukui_method: method to use for the Fukui calculation
+        solvent_settings: optional implicit solvent for the Fukui calculation. A dict
+            with two keys:
 
-        - ``"solvent"``: solvent name string (e.g. ``"water"``, ``"dichloromethane"``,
-          ``"dmso"``). See ``rowan.Solvent`` for all valid values.
-        - ``"model"``: solvation model (e.g. ``"alpb"``, ``"gbsa"``, ``"cpcmx"`` for xTB;
-          ``"cpcm"``, ``"pcm"`` for DFT). Must be compatible with the engine for the chosen method.
+            - `"solvent"`: solvent name string (e.g. `"water"`, `"dichloromethane"`,
+              `"dmso"`). See `rowan.Solvent` for all valid values.
+            - `"model"`: solvation model (e.g. `"alpb"`, `"gbsa"`, `"cpcmx"` for xTB;
+              `"cpcm"`, `"pcm"` for DFT). Must be compatible with the engine for the chosen method
 
-        Example: ``solvent_settings={"solvent": "water", "model": "alpb"}``
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+            Example: `solvent_settings={"solvent": "water", "model": "alpb"}`
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

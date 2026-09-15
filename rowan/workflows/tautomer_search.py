@@ -23,14 +23,14 @@ from .base import (
 
 @dataclass(frozen=True, slots=True)
 class Tautomer:
-    """
-    Tautomer result.
+    """Tautomer result.
 
-    :param energy: Energy in Hartree.
-    :param weight: Boltzmann weight (sum to 1.0 across all tautomers), if available.
-    :param predicted_relative_energy: Relative energy in kcal/mol (relative to lowest energy),
-        if available.
-    :param structure_uuids: UUIDs of the structure calculations.
+    Attributes:
+        energy: energy in Hartree
+        weight: Boltzmann weight (sum to 1.0 across all tautomers), if available
+        predicted_relative_energy: relative energy in kcal/mol (relative to lowest energy),
+            if available
+        structure_uuids: UUIDs of the structure calculations
     """
 
     energy: float
@@ -89,7 +89,7 @@ class TautomerResult(WorkflowResult):
     def molecules(self) -> list[Molecule]:
         """Molecules for all tautomers.
 
-        .. note::
+        Note:
             Makes one API call per tautomer on first access.
             Results are cached. Call clear_cache() to refresh.
         """
@@ -117,27 +117,31 @@ def submit_tautomer_search_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a tautomer-search workflow to the API.
+    """Submits a tautomer-search workflow to the API.
 
-    :param initial_molecule: Molecule to find tautomers for.
-    :param conf_gen_settings: Conformer generation settings. Defaults to OpenConf with
-        20 max conformers.
-    :param multistage_opt_settings: Optimization stages and singlepoint settings
-        describing the method stack. Defaults to AIMNet2/wB97M-D3 optimization with
-        CPCMx(water) singlepoint.
-    :param final_correction: if `COSMO_RS`, applies an additional, more expensive COSMO-RS
-        solvent correction to the final tautomer energies
-    :param screening_window: Maximum predicted relative energy retained during initial screening,
-        in kcal/mol.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: If the request to the API fails.
+    Args:
+        initial_molecule: molecule to find tautomers for
+        conf_gen_settings: conformer generation settings. Defaults to OpenConf with
+            20 max conformers
+        multistage_opt_settings: optimization stages and singlepoint settings
+            describing the method stack. Defaults to AIMNet2/wB97M-D3 optimization with
+            CPCMx(water) singlepoint
+        final_correction: `COSMO_RS` adds an additional, more expensive COSMO-RS
+            solvent correction to the final tautomer energies
+        screening_window: maximum predicted relative energy retained during initial screening,
+            in kcal/mol
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

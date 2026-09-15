@@ -50,7 +50,7 @@ plugins:
               - griffe_pydantic:
                   schema: true
             heading_level: 3
-            docstring_style: sphinx # ← "sphinx", "google" or "numpy"
+            docstring_style: google
             docstring_section_style: table # or "table" if you prefer grids
             show_signature_annotations: true
             merge_init_into_class: true # if you want __init__ docs on the class

@@ -10,8 +10,11 @@ BOLTZMANN_HARTREE_PER_K = 3.1668105e-6
 def to_relative_kcal(energies: list[float]) -> list[float]:
     """Convert absolute Hartree energies to relative kcal/mol.
 
-    :param energies: Absolute energies in Hartree.
-    :returns: Energies relative to the minimum, in kcal/mol. Empty list if input is empty.
+    Args:
+        energies: absolute energies in Hartree
+
+    Returns:
+        energies relative to the minimum, in kcal/mol. Empty list if input is empty
     """
     if not energies:
         return []

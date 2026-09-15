@@ -12,7 +12,7 @@ Use this skill when writing, reviewing, or editing code.
 Follow the staged migration in [AGENTS.md](../../../AGENTS.md). Apply style guidance
 within the requested work; do not rewrite existing code to satisfy deferred rules.
 Keep existing lint exceptions and commented-out migration settings. Use mypy;
-ty, rumdl, additional Ruff rules, and Google docstrings are deferred until requested.
+ty, rumdl, and additional Ruff rules are deferred until requested. Use Google-style docstrings.
 
 
 ## Purpose
@@ -24,7 +24,7 @@ Python version: see `requires-python` in `pyproject.toml`
 ## Before every commit
 
 - Ensure all code has type annotations
-- Preserve reStructuredText-style docstrings until the docstring migration; add docstrings (NO types, NO leading articles)
+- Use Google-style docstrings (NO types, NO leading articles)
 - Run checks: `prek -a`
 - Prek hooks will run automatically and must pass
 

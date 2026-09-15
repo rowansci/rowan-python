@@ -1,4 +1,4 @@
-"""Binding affinity workflow — SQM- and ML-based scoring of protein–ligand complexes."""
+"""Binding affinity workflow – SQM- and ML-based scoring of protein–ligand complexes."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -23,11 +23,11 @@ from .base import (
 
 @dataclass(frozen=True, slots=True)
 class BindingAffinityScore:
-    """
-    Binding affinity score for a single protein-ligand input.
+    """Binding affinity score for a single protein-ligand input.
 
-    :param binding_affinity: binding affinity in kcal/mol for SQM settings, or log10(M)
-        for GNINA, AEV-PLIG, and NESSO settings.
+    Attributes:
+        binding_affinity: binding affinity in kcal/mol for SQM settings, or log10(M)
+            for GNINA, AEV-PLIG, and NESSO settings
     """
 
     binding_affinity: float
@@ -75,53 +75,57 @@ def submit_binding_affinity_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a binding affinity workflow to the API.
+    """Submits a binding affinity workflow to the API.
 
     Scores protein-ligand inputs using SQM energies, GNINA, AEV-PLIG, or NESSO. Three
     input modes are supported:
 
-    **Mode 1 — holo protein:** protein already contains the bound ligand. Pass
-    ``ligand_residue_name`` to identify which residue is the ligand vs. the receptor.
-    Do not pass ``ligand_structures``.
+    **Mode 1 – holo protein:** protein already contains the bound ligand. Pass
+    `ligand_residue_name` to identify which residue is the ligand vs. the receptor.
+    Do not pass `ligand_structures`.
 
-    **Mode 2 — apo protein + external poses:** protein has no bound ligand. Pass
-    ``ligand_structures`` with poses that are already in the protein's coordinate frame.
-    Do not pass ``ligand_residue_name``.
+    **Mode 2 – apo protein + external poses:** protein has no bound ligand. Pass
+    `ligand_structures` with poses that are already in the protein's coordinate frame.
+    Do not pass `ligand_residue_name`.
 
-    **Mode 3 — NESSO sequence/SMILES input:** NESSO-only (``binding_affinity_settings``
-    must be ``NessoAffinitySettings``); no PDB required. Pass ``protein_sequences`` instead
-    of ``protein``, and ``ligand_smiles`` instead of ``ligand_residue_name``/
-    ``ligand_structures``.
+    **Mode 3 – NESSO sequence/SMILES input:** NESSO-only (`binding_affinity_settings`
+    must be `NessoAffinitySettings`); no PDB required. Pass `protein_sequences` instead
+    of `protein`, and `ligand_smiles` instead of `ligand_residue_name`/
+    `ligand_structures`.
 
-    NESSO also accepts a ``protein`` PDB but uses only its protein sequence, not its 3D
+    NESSO also accepts a `protein` PDB but uses only its protein sequence, not its 3D
     coordinates.
 
-    :param protein: protein structure. Can be input as a UUID or a Protein object. Required
-        unless ``protein_sequences`` is set (mode 3).
-    :param ligand_residue_name: residue name identifying the ligand in a holo protein PDB
-        (mode 1 only).
-    :param ligand_structures: external ligand poses to score, already in the protein's
-        coordinate frame. Must have 3D coordinates (mode 2 only).
-    :param protein_sequences: protein sequences to score against, in place of ``protein``
-        (mode 3, NESSO only).
-    :param ligand_smiles: ligand SMILES to score, in place of ``ligand_residue_name``/
-        ``ligand_structures`` (mode 3, NESSO only).
-    :param binding_affinity_settings: settings controlling how binding affinity is
-        computed: ``SinglePointEnergySettings`` (SQM), ``GninaAffinitySettings``,
-        ``AEVPLIGAffinitySettings``, or ``NessoAffinitySettings``. Defaults to
-        ``SinglePointEnergySettings`` (PM6-D3H4X/COSMO optimization followed by
-        PM6-D3H4X/COSMO2 single-point in water).
-    :param name: name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: if True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: if folder arguments conflict.
-    :raises pydantic.ValidationError: if the protein/ligand input combination is invalid.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        protein: protein structure. Can be input as a UUID or a Protein object. Required
+            unless `protein_sequences` is set (mode 3)
+        ligand_residue_name: residue name identifying the ligand in a holo protein PDB
+            (mode 1 only)
+        ligand_structures: external ligand poses to score, already in the protein's
+            coordinate frame. Must have 3D coordinates (mode 2 only)
+        protein_sequences: protein sequences to score against, in place of `protein`
+            (mode 3, NESSO only)
+        ligand_smiles: ligand SMILES to score, in place of `ligand_residue_name`/
+            `ligand_structures` (mode 3, NESSO only)
+        binding_affinity_settings: settings controlling how binding affinity is
+            computed: `SinglePointEnergySettings` (SQM), `GninaAffinitySettings`,
+            `AEVPLIGAffinitySettings`, or `NessoAffinitySettings`. Defaults to
+            `SinglePointEnergySettings` (PM6-D3H4X/COSMO optimization followed by
+            PM6-D3H4X/COSMO2 single-point in water)
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: folder arguments conflict
+        pydantic.ValidationError: protein/ligand input combination is invalid
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

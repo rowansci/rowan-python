@@ -1,5 +1,4 @@
-"""
-Rank a conformer ensemble you already have, using the Rowan API (screen-only mode).
+"""Rank a conformer ensemble you already have, using the Rowan API (screen-only mode).
 
 Conformer search normally *generates* conformers and then optimizes, deduplicates,
 and ranks them. If you already have 3D geometries -- from another tool (RDKit,

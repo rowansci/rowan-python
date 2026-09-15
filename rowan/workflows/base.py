@@ -40,12 +40,12 @@ ConformerClusteringSettings = stjames.ConformerClusteringSettings
 
 @dataclass(frozen=True, slots=True)
 class Message:
-    """
-    A workflow message (error, warning, or info).
+    """A workflow message (error, warning, or info).
 
-    :param title: Short message title.
-    :param body: Full message content.
-    :param type: Message type: 'error', 'warning', or 'info'.
+    Attributes:
+        title: short message title
+        body: full message content
+        type: message type: 'error', 'warning', or 'info'
     """
 
     title: str
@@ -64,9 +64,10 @@ def parse_messages(raw_messages: list[stjames.Message] | None) -> list[Message]:
 class DispatchInfo:
     """Estimated dispatch information for a workflow.
 
-    :param to_be_dispatched: whether workflow will be queued (vs starting immediately).
-    :param compute_hardware: hardware type (CPU, H200, A100, etc.).
-    :param estimated_runtime_minutes: estimated runtime in minutes, or None if unknown.
+    Attributes:
+        to_be_dispatched: whether workflow will be queued (vs starting immediately)
+        compute_hardware: hardware type (CPU, H200, A100, etc.)
+        estimated_runtime_minutes: estimated runtime in minutes, or None if unknown
     """
 
     to_be_dispatched: bool | None
@@ -77,30 +78,37 @@ class DispatchInfo:
 class WorkflowError(Exception):
     """Raised when a workflow cannot return a result.
 
-    The complete backend log is available through :attr:`logfile` rather than being included in
+    The complete backend log is available through `logfile` rather than being included in
     the exception text. It provides diagnostic context only and is not a source of workflow result
     values.
 
-    :param message: error summary
-    :param logfile: workflow log returned by the API, when available
+    Attributes:
+        message: error summary
+        logfile: workflow log returned by the API, when available
     """
 
     def __init__(self, message: str, *, logfile: str = "") -> None:
+        """Initialize the error with its summary and backend log.
+
+        Args:
+            message: error summary
+            logfile: workflow log returned by the API
+        """
         self.logfile = logfile
         super().__init__(message)
 
 
 @dataclass(slots=True, repr=False)
 class WorkflowResult:
-    """
-    Base class for workflow results.
+    """Base class for workflow results.
 
     Wraps the raw workflow data dict and parses it into a stjames object
     for typed access to nested data.
 
-    :param workflow_data: Raw data dict from the workflow
-    :param workflow_type: Workflow type string
-    :param workflow_uuid: UUID of the parent workflow (for API calls)
+    Attributes:
+        workflow_data: raw data dict from the workflow
+        workflow_type: workflow type string
+        workflow_uuid: UUID of the parent workflow (for API calls)
     """
 
     workflow_data: dict[str, Any]
@@ -143,8 +151,7 @@ the server (a field is missing, extra, or the wrong type). Underlying validation
         return self.workflow_data
 
     def clear_cache(self) -> None:
-        """
-        Clear all cached data to force re-fetching on next access.
+        """Clear all cached data to force re-fetching on next access.
 
         Use this if you need to refresh lazily-loaded data (e.g., structures,
         calculations) from the API.
@@ -168,16 +175,18 @@ def register_result[R: WorkflowResult](workflow_type: str) -> Callable[[type[R]]
 def create_result(
     workflow_data: dict[str, Any], workflow_type: str, workflow_uuid: str, complete: bool = True
 ) -> WorkflowResult:
-    """
-    Factory function to create the appropriate result type for a workflow.
+    """Factory function to create the appropriate result type for a workflow.
 
-    :param workflow_data: Raw data dict from the workflow.
-    :param workflow_type: Workflow type string.
-    :param workflow_uuid: UUID of the parent workflow.
-    :param complete: If True (default), eagerly fetch related data (e.g. calculations)
-        in ``__post_init__``. Set to False when polling partial results with
-        ``result(wait=False)`` to avoid unnecessary API calls.
-    :returns: Typed WorkflowResult subclass, or base WorkflowResult if unknown.
+    Args:
+        workflow_data: raw data dict from the workflow
+        workflow_type: workflow type string
+        workflow_uuid: UUID of the parent workflow
+        complete: eagerly fetch related data (e.g. calculations)
+            in `__post_init__`. Set to False when polling partial results with
+            `result(wait=False)` to avoid unnecessary API calls
+
+    Returns:
+        typed WorkflowResult subclass, or base WorkflowResult if unknown
     """
     result_class = RESULT_REGISTRY.get(workflow_type, WorkflowResult)
     return result_class(
@@ -194,28 +203,29 @@ class Workflow(BaseModel):
     Workflow data is not loaded by default to avoid unnecessary downloads that could impact
     performance. Call `fetch_latest()` to fetch and attach the workflow data.
 
-    :param name: Name of the workflow.
-    :param uuid: UUID of the workflow.
-    :param created_at: Date and time the workflow was created.
-    :param updated_at: Date and time the workflow was last updated.
-    :param started_at: Date and time the workflow computation was started.
-    :param completed_at: Date and time the workflow was completed.
-    :param status: Status of the workflow.
-    :param parent_uuid: UUID of the parent folder.
-    :param notes: Workflow notes.
-    :param starred: Whether the workflow is starred.
-    :param public: Whether the workflow is public.
-    :param public_until: Date and time until which the workflow is temporarily public.
-    :param is_temporarily_public: Whether temporary public access is currently active.
-    :param workflow_type: Type of the workflow.
-    :param data: Data of the workflow.
-    :param email_when_complete: Whether to send an email when the workflow completes.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param submission_group_uuid: UUID shared by workflows submitted as one execution group.
-    :param elapsed: Elapsed time of the workflow.
-    :param credits_charged: Number of credits charged for the workflow.
-    :param logfile: Workflow logfile.
+    Attributes:
+        name: name of the workflow
+        uuid: UUID of the workflow
+        created_at: date and time the workflow was created
+        updated_at: date and time the workflow was last updated
+        started_at: date and time the workflow computation was started
+        completed_at: date and time the workflow was completed
+        status: status of the workflow
+        parent_uuid: UUID of the parent folder
+        notes: workflow notes
+        starred: whether the workflow is starred
+        public: whether the workflow is public
+        public_until: date and time until which the workflow is temporarily public
+        is_temporarily_public: whether temporary public access is currently active
+        workflow_type: type of the workflow
+        data: data of the workflow
+        email_when_complete: whether to send an email when the workflow completes
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        submission_group_uuid: UUID shared by workflows submitted as one execution group
+        elapsed: elapsed time of the workflow
+        credits_charged: number of credits charged for the workflow
+        logfile: workflow logfile
     """
 
     name: str
@@ -259,12 +269,16 @@ Workflow:  {self.name}
   Credits: {self.credits_charged}"""
 
     def fetch_latest(self, in_place: bool = False) -> Self:
-        """
-        Loads workflow data from the database and updates the current instance.
+        """Loads workflow data from the database and updates the current instance.
 
-        :param in_place: Whether to update the current instance in-place.
-        :returns: Updated instance (self).
-        :raises HTTPError: If the API request fails.
+        Args:
+            in_place: whether to update the current instance in-place
+
+        Returns:
+            updated instance (self)
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.get(f"/workflow/{self.uuid}")
@@ -291,17 +305,19 @@ Workflow:  {self.name}
         public: bool | None = None,
         in_place: bool = False,
     ) -> Self:
-        """
-        Updates a workflow in the API with new data.
+        """Updates a workflow in the API with new data.
 
-        :param name: New name for the workflow.
-        :param parent_uuid: UUID of the parent folder.
-        :param notes: Description of the workflow.
-        :param starred: Whether the workflow is starred.
-        :param email_when_complete: Whether to send an email when complete.
-        :param public: Whether the workflow is public.
-        :param in_place: Whether to update the current instance in-place.
-        :raises HTTPError: If the API request fails.
+        Args:
+            name: new name for the workflow
+            parent_uuid: UUID of the parent folder
+            notes: description of the workflow
+            starred: whether the workflow is starred
+            email_when_complete: whether to send an email when complete
+            public: whether the workflow is public
+            in_place: whether to update the current instance in-place
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         old = self.fetch_latest()
         old_data = {
@@ -342,14 +358,19 @@ Workflow:  {self.name}
     def temporarily_share(self, duration_minutes: int, in_place: bool = False) -> Self:
         """Temporarily make the workflow publicly accessible.
 
-        Temporary sharing does not change :attr:`public`. The returned workflow instead records
-        the expiration in :attr:`public_until` and reports the active state through
-        :attr:`is_temporarily_public`.
+        Temporary sharing does not change `public`. The returned workflow instead records
+        the expiration in `public_until` and reports the active state through
+        `is_temporarily_public`.
 
-        :param duration_minutes: Number of minutes to share the workflow, up to 120.
-        :param in_place: Whether to update the current instance in-place.
-        :returns: Workflow with the temporary sharing state returned by the API.
-        :raises HTTPError: If the API request fails.
+        Args:
+            duration_minutes: number of minutes to share the workflow, up to 120
+            in_place: whether to update the current instance in-place
+
+        Returns:
+            workflow with the temporary sharing state returned by the API
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.post(
@@ -371,11 +392,16 @@ Workflow:  {self.name}
     def end_temporary_share(self, in_place: bool = False) -> Self:
         """End temporary public access to the workflow.
 
-        Permanent public access through :attr:`public` is unaffected.
+        Permanent public access through `public` is unaffected.
 
-        :param in_place: Whether to update the current instance in-place.
-        :returns: Workflow with the temporary sharing state returned by the API.
-        :raises HTTPError: If the API request fails.
+        Args:
+            in_place: whether to update the current instance in-place
+
+        Returns:
+            workflow with the temporary sharing state returned by the API
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.post(f"/workflow/{self.uuid}/end_temporary_share")
@@ -392,12 +418,12 @@ Workflow:  {self.name}
         return self
 
     def done(self) -> bool:
-        """
-        Check if the workflow has finished (success, failure, or stopped).
+        """Check if the workflow has finished (success, failure, or stopped).
 
         Non-blocking check following the concurrent.futures.Future pattern.
 
-        :returns: True if workflow is no longer running.
+        Returns:
+            true if workflow is no longer running
         """
         status = self.get_status()
         return status in {
@@ -407,17 +433,20 @@ Workflow:  {self.name}
         }
 
     def result(self, wait: bool = True, poll_interval: int = 5) -> "WorkflowResult":
-        """
-        Return the typed result, optionally waiting for completion.
+        """Return the typed result, optionally waiting for completion.
 
         Follows the concurrent.futures.Future.result() pattern.
 
-        :param wait: If True (default), block until the workflow completes.
-            If False, return immediately with whatever data is available.
-        :param poll_interval: Seconds between status checks while waiting.
-        :returns: WorkflowResult subclass with typed access to results.
-        :raises WorkflowError: If the workflow failed or was stopped. Inspect the exception's
-            `logfile` attribute for the backend log.
+        Args:
+            wait: block until completion; False returns the currently available data
+            poll_interval: seconds between status checks while waiting
+
+        Returns:
+            WorkflowResult subclass with typed access to results
+
+        Raises:
+            WorkflowError: workflow failed or was stopped. Inspect the exception's
+                `logfile` attribute for the backend log
         """
         if self.status == stjames.Status.DRAFT:
             raise WorkflowError(
@@ -449,15 +478,19 @@ Workflow:  {self.name}
         return create_result(self.data, self.workflow_type, self.uuid, complete=complete)
 
     def stream_result(self, poll_interval: int = 5) -> Iterator["WorkflowResult"]:
-        """
-        Poll the workflow and yield results until complete.
+        """Poll the workflow and yield results until complete.
 
         Yields partial results at each poll interval while running, then yields
         the final complete result once the workflow finishes.
 
-        :param poll_interval: Seconds between status checks.
-        :yields: WorkflowResult at each poll interval, with final complete result last.
-        :raises WorkflowError: If the workflow fails or is stopped.
+        Args:
+            poll_interval: seconds between status checks
+
+        Yields:
+            WorkflowResult at each poll interval, with final complete result last
+
+        Raises:
+            WorkflowError: workflow fails or is stopped
         """
         while not self.done():
             try:
@@ -468,62 +501,62 @@ Workflow:  {self.name}
         yield self.result()
 
     def wait_for_result(self, poll_interval: int = 5) -> Self:
-        """
-        Wait for the workflow to finish.
+        """Wait for the workflow to finish.
 
-        .. deprecated::
-            Use :meth:`result` instead, which waits and returns the typed result.
+        Deprecated:
+            Use `result` instead, which waits and returns the typed result.
 
-        :returns: Current instance (self).
+        Returns:
+            current instance (self)
         """
         while not self.done():
             time.sleep(poll_interval)
         return self
 
     def get_status(self) -> stjames.Status:
-        """
-        Gets the status of the workflow.
+        """Gets the status of the workflow.
 
-        :returns: Status of the workflow, as an instance of stjames.Status.
+        Returns:
+            status of the workflow, as an instance of stjames.Status
         """
         return self.fetch_latest().status or stjames.Status.QUEUED
 
     def is_finished(self) -> bool:
-        """
-        Check if the workflow is finished.
+        """Check if the workflow is finished.
 
-        .. deprecated::
-            Use :meth:`done` instead.
+        Deprecated:
+            Use `done` instead.
 
-        :returns: True if the workflow status is COMPLETED_OK, FAILED, or STOPPED.
+        Returns:
+            true if the workflow status is COMPLETED_OK, FAILED, or STOPPED
         """
         return self.done()
 
     def stop(self) -> None:
-        """
-        Stops a workflow.
+        """Stops a workflow.
 
-        :raises HTTPError: If the API request fails.
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.post(f"/workflow/{self.uuid}/stop")
             response.raise_for_status()
 
     def delete(self) -> None:
-        """
-        Deletes the workflow.
+        """Deletes the workflow.
 
-        :raises HTTPError: If the API request fails.
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.delete(f"/workflow/{self.uuid}")
             response.raise_for_status()
 
     def delete_data(self) -> None:
-        """
-        Deletes the workflow data from the API.
+        """Deletes the workflow data from the API.
 
-        :raises HTTPError: If the API request fails.
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.delete(f"/workflow/{self.uuid}/delete_workflow_data")
@@ -532,8 +565,11 @@ Workflow:  {self.name}
     def dispatch_info(self) -> DispatchInfo:
         """Fetch estimated dispatch information for this workflow.
 
-        :returns: estimated time, hardware, and queue info.
-        :raises HTTPError: if the API request fails.
+        Returns:
+            estimated time, hardware, and queue info
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         if self.data is None:
             self.fetch_latest(in_place=True)
@@ -560,9 +596,12 @@ Workflow:  {self.name}
     def submit_draft(self) -> Self:
         """Submit a draft workflow for execution.
 
-        :returns: updated workflow instance.
-        :raises WorkflowError: if workflow is not in DRAFT status.
-        :raises HTTPError: if the API request fails.
+        Returns:
+            updated workflow instance
+
+        Raises:
+            WorkflowError: workflow is not in DRAFT status
+            httpx.HTTPStatusError: API request fails
         """
         if self.status != stjames.Status.DRAFT:
             raise WorkflowError(
@@ -576,11 +615,10 @@ Workflow:  {self.name}
     def download_msa_files(
         self, msa_format: stjames.MSAFormat, path: Path | str | None = None
     ) -> None:
-        """
-        Download MSA files for an MSA workflow.
+        """Download MSA files for an MSA workflow.
 
-        .. deprecated::
-            Use ``workflow.result().download_files()`` instead.
+        Deprecated:
+            Use `workflow.result().download_files()` instead.
         """
         warnings.warn(
             "download_msa_files() is deprecated. Use workflow.result().download_files() instead.",
@@ -604,15 +642,15 @@ Workflow:  {self.name}
     def download_dcd_files(
         self, replicates: list[int], name: str | None = None, path: Path | str | None = None
     ) -> None:
-        """
-        Downloads DCD trajectory files for specified replicates.
+        """Downloads DCD trajectory files for specified replicates.
 
-        .. deprecated::
-            Use ``workflow.result().download_trajectories()`` instead.
+        Deprecated:
+            Use `workflow.result().download_trajectories()` instead.
 
-        :param replicates: List of replicate indices to download
-        :param name: Optional custom name for the tar.gz file
-        :param path: Directory to save the file to
+        Args:
+            replicates: list of replicate indices to download
+            name: optional custom name for the tar.gz file
+            path: directory to save the file to
         """
         warnings.warn(
             "download_dcd_files() is deprecated. "
@@ -637,14 +675,18 @@ Workflow:  {self.name}
 
 
 def extract_smiles(mol: SMILES | StructureInput | dict[str, Any]) -> SMILES:
-    """
-    Extract a SMILES string from a molecule input or return the string directly.
+    """Extract a SMILES string from a molecule input or return the string directly.
 
-    :param mol: SMILES string, or any molecule type (RowanMolecule, stjames.Molecule,
-        RDKit Mol, or dict).
-    :returns: SMILES string.
-    :raises TypeError: If the input type is not supported.
-    :raises ValueError: If the molecule has no SMILES associated with it.
+    Args:
+        mol: SMILES string, or any molecule type (RowanMolecule, stjames.Molecule,
+            RDKit Mol, or dict)
+
+    Returns:
+        SMILES string
+
+    Raises:
+        TypeError: input type is not supported
+        ValueError: molecule has no SMILES associated with it
     """
     if isinstance(mol, str):
         return mol
@@ -681,15 +723,17 @@ def molecule_to_stjames(mol: StructureInput | dict[str, Any]) -> stjames.Molecul
 
 
 def require_coordinates(mol: StructureInput) -> None:
-    """
-    Validate that a molecule input carries real 3D coordinates.
+    """Validate that a molecule input carries real 3D coordinates.
 
     Geometry-based workflows operate on 3D structure, so reject inputs that have no
     geometry rather than silently embedding an arbitrary conformer: a SMILES string
     (no coordinates) or an RDKit molecule with no conformer.
 
-    :param mol: molecule input to check
-    :raises ValueError: if the input has no 3D coordinates
+    Args:
+        mol: molecule input to check
+
+    Raises:
+        ValueError: input has no 3D coordinates
     """
     if isinstance(mol, str):
         raise ValueError(
@@ -704,11 +748,13 @@ def require_coordinates(mol: StructureInput) -> None:
 
 
 def molecule_to_dict(mol: StructureInput | dict[str, Any]) -> dict[str, Any]:
-    """
-    Convert a 3D molecule input to a dict for API submission.
+    """Convert a 3D molecule input to a dict for API submission.
 
-    :param mol: Molecule as Molecule, stjames.Molecule, RDKit Mol, or dict.
-    :returns: Dict representation suitable for API submission.
+    Args:
+        mol: molecule as Molecule, stjames.Molecule, RDKit Mol, or dict
+
+    Returns:
+        dict representation suitable for API submission
     """
     match mol:
         case RowanMolecule():
@@ -737,21 +783,25 @@ def submit_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a workflow to the API.
+    """Submits a workflow to the API.
 
-    :param workflow_type: Type of workflow to submit.
-    :param workflow_data: Dictionary containing the data required to run the workflow.
-    :param initial_molecule: Molecule object to use as the initial molecule.
-    :param initial_smiles: SMILES string to use as the initial molecule.
-    :param name: Name for the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in, or a Folder object.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If neither `initial_smiles` nor a valid `initial_molecule` is provided.
-    :raises HTTPError: If the API request fails.
+    Args:
+        workflow_type: type of workflow to submit
+        workflow_data: dictionary containing the data required to run the workflow
+        initial_molecule: molecule object to use as the initial molecule
+        initial_smiles: SMILES string to use as the initial molecule
+        name: name for the workflow
+        folder_uuid: UUID of the folder to store the workflow in, or a Folder object
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: neither `initial_smiles` nor a valid `initial_molecule` is provided
+        httpx.HTTPStatusError: API request fails
     """
     if isinstance(folder_uuid, Folder):
         folder_uuid = folder_uuid.uuid
@@ -792,12 +842,16 @@ def submit_workflow(
 
 
 def retrieve_workflow(uuid: str) -> Workflow:
-    """
-    Retrieve a workflow from the API by UUID.
+    """Retrieve a workflow from the API by UUID.
 
-    :param uuid: UUID of the workflow to retrieve.
-    :returns: Workflow object with the fetched data.
-    :raises requests.HTTPError: If the API request fails.
+    Args:
+        uuid: UUID of the workflow to retrieve
+
+    Returns:
+        workflow object with the fetched data
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     with api_client() as client:
         response = client.get(f"/workflow/{uuid}")
@@ -808,12 +862,16 @@ def retrieve_workflow(uuid: str) -> Workflow:
 
 
 def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
-    """
-    Retrieve a list of workflows from the API.
+    """Retrieve a list of workflows from the API.
 
-    :param uuids: UUIDs of the workflows to retrieve.
-    :returns: List of Workflow objects representing the retrieved workflows.
-    :raises HTTPError: If the API request fails.
+    Args:
+        uuids: UUIDs of the workflows to retrieve
+
+    Returns:
+        retrieved workflows
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     workflows: list[Workflow] = []
     with api_client() as client:
@@ -825,12 +883,16 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
 
 
 def batch_poll_status(uuids: list[str]) -> dict[str, int]:
-    """
-    Poll the status of a list of workflows.
+    """Poll the status of a list of workflows.
 
-    :param uuids: UUIDs of the workflows to poll.
-    :returns: Counts keyed by lower-case status name, plus the total workflow count.
-    :raises HTTPError: If the API request fails.
+    Args:
+        uuids: UUIDs of the workflows to poll
+
+    Returns:
+        counts keyed by lower-case status name, plus the total workflow count
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     with api_client() as client:
         response = client.post("/workflow/batch_status", json={"uuids": uuids})
@@ -841,13 +903,17 @@ def batch_poll_status(uuids: list[str]) -> dict[str, int]:
 def retrieve_calculation_molecules(
     uuid: str, return_frequencies: bool = False
 ) -> list[dict[str, Any]]:
-    """
-    Retrieve a list of molecules from a calculation.
+    """Retrieve a list of molecules from a calculation.
 
-    :param uuid: UUID of the calculation to retrieve molecules from.
-    :param return_frequencies: Whether to return the frequencies of the molecules.
-    :returns: List of dictionaries representing the molecules in the calculation.
-    :raises HTTPError: If the API request fails.
+    Args:
+        uuid: UUID of the calculation to retrieve molecules from
+        return_frequencies: whether to return the frequencies of the molecules
+
+    Returns:
+        molecules in the calculation
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     with api_client() as client:
         response = client.get(
@@ -867,19 +933,23 @@ def list_workflows(
     page: int = 0,
     size: int = 10,
 ) -> list[Workflow]:
-    """
-    List workflows subject to the specified criteria.
+    """List workflows subject to the specified criteria.
 
-    :param parent_uuid: UUID of the parent folder.
-    :param name_contains: Substring to search for in workflow names.
-    :param public: Filter workflows by their public status.
-    :param starred: Filter workflows by their starred status.
-    :param status: Filter workflows by their status.
-    :param workflow_type: Filter workflows by their type.
-    :param page: Page number to retrieve.
-    :param size: Number of items per page.
-    :returns: List of Workflow objects that match the search criteria.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        parent_uuid: UUID of the parent folder
+        name_contains: substring to search for in workflow names
+        public: filter workflows by their public status
+        starred: filter workflows by their starred status
+        status: filter workflows by their status
+        workflow_type: filter workflows by their type
+        page: page number to retrieve
+        size: number of items per page
+
+    Returns:
+        list of Workflow objects that match the search criteria
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if parent_uuid is None:
         if project_uuid := get_project_uuid():
@@ -923,21 +993,23 @@ def batch_submit_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
 ) -> list[Workflow]:
-    """
-    Submits a batch of workflows to the API.
+    """Submits a batch of workflows to the API.
 
     Each workflow will be submitted with the same workflow type, workflow data,
     and folder UUID, but with different initial molecules and/or SMILES strings.
 
-    :param workflow_type: Type of workflow to submit.
-    :param workflow_data: Dictionary containing the data required to run the workflow.
-    :param initial_molecules: Molecule objects to use as initial molecules.
-    :param initial_smileses: SMILES strings to use as initial molecules.
-    :param names: Names for the submitted workflows.
-    :param folder_uuid: UUID of the folder to store the workflows in.
-    :param max_credits: Maximum number of credits to use per workflow.
-    :param webhook_url: URL to call when each workflow completes.
-    :returns: List of Workflow objects representing the submitted workflows.
+    Args:
+        workflow_type: type of workflow to submit
+        workflow_data: dictionary containing the data required to run the workflow
+        initial_molecules: molecule objects to use as initial molecules
+        initial_smileses: SMILES strings to use as initial molecules
+        names: names for the submitted workflows
+        folder_uuid: UUID of the folder to store the workflows in
+        max_credits: maximum number of credits to use per workflow
+        webhook_url: URL to call when each workflow completes
+
+    Returns:
+        list of Workflow objects representing the submitted workflows
     """
     if names is not None:
         expected = len(initial_smileses or initial_molecules or [])

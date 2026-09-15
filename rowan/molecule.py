@@ -11,8 +11,7 @@ from rdkit import Chem
 
 
 class Molecule(BaseModel):
-    """
-    Molecular structure with optional computed properties.
+    """Molecular structure with optional computed properties.
 
     Can be created from SMILES, XYZ, or directly from atoms. Wraps stjames.Molecule
     internally but provides a cleaner interface.
@@ -39,11 +38,13 @@ class Molecule(BaseModel):
 
     @classmethod
     def from_smiles(cls, smiles: str) -> Self:
-        """
-        Create molecule from SMILES string.
+        """Create molecule from SMILES string.
 
-        :param smiles: SMILES string.
-        :returns: Molecule instance.
+        Args:
+            smiles: SMILES string
+
+        Returns:
+            molecule instance
         """
         return cls(_stjames=stjames.Molecule.from_smiles(smiles))
 
@@ -51,13 +52,15 @@ class Molecule(BaseModel):
     def from_xyz(
         cls, xyz_string: str, charge: int | None = None, multiplicity: int | None = None
     ) -> Self:
-        """
-        Create Molecule from XYZ string.
+        """Create Molecule from XYZ string.
 
-        :param xyz_string: XYZ format string
-        :param charge: charge
-        :param multiplicity: spin multiplicity
-        :returns: Molecule
+        Args:
+            xyz_string: XYZ format string
+            charge: charge
+            multiplicity: spin multiplicity
+
+        Returns:
+            molecule
         """
         return cls(
             _stjames=stjames.Molecule.from_xyz(
@@ -71,36 +74,42 @@ class Molecule(BaseModel):
     def from_xyz_file(
         cls, path: str | Path, charge: int | None = None, multiplicity: int | None = None
     ) -> Self:
-        """
-        Create molecule from XYZ file.
+        """Create molecule from XYZ file.
 
-        :param path: path to XYZ file
-        :param charge: charge
-        :param multiplicity: spin multiplicity
-        :returns: Molecule
+        Args:
+            path: path to XYZ file
+            charge: charge
+            multiplicity: spin multiplicity
+
+        Returns:
+            molecule
         """
         return cls.from_xyz(Path(path).read_text(), charge=charge, multiplicity=multiplicity)
 
     @classmethod
     def molecules_from_sdf(cls, path: str | Path) -> list[Self]:
-        """
-        Read all records from an SDF file as a list of molecules.
+        """Read all records from an SDF file as a list of molecules.
 
         Each record becomes one Molecule, in file order, with atom ordering preserved
         across records -- so a multi-conformer SDF reads as a consistent ensemble.
 
-        :param path: path to the SDF file
-        :returns: one Molecule per record
+        Args:
+            path: path to the SDF file
+
+        Returns:
+            one Molecule per record
         """
         return [cls.from_stjames(mol) for mol in stjames.Molecule.molecules_from_sdf(path)]
 
     @classmethod
     def from_stjames(cls, stj: stjames.Molecule) -> Self:
-        """
-        Create from stjames.Molecule.
+        """Create from stjames.Molecule.
 
-        :param stj: stjames.Molecule
-        :returns: Molecule
+        Args:
+            stj: stjames.Molecule
+
+        Returns:
+            molecule
         """
         return cls(_stjames=stj)
 
@@ -112,14 +121,16 @@ class Molecule(BaseModel):
         multiplicity: int = 1,
         cell: stjames.PeriodicCell | None = None,
     ) -> Self:
-        """
-        Create molecule from a list of atoms.
+        """Create molecule from a list of atoms.
 
-        :param atoms: List of Atom objects.
-        :param charge: Molecular charge (default 0).
-        :param multiplicity: Spin multiplicity (default 1).
-        :param cell: PeriodicCell for periodic boundary conditions.
-        :returns: Molecule instance.
+        Args:
+            atoms: list of Atom objects
+            charge: molecular charge (default 0)
+            multiplicity: spin multiplicity (default 1)
+            cell: PeriodicCell for periodic boundary conditions
+
+        Returns:
+            molecule instance
         """
         return cls(
             _stjames=stjames.Molecule(
@@ -293,49 +304,57 @@ class Molecule(BaseModel):
     # -- Geometric utilities --
 
     def distance(self, i: int, j: int) -> float:
-        """
-        Calculate distance between two atoms.
+        """Calculate distance between two atoms.
 
-        :param i: First atom index (1-based).
-        :param j: Second atom index (1-based).
-        :returns: Distance in Angstroms.
+        Args:
+            i: first atom index (1-based)
+            j: second atom index (1-based)
+
+        Returns:
+            distance in Angstroms
         """
         return self._stjames.distance(i, j)
 
     def angle(self, i: int, j: int, k: int, degrees: bool = True) -> float:
-        """
-        Calculate angle between three atoms (i-j-k).
+        """Calculate angle between three atoms (i-j-k).
 
-        :param i: First atom index (1-based).
-        :param j: Central atom index (1-based).
-        :param k: Third atom index (1-based).
-        :param degrees: Return angle in degrees (default) or radians.
-        :returns: Angle in degrees or radians.
+        Args:
+            i: first atom index (1-based)
+            j: central atom index (1-based)
+            k: third atom index (1-based)
+            degrees: return angle in degrees (default) or radians
+
+        Returns:
+            angle in degrees or radians
         """
         return self._stjames.angle(i, j, k, degrees=degrees)
 
     def dihedral(self, i: int, j: int, k: int, l: int, degrees: bool = True) -> float:
-        """
-        Calculate dihedral angle between four atoms (i-j-k-l).
+        """Calculate dihedral angle between four atoms (i-j-k-l).
 
-        :param i: First atom index (1-based).
-        :param j: Second atom index (1-based).
-        :param k: Third atom index (1-based).
-        :param l: Fourth atom index (1-based).
-        :param degrees: Return angle in degrees (default) or radians.
-        :returns: Dihedral angle in degrees (0-360) or radians.
+        Args:
+            i: first atom index (1-based)
+            j: second atom index (1-based)
+            k: third atom index (1-based)
+            l: fourth atom index (1-based)
+            degrees: return angle in degrees (default) or radians
+
+        Returns:
+            dihedral angle in degrees (0-360) or radians
         """
         return self._stjames.dihedral(i, j, k, l, degrees=degrees)
 
     def perturb(self, stddev: float = 0.005) -> "Molecule":
-        """
-        Return a copy with random Gaussian noise added to each atom position.
+        """Return a copy with random Gaussian noise added to each atom position.
 
         Useful for breaking symmetry before resubmitting an optimization (e.g. when
         a calculation is stuck in a saddle point or converges to an unwanted geometry).
 
-        :param stddev: standard deviation of the Gaussian displacement (Angstroms)
-        :returns: new Molecule with perturbed coordinates
+        Args:
+            stddev: standard deviation of the Gaussian displacement (Angstroms)
+
+        Returns:
+            new Molecule with perturbed coordinates
         """
 
         def _gauss() -> float:
@@ -359,16 +378,20 @@ class Molecule(BaseModel):
         return Molecule(_stjames=new_mol)
 
     def displace_along_mode(self, mode: stjames.VibrationalMode, displacement: float) -> "Molecule":
-        """
-        Return a copy with atom positions displaced along a vibrational normal mode.
+        """Return a copy with atom positions displaced along a vibrational normal mode.
 
         Requires a prior frequency calculation. For a transition state, the imaginary
         mode has a negative frequency and points toward the reactant or product.
 
-        :param mode: vibrational mode to displace along, from ``vibrational_modes``
-        :param displacement: displacement distance along the normalized mode (Angstroms)
-        :returns: new Molecule with displaced coordinates
-        :raises ValueError: if the mode has no displacements or zero-norm displacements
+        Args:
+            mode: vibrational mode to displace along, from `vibrational_modes`
+            displacement: displacement distance along the normalized mode (Angstroms)
+
+        Returns:
+            new Molecule with displaced coordinates
+
+        Raises:
+            ValueError: mode has no displacements or zero-norm displacements
         """
         raw = mode.displacements
         if not raw:
@@ -400,8 +423,7 @@ class Molecule(BaseModel):
 
 
 def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
-    """
-    Load named ligands from a multi-molecule file.
+    """Load named ligands from a multi-molecule file.
 
     Molecule names are read from the title field of each record. Use this when
     ligand identity needs to be preserved - for example, building a ligand dict
@@ -410,13 +432,18 @@ def load_named_ligands(path: Path | str) -> dict[str, Molecule]:
     rather than silently collapsing into one ligand.
 
     Supported formats (all carry per-molecule name fields):
-    - SDF / MOL (``.sdf``, ``.mol``) - name from the title line
-    - MOL2 (``.mol2``) - name from the ``@<TRIPOS>MOLECULE`` block
+    - SDF / MOL (`.sdf`, `.mol`) - name from the title line
+    - MOL2 (`.mol2`) - name from the `@<TRIPOS>MOLECULE` block
 
-    :param path: Path to an SDF, MOL, or MOL2 file.
-    :returns: Dict mapping ligand name to Molecule, in file order.
-    :raises ValueError: If no valid molecules are found, the format is
-        unsupported, or two records share a name.
+    Args:
+        path: path to an SDF, MOL, or MOL2 file
+
+    Returns:
+        dict mapping ligand name to Molecule, in file order
+
+    Raises:
+        ValueError: no valid molecules are found, the format is
+            unsupported, or two records share a name
     """
     path = Path(path)
     suffix = path.suffix.lower()

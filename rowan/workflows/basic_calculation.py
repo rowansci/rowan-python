@@ -101,13 +101,15 @@ class BasicCalculationResult(WorkflowResult):
         return mol.energy if mol else None
 
     def optimization_energies(self, relative: bool = False) -> list[float]:
-        """
-        Energies for each optimization step.
+        """Energies for each optimization step.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy step). If False (default), return absolute energies
-            in Hartree.
-        :returns: List of energies for each optimization step.
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy step). If False (default), return absolute energies
+                in Hartree
+
+        Returns:
+            list of energies for each optimization step
         """
         energies: list[float] = [m.energy for m in self.molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
@@ -186,13 +188,17 @@ class BasicCalculationResult(WorkflowResult):
 
 
 def settings_from_preset(preset: PresetName, **overrides: Any) -> stjames.Settings:
-    """
-    Construct a `Settings` object from a named preset.
+    """Construct a `Settings` object from a named preset.
 
-    :param preset: Preset name — see `PresetName` for options.
-    :param overrides: Any `Settings` fields to override (e.g. tasks, mode, solvent_settings).
-    :returns: Validated `Settings` object.
-    :raises ValueError: if an unknown preset name is given.
+    Args:
+        preset: preset name – see `PresetName` for options
+        overrides: any `Settings` fields to override (e.g. tasks, mode, solvent_settings)
+
+    Returns:
+        validated `Settings` object
+
+    Raises:
+        ValueError: an unknown preset name is given
     """
     if preset not in _PRESETS:
         raise ValueError(f"Unknown preset {preset!r}. Choose from: {list(_PRESETS)}")
@@ -220,38 +226,42 @@ def submit_basic_calculation_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submit a basic-calculation workflow to the API.
+    """Submit a basic-calculation workflow to the API.
 
-    :param initial_molecule: Molecule to perform the calculation on.
-    :param tasks: Tasks to perform, see `Task` (e.g. optimize, energy, frequencies).
-    :param method: Computational method, see `Method`. Default: `omol25_conserving_s`.
-    :param basis_set: Basis set, see `BasisSet`.
-    :param mode: Accuracy mode, see `Mode`. Default: `auto`.
-    :param engine: Compute engine, see `Engine`. Auto-selected from method if not specified.
-    :param corrections: Dispersion corrections, see `Correction`.
-    :param solvent_settings: Solvent settings as a dict or `SolventSettings`.
-    :param opt_settings: Optimization settings as a dict or `OptimizationSettings`.
-    :param pbc_dft_settings: Periodic boundary condition DFT settings as a dict or
-        `PBCDFTSettings`. Specifies the plane-wave cutoff (Hartree), Monkhorst–Pack
-        k-point grid, and optional smearing. When set, the engine is automatically
-        set to Quantum ESPRESSO unless ``engine`` is explicitly provided.
-    :param excited_state_settings: Excited-state settings for TDDFT calculations.
-    :param preset: Named preset, mutually exclusive with method/engine/basis_set/corrections.
-        - `general_nnp` — omol25_conserving_s on omol25
-        - `organic_nnp` — aimnet2_wb97md3 on aimnet2
-        - `rapid_semiempirical` — gfn2_xtb on xtb
-        - `routine_dft` — r2scan-D4/vDZP on gpu4pyscf
-        - `careful_dft` — wb97m_d3bj/vDZP on gpu4pyscf
-    :param name: Workflow name.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder to place the workflow in.
-    :param max_credits: Maximum credits to use.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Submitted workflow.
-    :raises requests.HTTPError: if the API request fails.
-    :raises ValueError: if preset is combined with method/engine/basis_set/corrections.
+    Args:
+        initial_molecule: molecule to perform the calculation on
+        tasks: tasks to perform, see `Task` (e.g. optimize, energy, frequencies)
+        method: computational method, see `Method`. Default: `omol25_conserving_s`
+        basis_set: basis set, see `BasisSet`
+        mode: accuracy mode, see `Mode`. Default: `auto`
+        engine: compute engine, see `Engine`. Auto-selected from method if not specified
+        corrections: dispersion corrections, see `Correction`
+        solvent_settings: solvent settings as a dict or `SolventSettings`
+        opt_settings: optimization settings as a dict or `OptimizationSettings`
+        pbc_dft_settings: periodic boundary condition DFT settings as a dict or
+            `PBCDFTSettings`. Specifies the plane-wave cutoff (Hartree), Monkhorst–Pack
+            k-point grid, and optional smearing. When set, the engine is automatically
+            set to Quantum ESPRESSO unless `engine` is explicitly provided
+        excited_state_settings: excited-state settings for TDDFT calculations
+        preset: named preset, mutually exclusive with method/engine/basis_set/corrections.
+            - `general_nnp` – omol25_conserving_s on omol25
+            - `organic_nnp` – aimnet2_wb97md3 on aimnet2
+            - `rapid_semiempirical` – gfn2_xtb on xtb
+            - `routine_dft` – r2scan-D4/vDZP on gpu4pyscf
+            - `careful_dft` – wb97m_d3bj/vDZP on gpu4pyscf
+        name: workflow name
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: folder to place the workflow in
+        max_credits: maximum credits to use
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
+        ValueError: preset is combined with method/engine/basis_set/corrections
 
     To resubmit with identical settings insulated from future preset changes, use
     `submit_workflow` directly with `workflow_data` from a previous result.

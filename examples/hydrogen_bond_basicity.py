@@ -1,5 +1,4 @@
-"""
-Calculate hydrogen bond acceptor/donor strength using the Rowan API.
+"""Calculate hydrogen bond acceptor/donor strength using the Rowan API.
 
 This workflow predicts pKBHX values of hydrogen-bond acceptors and pKa values
 of hydrogen-bond donors using neural network potentials and r2SCAN-3c.

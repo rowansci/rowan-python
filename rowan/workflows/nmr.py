@@ -31,13 +31,14 @@ class NMRPeak:
 class NMRCoupling:
     """Predicted scalar coupling between symmetry-equivalent atom pairs.
 
-    :param nuclei: atomic numbers of the coupled nuclei.
-    :param atom_pairs: symmetry-equivalent pairs of 0-indexed atom indices.
-    :param bond_distance: number of bonds separating the nuclei.
-    :param coupling: predicted coupling constant, in Hz.
-    :param uncertainty: model uncertainty, in Hz.
-    :param conformer_deviation: standard deviation across conformers, in Hz.
-    :param model: model used for the prediction.
+    Attributes:
+        nuclei: atomic numbers of the coupled nuclei
+        atom_pairs: symmetry-equivalent pairs of 0-indexed atom indices
+        bond_distance: number of bonds separating the nuclei
+        coupling: predicted coupling constant, in Hz
+        uncertainty: model uncertainty, in Hz
+        conformer_deviation: standard deviation across conformers, in Hz
+        model: model used for the prediction
     """
 
     nuclei: tuple[int, int]
@@ -63,8 +64,7 @@ class NMRResult(WorkflowResult):
 
     @property
     def chemical_shifts(self) -> list[float | None]:
-        """
-        Per-atom NMR chemical shifts (Boltzmann-weighted ensemble average).
+        """Per-atom NMR chemical shifts (Boltzmann-weighted ensemble average).
 
         Index corresponds to atom index in the molecule. Returns None for
         atoms without NMR-active nuclei (e.g., oxygen).
@@ -73,8 +73,7 @@ class NMRResult(WorkflowResult):
 
     @property
     def per_conformer_chemical_shifts(self) -> list[list[float | None]]:
-        """
-        Chemical shifts for each conformer before Boltzmann averaging.
+        """Chemical shifts for each conformer before Boltzmann averaging.
 
         Outer list is per-conformer, inner list is per-atom.
         """
@@ -92,8 +91,7 @@ class NMRResult(WorkflowResult):
 
     @property
     def predicted_peaks(self) -> dict[int, list[NMRPeak]]:
-        """
-        Predicted NMR peaks grouped by nucleus atomic number.
+        """Predicted NMR peaks grouped by nucleus atomic number.
 
         Keys are atomic numbers (1 for 1H, 6 for 13C). Peaks with equivalent
         atoms are merged and shifts are averaged.
@@ -128,8 +126,7 @@ class NMRResult(WorkflowResult):
 
     @property
     def symmetry_equivalent_nuclei(self) -> list[list[int]]:
-        """
-        Groups of symmetry-equivalent atom indices (0-indexed).
+        """Groups of symmetry-equivalent atom indices (0-indexed).
 
         Atoms in the same group have equivalent chemical environments
         and are averaged together in predicted_peaks.
@@ -138,14 +135,16 @@ class NMRResult(WorkflowResult):
 
 
 def _nmr_multistage_opt_settings(solvent: SolventInput) -> stjames.MultiStageOptSettings:
-    """
-    Build NMR optimization settings, adding a solvated AIMNet2 singlepoint.
+    """Build NMR optimization settings, adding a solvated AIMNet2 singlepoint.
 
     Optimization runs gas-phase (matching MagNet); the solvated singlepoint, whose solvent model
     is looked up from stjames.NMR_SOLVENT_MODELS, reweights the conformer ensemble.
 
-    :param solvent: solvent for the prediction
-    :returns: multi-stage optimization settings
+    Args:
+        solvent: solvent for the prediction
+
+    Returns:
+        multi-stage optimization settings
     """
     singlepoint_settings = stjames.Settings(
         method=stjames.Method.AIMNET2_WB97MD3,
@@ -175,24 +174,28 @@ def submit_nmr_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
+    """Submits a Nuclear Magnetic Resonance (NMR) prediction workflow to the API.
 
-    :param initial_molecule: Molecule to predict NMR spectra for.
-    :param solvent: Solvent for NMR calculation (default: chloroform). Must be an NMR-supported
-        solvent (see rowan.NMR_SUPPORTED_SOLVENTS); others raise ValueError. A solvated AIMNet2
-        singlepoint reweights the conformer ensemble, using CPCM-X where supported and
-        otherwise ALPB.
-    :param do_csearch: Whether to perform a conformational search. Requires do_optimization.
-    :param do_optimization: Whether to optimize conformer geometries.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to predict NMR spectra for
+        solvent: solvent for NMR calculation (default: chloroform). Must be an NMR-supported
+            solvent (see rowan.NMR_SUPPORTED_SOLVENTS); others raise ValueError. A solvated AIMNet2
+            singlepoint reweights the conformer ensemble, using CPCM-X where supported and
+            otherwise ALPB
+        do_csearch: whether to perform a conformational search. Requires do_optimization
+        do_optimization: whether to optimize conformer geometries
+        name: name of the workflow
+        folder_uuid: UUID of the folder to store the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if stjames.Solvent(solvent) not in stjames.NMR_SUPPORTED_SOLVENTS:

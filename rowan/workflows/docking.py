@@ -26,18 +26,19 @@ from .base import (
 class DockingScore:
     """A docking pose with its scores.
 
-    :param score: Docking score in kcal/mol.
-    :param posebusters_valid: PoseBusters validity, or `None` when not evaluated.
-    :param mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol.
-    :param receptor_strain: Induced receptor strain relative to its locally relaxed unbound
-        state, in kcal/mol. Only populated when induced-fit docking is enabled; zero for rigid
-        poses.
-    :param geometry_penalty: PoseBusters failure penalty used to rank induced-fit results: 0 for
-        a passing pose, 100 for a failing pose, and `None` when induced-fit docking is disabled.
-    :param induced_fit_score: Composite score used to rank rigid and induced-fit poses together,
-        in kcal/mol. Only populated when induced-fit docking is enabled.
-    :param induced_receptor_pdb: UUID of the relaxed receptor used for induced-fit redocking.
-        Only set for poses from an induced receptor.
+    Attributes:
+        score: docking score in kcal/mol
+        posebusters_valid: PoseBusters validity, or `None` when not evaluated
+        mmgbsa_score: MM/GBSA binding free energy estimate in kcal/mol
+        receptor_strain: induced receptor strain relative to its locally relaxed unbound
+            state, in kcal/mol. Only populated when induced-fit docking is enabled; zero for rigid
+            poses
+        geometry_penalty: PoseBusters failure penalty used to rank induced-fit results: 0 for
+            a passing pose, 100 for a failing pose, and `None` when induced-fit docking is disabled
+        induced_fit_score: composite score used to rank rigid and induced-fit poses together,
+            in kcal/mol. Only populated when induced-fit docking is enabled
+        induced_receptor_pdb: UUID of the relaxed receptor used for induced-fit redocking.
+            Only set for poses from an induced receptor
     """
 
     score: float
@@ -99,13 +100,17 @@ class DockingResult(WorkflowResult):
         return self._workflow.conformers
 
     def get_pose(self, index: int = 0) -> Calculation:
-        """
-        Fetch a docked ligand pose as a calculation with 3D coordinates.
+        """Fetch a docked ligand pose as a calculation with 3D coordinates.
 
-        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :returns: Calculation containing the docked ligand molecule with 3D coordinates.
-        :raises IndexError: If index is out of range.
-        :raises ValueError: If the pose has no UUID.
+        Args:
+            index: index of the pose (0-based, ordered by score). Default 0 (best)
+
+        Returns:
+            calculation containing the docked ligand molecule with 3D coordinates
+
+        Raises:
+            IndexError: index is out of range
+            ValueError: pose has no UUID
         """
         scores = self.scores
         if index < 0 or index >= len(scores):
@@ -126,10 +131,10 @@ class DockingResult(WorkflowResult):
         return self.get_pose(0).molecules[-1]
 
     def get_poses(self) -> list[Calculation]:
-        """
-        Fetch all docked ligand poses as calculations with 3D coordinates.
+        """Fetch all docked ligand poses as calculations with 3D coordinates.
 
-        :returns: List of Calculations for each pose (ordered by score).
+        Returns:
+            list of Calculations for each pose (ordered by score)
         """
         poses: list[Calculation] = []
         for i, score in enumerate(self.scores):
@@ -138,13 +143,17 @@ class DockingResult(WorkflowResult):
         return poses
 
     def get_complex(self, index: int = 0) -> Protein:
-        """
-        Fetch a protein-ligand complex structure.
+        """Fetch a protein-ligand complex structure.
 
-        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :returns: Protein object with the full protein-ligand complex.
-        :raises IndexError: If index is out of range.
-        :raises ValueError: If the complex has no structure UUID.
+        Args:
+            index: index of the pose (0-based, ordered by score). Default 0 (best)
+
+        Returns:
+            protein object with the full protein-ligand complex
+
+        Raises:
+            IndexError: index is out of range
+            ValueError: complex has no structure UUID
         """
         scores = self.scores
         if index < 0 or index >= len(scores):
@@ -160,10 +169,10 @@ class DockingResult(WorkflowResult):
         return self._cache[cache_key]
 
     def get_complexes(self) -> list[Protein]:
-        """
-        Fetch all protein-ligand complex structures.
+        """Fetch all protein-ligand complex structures.
 
-        :returns: List of Protein objects for each complex (ordered by score).
+        Returns:
+            proteins for each complex (ordered by score)
         """
         complexes: list[Protein] = []
         for i, score in enumerate(self.scores):
@@ -172,16 +181,20 @@ class DockingResult(WorkflowResult):
         return complexes
 
     def get_induced_receptor(self, index: int = 0) -> Protein:
-        """
-        Fetch the relaxed receptor structure used for an induced-fit pose's redocking.
+        """Fetch the relaxed receptor structure used for an induced-fit pose's redocking.
 
         Only populated for poses produced by the induced-fit phase (see
-        ``DockingScore.induced_receptor_pdb``); rigid poses share the original receptor.
+        `DockingScore.induced_receptor_pdb`); rigid poses share the original receptor.
 
-        :param index: Index of the pose (0-based, ordered by score). Default 0 (best).
-        :returns: Protein object with the induced (relaxed) receptor structure.
-        :raises IndexError: If index is out of range.
-        :raises ValueError: If the pose has no induced receptor UUID.
+        Args:
+            index: index of the pose (0-based, ordered by score). Default 0 (best)
+
+        Returns:
+            protein object with the induced (relaxed) receptor structure
+
+        Raises:
+            IndexError: index is out of range
+            ValueError: pose has no induced receptor UUID
         """
         scores = self.scores
         if index < 0 or index >= len(scores):
@@ -197,11 +210,11 @@ class DockingResult(WorkflowResult):
         return self._cache[cache_key]
 
     def get_induced_receptors(self) -> list[Protein]:
-        """
-        Fetch all induced (relaxed) receptor structures.
+        """Fetch all induced (relaxed) receptor structures.
 
-        :returns: List of Protein objects for each induced-fit pose's receptor (ordered by
-            score). Poses without an induced receptor are omitted.
+        Returns:
+            proteins for each induced-fit pose's receptor (ordered by
+            score). Poses without an induced receptor are omitted
         """
         receptors: list[Protein] = []
         for i, score in enumerate(self.scores):
@@ -230,39 +243,44 @@ def submit_docking_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a docking workflow to the API.
+    """Submits a docking workflow to the API.
 
-    :param protein: Protein to dock. Can be input as a uuid or a Protein object.
-    :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
-    :param initial_molecule: Initial molecule to be docked.
-    :param docking_settings: settings controlling the docking engine, such as `VinaSettings` or
-        `GninaSettings`. Set both `GninaSettings` covalent atom indices for covalent docking; leave
-        both unset for noncovalent gnina docking. If provided, the deprecated `executable`,
-        `scoring_function`, `exhaustiveness`, and `max_poses` are ignored.
-    :param executable: Deprecated, use `docking_settings=VinaSettings(executable=...)` instead.
-        Which Vina docking implementation to use.
-    :param scoring_function: Deprecated, use `docking_settings=VinaSettings(scoring_function=...)`
-        instead. Which Vina docking scoring function to use.
-    :param exhaustiveness: Deprecated, use `docking_settings=VinaSettings(exhaustiveness=...)`
-        instead. Which exhaustiveness to employ.
-    :param max_poses: Deprecated, use `docking_settings=VinaSettings(max_poses=...)` instead.
-        Maximum number of poses generated per input conformer.
-    :param do_csearch: Whether to perform a conformational search on the ligand.
-    :param do_optimization: Whether to perform an optimization on the ligand.
-    :param do_pose_refinement: Whether or not to optimize output poses.
-    :param induced_fit_settings: Settings enabling induced-fit docking: soft-docks candidate
-        poses, relaxes the receptor around each with restrained local minimization, and redocks
-        into the relaxed receptor. ``None`` (default) disables it. Requires ``docking_settings``
-        to be ``VinaSettings`` with ``executable="vina"`` or ``"qvina2"``.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted docking workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        protein: protein to dock. Can be input as a uuid or a Protein object
+        pocket: binding pocket as `[[cx, cy, cz], [sx, sy, sz]]` – center (Å) and box size (Å)
+        initial_molecule: initial molecule to be docked
+        docking_settings: settings controlling the docking engine, such as `VinaSettings` or
+            `GninaSettings`. Set both `GninaSettings` covalent atom indices for covalent docking;
+            leave
+            both unset for noncovalent gnina docking. If provided, the deprecated `executable`,
+            `scoring_function`, `exhaustiveness`, and `max_poses` are ignored
+        executable: deprecated, use `docking_settings=VinaSettings(executable=...)` instead.
+            Which Vina docking implementation to use
+        scoring_function: deprecated, use `docking_settings=VinaSettings(scoring_function=...)`
+            instead. Which Vina docking scoring function to use
+        exhaustiveness: deprecated, use `docking_settings=VinaSettings(exhaustiveness=...)`
+            instead. Which exhaustiveness to employ
+        max_poses: deprecated, use `docking_settings=VinaSettings(max_poses=...)` instead.
+            Maximum number of poses generated per input conformer
+        do_csearch: whether to perform a conformational search on the ligand
+        do_optimization: whether to perform an optimization on the ligand
+        do_pose_refinement: whether or not to optimize output poses
+        induced_fit_settings: settings enabling induced-fit docking: soft-docks candidate
+            poses, relaxes the receptor around each with restrained local minimization, and redocks
+            into the relaxed receptor. `None` (default) disables it. Requires `docking_settings`
+            to be `VinaSettings` with `executable="vina"` or `"qvina2"`
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        workflow object representing the submitted docking workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

@@ -1,5 +1,4 @@
-"""
-Calculate Bond-Dissociation Energies (BDE) with the Rowan API.
+"""Calculate Bond-Dissociation Energies (BDE) with the Rowan API.
 
 `mode` is a BDE method string (the level of theory):
 - "omol25_conserving_s": neural network potential (default)

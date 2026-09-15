@@ -32,14 +32,18 @@ class MSAResult(WorkflowResult):
         format: MSAOutputFormat | stjames.MSAFormat | None = None,
         path: Path | str | None = None,
     ) -> list[Path]:
-        """
-        Download MSA files for this workflow.
+        """Download MSA files for this workflow.
 
-        :param format: Output format to download. If None, downloads all requested formats.
-        :param path: Directory to save files to. Defaults to current directory.
-        :returns: List of paths to downloaded tar.gz files.
-        :raises ValueError: If the requested format wasn't in the original output_formats.
-        :raises HTTPError: If the API request fails.
+        Args:
+            format: output format to download. If None, downloads all requested formats
+            path: directory to save files to. Defaults to current directory
+
+        Returns:
+            list of paths to downloaded tar.gz files
+
+        Raises:
+            ValueError: requested format wasn't in the original output_formats
+            httpx.HTTPStatusError: API request fails
         """
         fmt_str: str | None = format.value if isinstance(format, stjames.MSAFormat) else format
         if fmt_str is not None and fmt_str not in self._output_formats:
@@ -77,19 +81,23 @@ def submit_msa_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a Multiple Sequence Alignment (MSA) workflow to the API.
+    """Submits a Multiple Sequence Alignment (MSA) workflow to the API.
 
-    :param initial_protein_sequences: List of protein sequences to align (amino acid strings).
-    :param output_formats: Output formats for the MSA files. Defaults to {MSAFormat.COLABFOLD}.
-    :param name: Name to assign to the workflow.
-    :param folder_uuid: UUID of the folder where the workflow will be stored.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted MSA workflow.
-    :raises HTTPError: If the API request fails.
+    Args:
+        initial_protein_sequences: list of protein sequences to align (amino acid strings)
+        output_formats: output formats for the MSA files. Defaults to {MSAFormat.COLABFOLD}
+        name: name to assign to the workflow
+        folder_uuid: UUID of the folder where the workflow will be stored
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        workflow object representing the submitted MSA workflow
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

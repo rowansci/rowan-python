@@ -51,8 +51,9 @@ _PRESETS: dict[str, dict] = {
 class RelativeBindingFreeEnergyResult:
     """Aggregate RBFE outcome for a single ligand.
 
-    :param dg: Predicted binding free energy difference (kcal/mol).
-    :param dg_err: Uncertainty estimate on dg.
+    Attributes:
+        dg: predicted binding free energy difference (kcal/mol)
+        dg_err: uncertainty estimate on dg
     """
 
     dg: float
@@ -63,9 +64,10 @@ class RelativeBindingFreeEnergyResult:
 class RelativeBindingFreeEnergyDiagnostics:
     """Quality-control metrics from an RBFE simulation.
 
-    :param cycle_closure_rms: RMS error across completed thermodynamic cycles.
-    :param windows_completed: Count of successfully converged lambda windows.
-    :param windows_failed: Count of failed lambda windows.
+    Attributes:
+        cycle_closure_rms: RMS error across completed thermodynamic cycles
+        windows_completed: count of successfully converged lambda windows
+        windows_failed: count of failed lambda windows
     """
 
     cycle_closure_rms: float | None
@@ -138,16 +140,20 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         path: Path | str | None = None,
         name: str | None = None,
     ) -> Path:
-        """
-        Download DCD trajectory files for a specific perturbation edge.
+        """Download DCD trajectory files for a specific perturbation edge.
 
-        :param edge_index: Index of the edge (0-based, matching ``edges`` order).
-        :param lambda_vals: Lambda values to download. Defaults to all windows.
-        :param path: Directory to save the file to. Defaults to current directory.
-        :param name: Custom name for the tar.gz file (without extension).
-        :returns: Path to the downloaded tar.gz file.
-        :raises IndexError: If edge_index is out of range.
-        :raises HTTPError: If the API request fails.
+        Args:
+            edge_index: index of the edge (0-based, matching `edges` order)
+            lambda_vals: lambda values to download. Defaults to all windows
+            path: directory to save the file to. Defaults to current directory
+            name: custom name for the tar.gz file (without extension)
+
+        Returns:
+            path to the downloaded tar.gz file
+
+        Raises:
+            IndexError: edge_index is out of range
+            httpx.HTTPStatusError: API request fails
         """
         edges = self.edges
         if edge_index < 0 or edge_index >= len(edges):
@@ -173,12 +179,16 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         self,
         path: Path | str | None = None,
     ) -> list[Path]:
-        """
-        Download DCD trajectory files for all perturbation edges.
+        """Download DCD trajectory files for all perturbation edges.
 
-        :param path: Directory to save the files to. Defaults to current directory.
-        :returns: List of paths to the downloaded tar.gz files, one per edge.
-        :raises HTTPError: If any API request fails.
+        Args:
+            path: directory to save the files to. Defaults to current directory
+
+        Returns:
+            list of paths to the downloaded tar.gz files, one per edge
+
+        Raises:
+            httpx.HTTPStatusError: any API request fails
         """
         return [self.download_edge_trajectories(i, path=path) for i in range(len(self.edges))]
 
@@ -192,15 +202,19 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         }
 
     def write_ligand_results_csv(self, path: Path | str = "ligand_results.csv") -> Path:
-        """
-        Write per-ligand results to a CSV, matching the platform's ligand-results export.
+        """Write per-ligand results to a CSV, matching the platform's ligand-results export.
 
-        Columns are ``Ligand name``, ``ΔG``, ``ΔG error``, ``SMILES``, quoted and
+        Columns are `Ligand name`, `ΔG`, `ΔG error`, `SMILES`, quoted and
         BOM-prefixed for spreadsheet compatibility, identical to the download in the web UI.
 
-        :param path: destination CSV path.
-        :returns: path written to.
-        :raises ValueError: if per-ligand results are not yet available.
+        Args:
+            path: destination CSV path
+
+        Returns:
+            path written to
+
+        Raises:
+            ValueError: per-ligand results are not yet available
         """
         if (results := self.ligand_dg_results) is None:
             raise ValueError("No per-ligand results yet - has the workflow completed?")
@@ -261,51 +275,55 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a relative binding free energy perturbation (RBFE) workflow to the API.
+    """Submits a relative binding free energy perturbation (RBFE) workflow to the API.
 
     Runs FEP simulations along edges of the perturbation graph to predict
     relative binding free energies between ligands.
 
     Preset settings (any individual param overrides the tmd_settings):
-    - ``"fast"``: fewer windows/steps for quick screening (NAGL charges).
-    - ``"recommended"`` (default): balanced speed and accuracy (NAGL charges).
-    - ``"rigorous"``: same as recommended but disables local MD for higher accuracy.
+    - `"fast"`: fewer windows/steps for quick screening (NAGL charges).
+    - `"recommended"` (default): balanced speed and accuracy (NAGL charges).
+    - `"rigorous"`: same as recommended but disables local MD for higher accuracy.
 
-    :param graph_result: Completed ``RelativeBindingFreeEnergyGraphResult``.
-    :param protein: Protein target, as a UUID string or Protein object.
-    :param tmd_settings: Starting settings profile. Individual params override this.
-    :param forcefield: Force field for the simulation. Mango requires ``charge_method="nagl"``.
-    :param charge_method: Method for computing partial charges. The ``"recommended"`` and
-        ``"fast"`` profiles use NAGL by default; override the ``"rigorous"`` profile to NAGL
-        when using Mango.
-    :param n_eq_steps: Equilibration steps per lambda window.
-    :param n_frames: Production frames saved per lambda window.
-    :param steps_per_frame: MD integration steps per saved frame.
-    :param n_windows: Maximum number of lambda windows considered for bisection.
-    :param min_overlap: Minimum acceptable overlap during schedule bisection.
-    :param target_overlap: Desired overlap after HREX optimization.
-    :param water_sampling_padding: Extra nanometers added to the solvent sampling radius.
-    :param rest_max_temperature_scale: Maximum effective temperature scaling for REST.
-    :param rest_temperature_scale_interpolation: Functional form used for REST scaling.
-    :param local_md_steps: Number of local MD steps per frame (0 disables local MD).
-    :param local_md_k: Spring constant used during local MD.
-    :param local_md_radius: Sphere radius in nanometers for the local MD region.
-    :param local_md_free_reference: Whether to free the reference frame during local MD.
-    :param legs: Which thermodynamic cycle legs to run.
-    :param save_trajectories: Whether to save DCD trajectories.
-    :param trajectory_save_interval: Save every Nth frame when saving trajectories.
-    :param validate_forcefield: If True (default), validate protein forcefield
-        compatibility before submitting.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If graph_result has no graph or both folder and folder_uuid are provided.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        graph_result: completed `RelativeBindingFreeEnergyGraphResult`
+        protein: protein target, as a UUID string or Protein object
+        tmd_settings: starting settings profile. Individual params override this
+        forcefield: force field for the simulation. Mango requires `charge_method="nagl"`
+        charge_method: method for computing partial charges. The `"recommended"` and
+            `"fast"` profiles use NAGL by default; override the `"rigorous"` profile to NAGL
+            when using Mango
+        n_eq_steps: equilibration steps per lambda window
+        n_frames: production frames saved per lambda window
+        steps_per_frame: MD integration steps per saved frame
+        n_windows: maximum number of lambda windows considered for bisection
+        min_overlap: minimum acceptable overlap during schedule bisection
+        target_overlap: desired overlap after HREX optimization
+        water_sampling_padding: extra nanometers added to the solvent sampling radius
+        rest_max_temperature_scale: maximum effective temperature scaling for REST
+        rest_temperature_scale_interpolation: functional form used for REST scaling
+        local_md_steps: number of local MD steps per frame (0 disables local MD)
+        local_md_k: spring constant used during local MD
+        local_md_radius: sphere radius in nanometers for the local MD region
+        local_md_free_reference: whether to free the reference frame during local MD
+        legs: which thermodynamic cycle legs to run
+        save_trajectories: whether to save DCD trajectories
+        trajectory_save_interval: save every Nth frame when saving trajectories
+        validate_forcefield: validate protein forcefield
+            compatibility before submitting
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: graph_result has no graph or both folder and folder_uuid are provided
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

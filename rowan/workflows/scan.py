@@ -42,7 +42,7 @@ class ScanResult(WorkflowResult):
     def scan_points(self) -> list[Calculation]:
         """All scan point calculations.
 
-        .. note::
+        Note:
             Makes one API call per scan point on first access.
             Results are cached. Call clear_cache() to refresh.
         """
@@ -53,14 +53,16 @@ class ScanResult(WorkflowResult):
         return self._cache["scan_points"]
 
     def get_energies(self, relative: bool = False) -> list[tuple[float, float | None]]:
-        """
-        Get scan coordinate values paired with energies.
+        """Get scan coordinate values paired with energies.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy point). If False (default), return absolute energies
-            in Hartree.
-        :returns: List of (coordinate, energy) tuples. Coordinate is the scanned
-            value (e.g., bond distance in Angstrom, angle in degrees).
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy point). If False (default), return absolute energies
+                in Hartree
+
+        Returns:
+            list of (coordinate, energy) tuples. Coordinate is the scanned
+            value (e.g., bond distance in Angstrom, angle in degrees)
         """
         scan_settings = self._workflow.scan_settings
         scan_settings_2d = getattr(self._workflow, "scan_settings_2d", None) or []
@@ -114,33 +116,37 @@ def submit_scan_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a scan workflow to the API.
+    """Submits a scan workflow to the API.
 
-    :param initial_molecule: Molecule to scan.
-    :param scan_settings: coordinate(s) to scan. Pass one ScanSettings (or dict) for a 1D
-        scan, or a list to scan several coordinates simultaneously (concerted); concerted
-        coordinates must all use the same number of points.
-    :param scan_settings_2d: optional additional coordinate(s) scanned as a second dimension,
-        forming a 2D grid with scan_settings. Same single-or-list form as scan_settings.
-    :param calculation_engine: Engine to use for the calculation.
-    :param calculation_method: Method to use for the calculation.
-    :param basis_set: Basis set, see `BasisSet`.
-    :param corrections: Dispersion corrections, see `Correction`.
-    :param solvent: Solvent to use for the calculation.
-    :param mode: geometry-optimization mode controlling convergence thresholds for each
-        constrained optimization, see `Mode`. Defaults to auto (normally rapid).
-    :param constraints: additional geometric constraints held fixed during every scan-point
-        optimization, beyond the scanned coordinate, see `Constraint`.
-    :param wavefront_propagation: Whether to use wavefront propagation in the scan.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to scan
+        scan_settings: coordinate(s) to scan. Pass one ScanSettings (or dict) for a 1D
+            scan, or a list to scan several coordinates simultaneously (concerted); concerted
+            coordinates must all use the same number of points
+        scan_settings_2d: optional additional coordinate(s) scanned as a second dimension,
+            forming a 2D grid with scan_settings. Same single-or-list form as scan_settings
+        calculation_engine: engine to use for the calculation
+        calculation_method: method to use for the calculation
+        basis_set: basis set, see `BasisSet`
+        corrections: dispersion corrections, see `Correction`
+        solvent: solvent to use for the calculation
+        mode: geometry-optimization mode controlling convergence thresholds for each
+            constrained optimization, see `Mode`. Defaults to auto (normally rapid)
+        constraints: additional geometric constraints held fixed during every scan-point
+            optimization, beyond the scanned coordinate, see `Constraint`
+        wavefront_propagation: whether to use wavefront propagation in the scan
+        name: name of the workflow
+        folder_uuid: UUID of the folder to store the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

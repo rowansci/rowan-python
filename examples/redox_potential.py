@@ -1,5 +1,4 @@
-"""
-Calculate the redox potential of a molecule using the Rowan API.
+"""Calculate the redox potential of a molecule using the Rowan API.
 
 See documentiation at: https://docs.rowansci.com/science/workflows/redox-potential
 """

@@ -55,11 +55,14 @@ class IRCResult(WorkflowResult):
         """Retrieve the calculation(s) holding an IRC path.
 
         Supports both the current single-calculation storage and the deprecated
-        per-step list storage (see :meth:`forward_molecules`).
+        per-step list storage (see `forward_molecules`).
 
-        :param raw: Single calculation UUID (current) or list of per-step UUIDs
-            (deprecated).
-        :returns: Calculations holding the path, in path order.
+        Args:
+            raw: single calculation UUID (current) or list of per-step UUIDs
+                (deprecated)
+
+        Returns:
+            calculations holding the path, in path order
         """
         if not raw:
             return []
@@ -125,7 +128,7 @@ class IRCResult(WorkflowResult):
     def forward_molecules(self) -> list[Molecule]:
         """Molecules along the forward IRC path (lazily fetched).
 
-        .. note::
+        Note:
             Legacy workflows stored the path as one calculation per step; these
             are still read transparently for back-compatibility.
         """
@@ -135,32 +138,36 @@ class IRCResult(WorkflowResult):
     def backward_molecules(self) -> list[Molecule]:
         """Molecules along the backward IRC path (lazily fetched).
 
-        .. note::
+        Note:
             Legacy workflows stored the path as one calculation per step; these
             are still read transparently for back-compatibility.
         """
         return self._path_molecules(self._workflow.irc_backward, self._get_backward_calculations())  # type: ignore[arg-type]
 
     def get_forward_energies(self, relative: bool = False) -> list[float]:
-        """
-        Get energies along the forward IRC path.
+        """Get energies along the forward IRC path.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy point). If False (default), return absolute energies
-            in Hartree.
-        :returns: List of energies along the forward path.
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy point). If False (default), return absolute energies
+                in Hartree
+
+        Returns:
+            list of energies along the forward path
         """
         energies: list[float] = [m.energy for m in self.forward_molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
 
     def get_backward_energies(self, relative: bool = False) -> list[float]:
-        """
-        Get energies along the backward IRC path.
+        """Get energies along the backward IRC path.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy point). If False (default), return absolute energies
-            in Hartree.
-        :returns: List of energies along the backward path.
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy point). If False (default), return absolute energies
+                in Hartree
+
+        Returns:
+            list of energies along the backward path
         """
         energies: list[float] = [m.energy for m in self.backward_molecules if m.energy is not None]
         return to_relative_kcal(energies) if relative else energies
@@ -177,7 +184,7 @@ class IRCResult(WorkflowResult):
 
     @property
     def forward_endpoint_calculation(self) -> Calculation | None:
-        """Optimization of the forward endpoint (if ``optimize_endpoints=True``, lazily fetched)."""
+        """Optimization of the forward endpoint (if `optimize_endpoints=True`, lazily fetched)."""
         if "forward_endpoint_calc" not in self._cache:
             uuid = self._workflow.endpoint_opt_forward
             self._cache["forward_endpoint_calc"] = retrieve_calculation(uuid) if uuid else None
@@ -185,7 +192,7 @@ class IRCResult(WorkflowResult):
 
     @property
     def backward_endpoint_calculation(self) -> Calculation | None:
-        """Optimization of backward endpoint (if ``optimize_endpoints=True``, lazily fetched)."""
+        """Optimization of backward endpoint (if `optimize_endpoints=True`, lazily fetched)."""
         if "backward_endpoint_calc" not in self._cache:
             uuid = self._workflow.endpoint_opt_backward
             self._cache["backward_endpoint_calc"] = retrieve_calculation(uuid) if uuid else None
@@ -193,13 +200,13 @@ class IRCResult(WorkflowResult):
 
     @property
     def forward_endpoint_molecule(self) -> Molecule | None:
-        """Optimized forward endpoint molecule (if ``optimize_endpoints=True``)."""
+        """Optimized forward endpoint molecule (if `optimize_endpoints=True`)."""
         calc = self.forward_endpoint_calculation
         return calc.molecule if calc else None
 
     @property
     def backward_endpoint_molecule(self) -> Molecule | None:
-        """Optimized backward endpoint molecule (if ``optimize_endpoints=True``)."""
+        """Optimized backward endpoint molecule (if `optimize_endpoints=True`)."""
         calc = self.backward_endpoint_calculation
         return calc.molecule if calc else None
 
@@ -223,28 +230,32 @@ def submit_irc_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
+    """Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
-    :param initial_molecule: Transition state (TS) guess to start from
-    :param method: Method for the IRC (and optional preopt)
-    :param basis_set: Basis set for the IRC (and optional preopt)
-    :param corrections: Corrections for the IRC (and optional preopt)
-    :param solvent_settings: Solvent settings for the IRC (and optional preopt)
-    :param engine: Engine for the calculation (and optional preopt)
-    :param pbc_dft_settings: PBC DFT settings for the IRC (and optional preopt)
-    :param preopt: Whether to perform a pre-optimization of the TS guess
-    :param step_size: Step size for the IRC calculation (0.001-0.5 Å√amu)
-    :param max_irc_steps: Maximum number of IRC steps to perform
-    :param optimize_endpoints: Whether to optimize the endpoint geometries once the IRC completes
-    :param name: Name for the workflow
-    :param folder_uuid: UUID of the folder to place the workflow in
-    :param folder: Folder object to store the workflow in
-    :param max_credits: Maximum number of credits to use for the workflow
-    :param webhook_url: URL that Rowan will POST to when the workflow completes
-    :param is_draft: Submit the workflow as a draft without starting execution
-    :returns: Workflow object representing the submitted IRC workflow
-    :raises requests.HTTPError: if the request to the API fails
+    Args:
+        initial_molecule: transition state (TS) guess to start from
+        method: method for the IRC (and optional preopt)
+        basis_set: basis set for the IRC (and optional preopt)
+        corrections: corrections for the IRC (and optional preopt)
+        solvent_settings: solvent settings for the IRC (and optional preopt)
+        engine: engine for the calculation (and optional preopt)
+        pbc_dft_settings: PBC DFT settings for the IRC (and optional preopt)
+        preopt: whether to perform a pre-optimization of the TS guess
+        step_size: step size for the IRC calculation (0.001-0.5 Å√amu)
+        max_irc_steps: maximum number of IRC steps to perform
+        optimize_endpoints: whether to optimize the endpoint geometries once the IRC completes
+        name: name for the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: submit the workflow as a draft without starting execution
+
+    Returns:
+        workflow object representing the submitted IRC workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

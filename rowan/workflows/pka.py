@@ -21,19 +21,19 @@ from .base import (
 
 @dataclass(frozen=True, slots=True)
 class pKaMicrostate:
-    """
-    Microstate from a pKa calculation.
+    """Microstate from a pKa calculation.
 
     Available fields depend on the pKa method used. 3D structure-based methods
     (aimnet2_wagen2024, gxtb_wagen2026) populate delta_g. SMILES-based methods
     (chemprop_nevolianis2025, starling) populate smiles; chemprop_nevolianis2025
     also populates uncertainty.
 
-    :param atom_index: Index of the protonation site atom.
-    :param pka: Predicted pKa value.
-    :param smiles: SMILES of the microstate (SMILES-based methods only).
-    :param delta_g: Free energy of (de)protonation in kcal/mol (3D structure-based methods only).
-    :param uncertainty: Prediction uncertainty (chemprop_nevolianis2025 only).
+    Attributes:
+        atom_index: index of the protonation site atom
+        pka: predicted pKa value
+        smiles: SMILES of the microstate (SMILES-based methods only)
+        delta_g: free energy of (de)protonation in kcal/mol (3D structure-based methods only)
+        uncertainty: prediction uncertainty (chemprop_nevolianis2025 only)
     """
 
     atom_index: int
@@ -100,16 +100,16 @@ class pKaResult(WorkflowResult):
 
     @property
     def structures(self) -> list[Calculation]:
-        """
-        Optimized structure calculations (lazily fetched).
+        """Optimized structure calculations (lazily fetched).
 
         Only available for 3D structure-based methods (aimnet2_wagen2024, gxtb_wagen2026).
 
-        .. note::
+        Note:
             Makes one API call per structure on first access.
             Results are cached. Call clear_cache() to refresh.
 
-        :raises ValueError: If method is SMILES-based (chemprop_nevolianis2025, starling).
+        Raises:
+            ValueError: method is SMILES-based (chemprop_nevolianis2025, starling)
         """
         method = self._workflow.microscopic_pka_method
         if method in _PKA_SMILES_METHODS:
@@ -140,30 +140,35 @@ def submit_pka_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a pKa workflow to the API.
+    """Submits a pKa workflow to the API.
 
-    :param initial_molecule: Molecule to calculate pKa for.
-        Accepts Molecule, stjames.Molecule, RDKit Mol, dict, or SMILES string.
-    :param pka_range: Range of pKa values to calculate.
-    :param method: Algorithm used to compute pKa values:
-        - ``aimnet2_wagen2024``: AIMNet2-based; requires 3D structure; water only.
-        - ``gxtb_wagen2026``: g-xTB-based; requires 3D structure; water only; full periodic table.
-        - ``chemprop_nevolianis2025``: Chemprop-based; requires SMILES; several solvents supported.
-        - ``starling``: SMILES-based; water only.
-    :param solvent: Solvent in which pKa values will be computed.
-    :param deprotonate_elements: Elements to deprotonate (atomic numbers).
-    :param protonate_elements: Elements to protonate (atomic numbers).
-    :param mode: Mode to run the calculation in.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If method/input type mismatch, or chemprop used with protonate_elements.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to calculate pKa for.
+            Accepts Molecule, stjames.Molecule, RDKit Mol, dict, or SMILES string
+        pka_range: range of pKa values to calculate
+        method: algorithm used to compute pKa values:
+            - `aimnet2_wagen2024`: AIMNet2-based; requires 3D structure; water only.
+            - `gxtb_wagen2026`: g-xTB-based; requires 3D structure; water only; full periodic table.
+            - `chemprop_nevolianis2025`: Chemprop-based; requires SMILES; several solvents
+              supported.
+            - `starling`: SMILES-based; water only
+        solvent: solvent in which pKa values will be computed
+        deprotonate_elements: elements to deprotonate (atomic numbers)
+        protonate_elements: elements to protonate (atomic numbers)
+        mode: mode to run the calculation in
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: method/input type mismatch, or chemprop used with protonate_elements
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

@@ -1,6 +1,5 @@
 # ruff: noqa: E501
-"""
-Design protein binders using BoltzGen via the Rowan API.
+"""Design protein binders using BoltzGen via the Rowan API.
 
 This workflow generates, filters, and ranks protein designs that bind
 to given protein or small-molecule targets.

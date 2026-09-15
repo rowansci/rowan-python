@@ -10,23 +10,23 @@ APIKeyScope = Literal["read", "read_write", "read_write_delete"]
 
 
 class APIKey(BaseModel):
-    """
-    Rowan API key.
+    """Rowan API key.
 
-    :ivar uuid: UUID of the API key.
-    :ivar name: Human-readable name of the API key.
-    :ivar created_at: When the key was created.
-    :ivar expires_at: When the key expires.
-    :ivar is_expired: Whether the key has expired.
-    :ivar is_revoked: Whether the key has been revoked.
-    :ivar scope: Permission scope ("read", "read_write", or "read_write_delete").
-    :ivar can_manage_api_keys: Whether this key can create/list/revoke other API keys.
-    :ivar budget: Maximum credits this key may spend. ``None`` means unlimited.
-    :ivar credits_used: Credits spent by this key so far.
-    :ivar scoped_project_uuid: If set, the key can only access this project.
-    :ivar created_by_key_uuid: UUID of the API key used to create this one (if any).
-    :ivar revoked_at: When the key was revoked, if applicable.
-    :ivar last_used_at: When the key was last used, if known.
+    Attributes:
+        uuid: UUID of the API key
+        name: human-readable name of the API key
+        created_at: when the key was created
+        expires_at: when the key expires
+        is_expired: whether the key has expired
+        is_revoked: whether the key has been revoked
+        scope: permission scope ("read", "read_write", or "read_write_delete")
+        can_manage_api_keys: whether this key can create/list/revoke other API keys
+        budget: maximum credits this key may spend. `None` means unlimited
+        credits_used: credits spent by this key so far
+        scoped_project_uuid: project to which access is restricted
+        created_by_key_uuid: UUID of the API key used to create this one (if any)
+        revoked_at: when the key was revoked, if applicable
+        last_used_at: when the key was last used, if known
     """
 
     uuid: str
@@ -51,10 +51,10 @@ class APIKey(BaseModel):
         )
 
     def revoke(self) -> Self:
-        """
-        Revoke this API key.
+        """Revoke this API key.
 
-        :returns: Updated APIKey object.
+        Returns:
+            updated APIKey object
         """
         with api_client() as client:
             response = client.post(f"/api_key/{self.uuid}/revoke")
@@ -62,12 +62,16 @@ class APIKey(BaseModel):
             return type(self)(**response.json())
 
     def refresh(self, in_place: bool = True) -> Self:
-        """
-        Reload this key's metadata (e.g. ``credits_used``) from the server.
+        """Reload this key's metadata (e.g. `credits_used`) from the server.
 
-        :param in_place: If True, update this instance in-place. If False, return new instance.
-        :returns: Updated APIKey object.
-        :raises ValueError: If this key is no longer present in the account's key list.
+        Args:
+            in_place: update this instance in place rather than return a new instance
+
+        Returns:
+            updated APIKey object
+
+        Raises:
+            ValueError: this key is no longer present in the account's key list
         """
         matches = [key for key in list_api_keys(active=None) if key.uuid == self.uuid]
         if not matches:
@@ -84,14 +88,14 @@ class APIKey(BaseModel):
 
 
 class CreatedAPIKey(BaseModel):
-    """
-    Result of creating a new API key.
+    """Result of creating a new API key.
 
-    The plaintext ``key`` is only available at creation time — store it now,
+    The plaintext `key` is only available at creation time – store it now,
     it cannot be retrieved later.
 
-    :ivar key: Plaintext API key. Save this; it is only returned once.
-    :ivar api_key: Metadata for the newly-created key.
+    Attributes:
+        key: plaintext API key. Save this; it is only returned once
+        api_key: metadata for the newly-created key
     """
 
     key: str
@@ -105,20 +109,22 @@ def create_api_key(
     scoped_project_uuid: str | None = None,
     budget: float | None = None,
 ) -> CreatedAPIKey:
-    """
-    Create a new API key.
+    """Create a new API key.
 
     The caller must currently authenticate with an unscoped key that has
-    ``can_manage_api_keys`` permission.
+    `can_manage_api_keys` permission.
 
-    :param name: Human-readable name for the key.
-    :param scope: Permission scope. One of "read", "read_write", "read_write_delete".
-    :param valid_days: Number of days until the key expires.
-    :param scoped_project_uuid: If provided, restrict the key to a single project.
-    :param budget: Maximum credits the key may spend. If not provided, the key has no
-        spending limit.
-    :returns: plaintext key together with its metadata; the plaintext key is
-        only returned once — store it immediately.
+    Args:
+        name: human-readable name for the key
+        scope: permission scope. One of "read", "read_write", "read_write_delete"
+        valid_days: number of days until the key expires
+        scoped_project_uuid: project to which access is restricted
+        budget: maximum credits the key may spend. If not provided, the key has no
+            spending limit
+
+    Returns:
+        plaintext key together with its metadata; the plaintext key is
+        only returned once – store it immediately
     """
     plaintext_key = f"rowan-sk{uuid.uuid4()}"
     payload = {
@@ -143,12 +149,14 @@ def create_api_key(
 
 
 def list_api_keys(active: bool | None = True) -> list[APIKey]:
-    """
-    List API keys belonging to the current user.
+    """List API keys belonging to the current user.
 
-    :param active: If True (default), only return non-revoked, non-expired keys.
-        If False, only return revoked or expired keys. If None, return all keys.
-    :returns: List of APIKey objects.
+    Args:
+        active: filter by key validity: True for non-revoked, non-expired keys,
+            False for revoked or expired keys, or None for all keys
+
+    Returns:
+        matching API keys
     """
     params: dict[str, str] = {}
     if active is not None:
@@ -161,11 +169,13 @@ def list_api_keys(active: bool | None = True) -> list[APIKey]:
 
 
 def revoke_api_key(uuid: str) -> APIKey:
-    """
-    Revoke an API key by UUID.
+    """Revoke an API key by UUID.
 
-    :param uuid: UUID of the key to revoke.
-    :returns: Updated APIKey object.
+    Args:
+        uuid: UUID of the key to revoke
+
+    Returns:
+        updated APIKey object
     """
     with api_client() as client:
         response = client.post(f"/api_key/{uuid}/revoke")
@@ -174,16 +184,18 @@ def revoke_api_key(uuid: str) -> APIKey:
 
 
 def update_api_key_budget(uuid: str, budget: float | None) -> APIKey:
-    """
-    Update the spending budget of an API key.
+    """Update the spending budget of an API key.
 
     The caller must currently authenticate with an unscoped key that has
-    ``can_manage_api_keys`` permission.
+    `can_manage_api_keys` permission.
 
-    :param uuid: UUID of the key to update.
-    :param budget: New maximum credits the key may spend. Pass ``None`` to remove
-        the spending limit.
-    :returns: Updated APIKey object.
+    Args:
+        uuid: UUID of the key to update
+        budget: new maximum credits the key may spend. Pass `None` to remove
+            the spending limit
+
+    Returns:
+        updated APIKey object
     """
     with api_client() as client:
         response = client.patch(f"/api_key/{uuid}", json={"budget": budget})

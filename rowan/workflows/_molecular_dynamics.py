@@ -42,7 +42,8 @@ class _MolecularDynamicsResult(WorkflowResult):
     def get_minimized_protein(self) -> Protein | None:
         """Fetch and cache the energy-minimized protein structure.
 
-        :returns: protein object, or `None` when no minimized structure is available
+        Returns:
+            protein object, or `None` when no minimized structure is available
         """
         if not (uuid := self.minimized_protein_uuid):
             return None
@@ -55,9 +56,14 @@ class _MolecularDynamicsResult(WorkflowResult):
     def get_mean_structure(self, replicate: int = 0) -> Protein | None:
         """Fetch and cache the coordinate-averaged structure for a replicate.
 
-        :param replicate: zero-based trajectory replicate index
-        :returns: protein object, or `None` when no mean structure is available
-        :raises IndexError: if `replicate` is out of range
+        Args:
+            replicate: zero-based trajectory replicate index
+
+        Returns:
+            protein object, or `None` when no mean structure is available
+
+        Raises:
+            IndexError: `replicate` is out of range
         """
         trajectory = self._trajectory(replicate)
         if not trajectory.mean_structure_uuid:
@@ -80,12 +86,17 @@ class _MolecularDynamicsResult(WorkflowResult):
     ) -> Path | None:
         """Download the coordinate-averaged structure for a replicate, defaulting to mmCIF.
 
-        :param replicate: zero-based trajectory replicate index
-        :param path: output directory; defaults to the current directory
-        :param name: filename without an extension
-        :param file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
-        :returns: downloaded path, or `None` when no mean structure is available
-        :raises IndexError: if `replicate` is out of range
+        Args:
+            replicate: zero-based trajectory replicate index
+            path: output directory; defaults to the current directory
+            name: filename without an extension
+            file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
+
+        Returns:
+            downloaded path, or `None` when no mean structure is available
+
+        Raises:
+            IndexError: `replicate` is out of range
         """
         protein = self.get_mean_structure(replicate)
         if protein is None:
@@ -111,14 +122,19 @@ class _MolecularDynamicsResult(WorkflowResult):
 
         Use the minimized topology's first model without modifying cached coordinates.
 
-        :param replicate: zero-based trajectory replicate index
-        :param path: output directory; defaults to the current directory
-        :param name: filename without an extension
-        :param file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
-        :returns: downloaded path, or `None` when no medoid frame is available
-        :raises IndexError: if `replicate` is out of range
-        :raises ValueError: if topology and trajectory data are inconsistent, the topology
-            has no models, or it contains unsupported branched entities
+        Args:
+            replicate: zero-based trajectory replicate index
+            path: output directory; defaults to the current directory
+            name: filename without an extension
+            file_format: output format (`mmcif` or `pdb`); defaults to mmCIF
+
+        Returns:
+            downloaded path, or `None` when no medoid frame is available
+
+        Raises:
+            IndexError: `replicate` is out of range
+            ValueError: topology and trajectory data are inconsistent, the topology
+                has no models, or it contains unsupported branched entities
         """
         trajectory = self._trajectory(replicate)
         if trajectory.median_structure_frame_index is None:
@@ -180,10 +196,15 @@ class _MolecularDynamicsResult(WorkflowResult):
     ) -> list[list[float]]:
         """Fetch interatomic distances over a trajectory.
 
-        :param atom_pairs: zero-based atom-index pairs
-        :param replicate: zero-based trajectory replicate index
-        :returns: distance arrays in angstrom, one per atom pair
-        :raises requests.HTTPError: if the API request fails
+        Args:
+            atom_pairs: zero-based atom-index pairs
+            replicate: zero-based trajectory replicate index
+
+        Returns:
+            distance arrays in angstrom, one per atom pair
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.post(
@@ -202,11 +223,16 @@ class _MolecularDynamicsResult(WorkflowResult):
     ) -> Path:
         """Download DCD trajectory files for selected replicates.
 
-        :param replicates: zero-based replicate indices
-        :param name: archive filename without the `.tar.gz` extension
-        :param path: output directory; defaults to the current directory
-        :returns: path to the downloaded `.tar.gz` archive
-        :raises requests.HTTPError: if the API request fails
+        Args:
+            replicates: zero-based replicate indices
+            name: archive filename without the `.tar.gz` extension
+            path: output directory; defaults to the current directory
+
+        Returns:
+            path to the downloaded `.tar.gz` archive
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         directory = Path(path) if path is not None else Path.cwd()
         file_path = directory / f"{name or 'trajectories'}.tar.gz"

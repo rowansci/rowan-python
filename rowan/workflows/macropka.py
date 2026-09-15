@@ -114,29 +114,33 @@ def submit_macropka_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a macropKa workflow to the API.
+    """Submits a macropKa workflow to the API.
 
-    :param initial_smiles: Molecule to calculate macroscopic pKa values for. Accepts
-        a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
-        or dict). The molecule must have a SMILES string associated with it, as macropKa
-        models are 2D/SMILES-based and do not use 3D coordinates.
-    :param method: macroscopic pKa model to use.
-    :param min_pH: Minimum pH to use in the macropka workflow.
-    :param max_pH: Maximum pH to use in the macropka workflow.
-    :param min_charge: Minimum charge to use in the macropka workflow.
-    :param max_charge: Maximum charge to use in the macropka workflow.
-    :param compute_solvation_energy: Whether to compute the solvation energy.
-    :param compute_aqueous_solubility: Whether to compute aqueous solubility for each pH.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to store the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If the molecule has no SMILES associated with it.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_smiles: molecule to calculate macroscopic pKa values for. Accepts
+            a SMILES string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol,
+            or dict). The molecule must have a SMILES string associated with it, as macropKa
+            models are 2D/SMILES-based and do not use 3D coordinates
+        method: macroscopic pKa model to use
+        min_pH: minimum pH to use in the macropka workflow
+        max_pH: maximum pH to use in the macropka workflow
+        min_charge: minimum charge to use in the macropka workflow
+        max_charge: maximum charge to use in the macropka workflow
+        compute_solvation_energy: whether to compute the solvation energy
+        compute_aqueous_solubility: whether to compute aqueous solubility for each pH
+        name: name of the workflow
+        folder_uuid: UUID of the folder to store the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: molecule has no SMILES associated with it
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

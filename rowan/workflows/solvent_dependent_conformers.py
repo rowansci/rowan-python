@@ -32,9 +32,10 @@ _DEFAULT_SOLVENTS: list[Solvent] = [
 class SolventDependentConformerProperties:
     """Conformer ensemble properties for a single solvent.
 
-    :param solvent_accessible_surface_area: Average SASA (A^2).
-    :param polar_solvent_accessible_surface_area: Average polar SASA for non-C/H atoms (A^2).
-    :param radius_of_gyration: Radius of gyration (A).
+    Attributes:
+        solvent_accessible_surface_area: average SASA (A^2)
+        polar_solvent_accessible_surface_area: average polar SASA for non-C/H atoms (A^2)
+        radius_of_gyration: radius of gyration (A)
     """
 
     solvent_accessible_surface_area: float
@@ -46,12 +47,13 @@ class SolventDependentConformerProperties:
 class SolventDependentConformer:
     """A single conformer scored across multiple solvents.
 
-    :param calculation_uuid: UUID of the underlying calculation.
-    :param free_energy_by_solvent: Absolute free energy per solvent (Hartree).
-    :param relative_free_energy_by_solvent: Free energy relative to lowest conformer per solvent
-        (kcal/mol).
-    :param population_by_solvent: Boltzmann population per solvent (0-1).
-    :param smiles: Canonical SMILES identifying the conformer's tautomer.
+    Attributes:
+        calculation_uuid: UUID of the underlying calculation
+        free_energy_by_solvent: absolute free energy per solvent (Hartree)
+        relative_free_energy_by_solvent: free energy relative to lowest conformer per solvent
+            (kcal/mol)
+        population_by_solvent: Boltzmann population per solvent (0-1)
+        smiles: canonical SMILES identifying the conformer's tautomer
     """
 
     calculation_uuid: str
@@ -128,34 +130,38 @@ def submit_solvent_dependent_conformers_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a solvent-dependent conformers workflow to the API.
+    """Submits a solvent-dependent conformers workflow to the API.
 
     Generates conformers and scores them across multiple solvents using CPCM-X,
     enabling prediction of solvent-dependent conformer populations and transfer
     free energies. The input molecule must have 3D coordinates.
 
-    :param initial_molecule: Molecule with 3D coordinates to perform the conformer search on.
-    :param solvents: Solvents to score conformers in (``rowan.Solvent`` enum).
-        Defaults to hexane, octanol, chloroform, DMSO, and water.
-    :param conf_gen_settings: Conformer generation settings. When omitted, inherits the
-        stjames default for this workflow (currently OpenConf). Other options:
-        ``rowan.ETKDGSettings``, ``rowan.iMTDSettings``, ``rowan.iMTDGCSettings``.
-        Set the energy window (and any other generator parameter) on this object;
-        each type carries its own stjames default.
-    :param final_correction: Solvent method used for the final per-conformer corrections,
-        `COSMO_RS` or `CPCMX`.
-    :param enumerate_tautomers: Whether to enumerate and screen tautomers before generating
-        conformers.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If both folder and folder_uuid are provided.
-    :raises requests.HTTPError: If the request to the API fails.
+    Args:
+        initial_molecule: molecule with 3D coordinates to perform the conformer search on
+        solvents: solvents to score conformers in (`rowan.Solvent` enum).
+            Defaults to hexane, octanol, chloroform, DMSO, and water
+        conf_gen_settings: conformer generation settings. When omitted, inherits the
+            stjames default for this workflow (currently OpenConf). Other options:
+            `rowan.ETKDGSettings`, `rowan.iMTDSettings`, `rowan.iMTDGCSettings`.
+            Set the energy window (and any other generator parameter) on this object;
+            each type carries its own stjames default
+        final_correction: solvent method used for the final per-conformer corrections,
+            `COSMO_RS` or `CPCMX`
+        enumerate_tautomers: whether to enumerate and screen tautomers before generating
+            conformers
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: both folder and folder_uuid are provided
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

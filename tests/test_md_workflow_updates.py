@@ -115,7 +115,6 @@ def test_protein_md_exposes_binder_and_representative_structure_results(
     monkeypatch: MonkeyPatch,
 ) -> None:
     """Expose binder analyses and cache fetched mean structures."""
-
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein="protein-uuid",
         trajectories=[
@@ -155,7 +154,6 @@ def test_protein_md_exposes_binder_and_representative_structure_results(
 
 def test_protein_md_accepts_results_without_new_trajectory_fields() -> None:
     """Keep older Protein MD results readable when new fields are absent."""
-
     old_workflow = stjames.ProteinMolecularDynamicsWorkflow(
         protein="protein-uuid", trajectories=[{"uuid": "old-trajectory"}]
     )
@@ -170,7 +168,6 @@ def test_protein_md_accepts_results_without_new_trajectory_fields() -> None:
 
 def test_protein_md_accepts_legacy_binder_schema() -> None:
     """Keep workflows created with binder-contained SMILES readable."""
-
     legacy_result = ProteinMDResult(
         workflow_data={
             "protein": "protein-uuid",
@@ -232,7 +229,6 @@ def test_pose_analysis_md_uses_new_defaults_and_forcefields(monkeypatch: MonkeyP
 
 def test_pose_analysis_md_exposes_trajectory_analysis_results() -> None:
     """Expose trajectory analyses and representative structures for new and old results."""
-
     workflow = stjames.PoseAnalysisMolecularDynamicsWorkflow(
         protein="protein-uuid",
         initial_smiles="CC",

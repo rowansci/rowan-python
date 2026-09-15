@@ -74,26 +74,30 @@ def submit_batch_docking_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a batch-docking workflow to the API.
+    """Submits a batch-docking workflow to the API.
 
-    :param smiles_list: SMILES strings to dock.
-    :param protein: Protein to dock (UUID or Protein object).
-    :param pocket: Binding pocket as ``[[cx, cy, cz], [sx, sy, sz]]`` — center (Å) and box size (Å).
-    :param executable: Which docking implementation to use.
-    :param scoring_function: Which docking scoring function to use.
-    :param exhaustiveness: Docking exhaustiveness parameter.
-    :param num_poses_to_save: Number of top-scoring compounds whose best pose to save.
-    :param run_mmgbsa: Whether to refine the saved poses with MM/GBSA. Ignored when
-        `num_poses_to_save` is zero.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        smiles_list: SMILES strings to dock
+        protein: protein to dock (UUID or Protein object)
+        pocket: binding pocket as `[[cx, cy, cz], [sx, sy, sz]]` – center (Å) and box size (Å)
+        executable: which docking implementation to use
+        scoring_function: which docking scoring function to use
+        exhaustiveness: docking exhaustiveness parameter
+        num_poses_to_save: number of top-scoring compounds whose best pose to save
+        run_mmgbsa: whether to refine the saved poses with MM/GBSA. Ignored when
+            `num_poses_to_save` is zero
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum number of credits to use
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

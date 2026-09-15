@@ -1,5 +1,4 @@
-"""
-Run a double-ended transition state search using Rowan.
+"""Run a double-ended transition state search using Rowan.
 
 See documentation at: https://docs.rowansci.com/science/workflows/double-ended-ts-search
 """

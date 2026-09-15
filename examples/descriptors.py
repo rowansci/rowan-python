@@ -1,5 +1,4 @@
-"""
-Calculate molecular descriptors using the Rowan API.
+"""Calculate molecular descriptors using the Rowan API.
 
 Computes molecular descriptors including COSMO descriptors (surface area,
 screening charge, dielectric energy, polar surface area) in water by default.

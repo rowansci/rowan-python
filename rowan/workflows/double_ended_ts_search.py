@@ -24,12 +24,12 @@ from .constants import to_relative_kcal
 
 @dataclass(frozen=True, slots=True)
 class ReactionPathPoint:
-    """
-    Point along the reaction path.
+    """Point along the reaction path.
 
-    :param distance: Distance along the reaction path.
-    :param calculation_uuid: UUID of the calculation at this point.
-    :param calculation: Populated by get_path_calculations(), None otherwise.
+    Attributes:
+        distance: distance along the reaction path
+        calculation_uuid: UUID of the calculation at this point
+        calculation: populated by get_path_calculations(), None otherwise
     """
 
     distance: float
@@ -81,17 +81,17 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         return mol.energy if mol else None
 
     def get_path_calculations(self) -> list[ReactionPathPoint]:
-        """
-        Fetch all path point calculations, sorted by distance.
+        """Fetch all path point calculations, sorted by distance.
 
         Combines forward (reactant → TS) and backward (product → TS) points,
         sorted by distance, each with its Calculation populated.
         Results are cached after the first call.
 
-        .. note::
+        Note:
             Makes one API call per path point on first access.
 
-        :returns: List of ReactionPathPoints with calculations populated, sorted by distance.
+        Returns:
+            list of ReactionPathPoints with calculations populated, sorted by distance
         """
         if "path_calculations" not in self._cache:
             all_points = sorted(self.forward_path + self.backward_path, key=lambda p: p.distance)
@@ -108,13 +108,15 @@ class DoubleEndedTSSearchResult(WorkflowResult):
         return self._cache["path_calculations"]
 
     def get_path_energies(self, relative: bool = False) -> list[float]:
-        """
-        Get energies along the reaction path, sorted by distance.
+        """Get energies along the reaction path, sorted by distance.
 
-        :param relative: If True, return relative energies in kcal/mol (relative to
-            the lowest energy point). If False (default), return absolute energies
-            in Hartree.
-        :returns: List of energies along the reaction path.
+        Args:
+            relative: return relative energies in kcal/mol (relative to
+                the lowest energy point). If False (default), return absolute energies
+                in Hartree
+
+        Returns:
+            list of energies along the reaction path
         """
         energies: list[float] = [
             p.calculation.energy
@@ -162,22 +164,24 @@ def submit_double_ended_ts_search_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a double-ended transition state search workflow to the API.
+    """Submits a double-ended transition state search workflow to the API.
 
-    :param reactant: reactant Molecule.
-    :param product: product Molecule.
-    :param calculation_settings: Settings to use for calculations. Defaults to omol25_conserving_s.
-    :param search_settings: Settings for the transition state search; resolves to FSM
-    :param optimize_inputs: Whether to optimize the reactant and product before the search.
-    :param optimize_ts: Whether to optimize the found transition state.
-    :param name: name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
+    Args:
+        reactant: reactant Molecule
+        product: product Molecule
+        calculation_settings: settings to use for calculations. Defaults to omol25_conserving_s
+        search_settings: settings for the transition state search; resolves to FSM
+        optimize_inputs: whether to optimize the reactant and product before the search
+        optimize_ts: whether to optimize the found transition state
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
     """
     require_coordinates(reactant)
     require_coordinates(product)

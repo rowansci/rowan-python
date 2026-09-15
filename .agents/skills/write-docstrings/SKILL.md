@@ -9,17 +9,21 @@ Required for: all public modules, classes, functions, and methods
 
 ## Current migration stage
 
-Preserve the reStructuredText docstrings described in the root `AGENTS.md`.
-The Google-style guidance below is the target for the next migration; apply it
-only when the user requests that migration. Do not convert existing docstrings yet.
+Use Google-style docstrings as described below.
 
-## Target format: Google-style
+## Format: Google-style
 
 1. First line is a simple summary in imperative or indicative mood, ending in a period
 2. Use sections when relevant: `Args`, `Returns`, `Raises`, `Examples`
 3. Do not place type information in docstrings, use type annotations only
 4. Do not use leading articles in parameter, return, and error descriptions "a", "an", or "the"
 5. Only use single backticks (e.g. `Spam`, not ``Spam``)
+6. Start argument, attribute, return, and error descriptions with lowercase words;
+   preserve capitalization of identifiers, proper names, and acronyms
+7. Omit trailing periods from descriptions; keep the summary's final period
+8. State actions or error conditions directly, without leading `if` clauses
+9. Keep descriptions concise and avoid repeating types already in annotations
+10. Use en dashes rather than em dashes
 
 ## Example
 
@@ -32,7 +36,7 @@ def process_spam(input_data: list[tuple[str, int]], threshold: int = 2) -> dict[
         threshold: minimum count threshold for inclusion
 
     Returns:
-        Mapping of categories to counts
+        mapping of categories to counts
 
     Raises:
         ValueError: threshold is negative

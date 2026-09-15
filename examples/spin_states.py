@@ -1,5 +1,4 @@
-"""
-Calculate spin state energies using the Rowan API.
+"""Calculate spin state energies using the Rowan API.
 
 This workflow predicts the lowest energy spin state by running multistage
 optimizations at different spin multiplicities. The same

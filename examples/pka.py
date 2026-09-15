@@ -1,5 +1,4 @@
-"""
-Calculate the pKa of phenol using the Rowan API.
+"""Calculate the pKa of phenol using the Rowan API.
 
 Experimental value ≈ 9.99
 

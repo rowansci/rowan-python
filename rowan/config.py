@@ -354,15 +354,15 @@ BASIS_SET_ATOMS: dict[str, set[int]] = {
 
 @dataclass(frozen=True, slots=True)
 class ConformerGeneratorSettings:
-    """
-    Constraints for a conformer generator.
+    """Constraints for a conformer generator.
 
-    :param disable_constraints: Geometry constraints not supported.
-    :param disable_open_shell: Only closed-shell molecules supported.
-    :param disable_ts: Transition state search not supported.
-    :param atoms_supported: Supported atomic numbers (None = all).
-    :param allowed_engines: Engines allowed for energy evaluation (None = all).
-    :param solvent_warning: Warn if generator solvent differs from final opt solvent.
+    Attributes:
+        disable_constraints: geometry constraints not supported
+        disable_open_shell: only closed-shell molecules supported
+        disable_ts: transition state search not supported
+        atoms_supported: supported atomic numbers (None = all)
+        allowed_engines: engines allowed for energy evaluation (None = all)
+        solvent_warning: warn if generator solvent differs from final opt solvent
     """
 
     disable_constraints: bool = False
@@ -400,16 +400,16 @@ CONFORMER_GENERATOR_SETTINGS: dict[str, ConformerGeneratorSettings] = {
 
 @dataclass(frozen=True, slots=True)
 class MDSettings:
-    """
-    Molecular dynamics parameter constraints.
+    """Molecular dynamics parameter constraints.
 
-    :param TIMESTEP_MIN: Minimum timestep in femtoseconds.
-    :param TIMESTEP_MAX: Maximum timestep in femtoseconds.
-    :param MAX_SAVED_FRAMES: Maximum number of frames that can be saved.
-    :param NPT_REQUIRES_PERIODIC: NPT ensemble only valid for periodic systems.
-    :param QUASICLASSICAL_REQUIRES_FREQUENCIES: Quasiclassical init needs frequencies.
-    :param READ_REQUIRES_VELOCITIES: Read init needs velocities from previous job.
-    :param CONFINING_BLOCKED_FOR_PERIODIC: Confining constraints invalid for periodic.
+    Attributes:
+        TIMESTEP_MIN: minimum timestep in femtoseconds
+        TIMESTEP_MAX: maximum timestep in femtoseconds
+        MAX_SAVED_FRAMES: maximum number of frames that can be saved
+        NPT_REQUIRES_PERIODIC: NPT ensemble only valid for periodic systems
+        QUASICLASSICAL_REQUIRES_FREQUENCIES: quasiclassical init needs frequencies
+        READ_REQUIRES_VELOCITIES: read init needs velocities from previous job
+        CONFINING_BLOCKED_FOR_PERIODIC: confining constraints invalid for periodic
     """
 
     TIMESTEP_MIN: float = 0.5  # fs
@@ -432,12 +432,12 @@ MD_SETTINGS = MDSettings()
 
 @dataclass(frozen=True, slots=True)
 class SolubilityMethodSettings:
-    """
-    Constraints for solubility prediction methods.
+    """Constraints for solubility prediction methods.
 
-    :param allowed_solvents: Solvents supported (None = all). Use SMILES format.
-    :param single_temperature_k: If set, only this temperature allowed.
-    :param temperature_range: If set, (min_k, max_k) range allowed.
+    Attributes:
+        allowed_solvents: solvents supported (None = all). Use SMILES format
+        single_temperature_k: only allowed temperature, when specified
+        temperature_range: allowed temperature range (min_k, max_k)
     """
 
     allowed_solvents: list[str] | None = None
@@ -463,13 +463,13 @@ SOLUBILITY_METHOD_SETTINGS: dict[str, SolubilityMethodSettings] = {
 
 @dataclass(frozen=True, slots=True)
 class MacroPKaSettings:
-    """
-    MacroPKa workflow parameter constraints.
+    """MacroPKa workflow parameter constraints.
 
-    :param PH_WARNING_MIN: pH values below this trigger accuracy warning.
-    :param PH_WARNING_MAX: pH values above this trigger accuracy warning.
-    :param CHARGE_MIN: Minimum allowed charge state.
-    :param CHARGE_MAX: Maximum allowed charge state.
+    Attributes:
+        PH_WARNING_MIN: pH values below this trigger accuracy warning
+        PH_WARNING_MAX: pH values above this trigger accuracy warning
+        CHARGE_MIN: minimum allowed charge state
+        CHARGE_MAX: maximum allowed charge state
     """
 
     PH_WARNING_MIN: float = 0.0
@@ -487,15 +487,15 @@ TAUTOMER_ATOMS_SUPPORTED = [1, 5, 6, 7, 8, 9, 14, 15, 16, 17, 33, 34, 35, 53]
 
 @dataclass(frozen=True, slots=True)
 class CofoldingModelSettings:
-    """
-    Constraints for protein cofolding models.
+    """Constraints for protein cofolding models.
 
-    :param max_sequence_length: Maximum total sequence length.
-    :param supports_cyclic_peptides: Whether cyclic peptides are supported.
-    :param supports_potentials: Whether potentials can be used.
-    :param supports_ligand_binding_affinity: Whether binding affinity available.
-    :param ligand_max_atoms: Max atoms per ligand for binding affinity.
-    :param ligand_atoms_supported: Supported atoms for ligand binding.
+    Attributes:
+        max_sequence_length: maximum total sequence length
+        supports_cyclic_peptides: whether cyclic peptides are supported
+        supports_potentials: whether potentials can be used
+        supports_ligand_binding_affinity: whether binding affinity available
+        ligand_max_atoms: max atoms per ligand for binding affinity
+        ligand_atoms_supported: supported atoms for ligand binding
     """
 
     max_sequence_length: int = 3000
@@ -548,15 +548,15 @@ COFOLDING_MODEL_SETTINGS: dict[str, CofoldingModelSettings] = {
 
 @dataclass(frozen=True, slots=True)
 class BinderDesignSettings:
-    """
-    Protein binder design parameter constraints.
+    """Protein binder design parameter constraints.
 
-    :param MAX_SEQUENCE_LENGTH: Maximum total amino acids.
-    :param NUM_DESIGNS_MAX_FREE: Max designs for free tier.
-    :param NUM_DESIGNS_MAX_SUBSCRIBED: Max designs for subscribed users.
-    :param BUDGET_MUST_BE_LEQ_NUM_DESIGNS: budget cannot exceed num_designs.
-    :param REQUIRES_DESIGNABLE_REGIONS: At least one sequence must have digits.
-    :param REQUIRES_UNIQUE_CHAIN_IDS: All chain IDs must be unique.
+    Attributes:
+        MAX_SEQUENCE_LENGTH: maximum total amino acids
+        NUM_DESIGNS_MAX_FREE: max designs for free tier
+        NUM_DESIGNS_MAX_SUBSCRIBED: max designs for subscribed users
+        BUDGET_MUST_BE_LEQ_NUM_DESIGNS: budget cannot exceed num_designs
+        REQUIRES_DESIGNABLE_REGIONS: at least one sequence must have digits
+        REQUIRES_UNIQUE_CHAIN_IDS: all chain IDs must be unique
     """
 
     MAX_SEQUENCE_LENGTH: int = 1500
@@ -580,8 +580,11 @@ DOCKING_CSEARCH_REQUIRES_OPTIMIZATION = True
 def get_engine_settings(engine: str) -> EngineSettings | None:
     """Look up settings for a compute engine.
 
-    :param engine: Engine identifier string.
-    :returns: Settings for the engine, or None if not found.
+    Args:
+        engine: engine identifier string
+
+    Returns:
+        settings for the engine, or None if not found
     """
     return ENGINE_SETTINGS.get(engine)
 
@@ -589,8 +592,11 @@ def get_engine_settings(engine: str) -> EngineSettings | None:
 def get_method_settings(method: str) -> MethodSettings | None:
     """Look up settings for a calculation method.
 
-    :param method: Method identifier string.
-    :returns: Settings for the method, or None if not found.
+    Args:
+        method: method identifier string
+
+    Returns:
+        settings for the method, or None if not found
     """
     return METHOD_SETTINGS.get(method)
 
@@ -598,8 +604,11 @@ def get_method_settings(method: str) -> MethodSettings | None:
 def get_engines_for_method(method: str) -> list[str]:
     """Find all engines that support a given method.
 
-    :param method: Method identifier string.
-    :returns: List of engine identifier strings that support the method.
+    Args:
+        method: method identifier string
+
+    Returns:
+        list of engine identifier strings that support the method
     """
     return [engine for engine, settings in ENGINE_SETTINGS.items() if method in settings.methods]
 
@@ -611,10 +620,13 @@ def get_combined_settings(
 
     Merges engine and method constraints to give the full picture of what's supported.
 
-    :param engine: Engine identifier string.
-    :param method: Method identifier string.
-    :param periodic: Whether periodic boundary conditions are used.
-    :returns: Merged MethodSettings, or None if the combination is not supported.
+    Args:
+        engine: engine identifier string
+        method: method identifier string
+        periodic: whether periodic boundary conditions are used
+
+    Returns:
+        merged MethodSettings, or None if the combination is not supported
     """
     engine_settings = ENGINE_SETTINGS.get(engine)
     if engine_settings is None or method not in engine_settings.methods:
@@ -650,8 +662,11 @@ def get_combined_settings(
 def get_conformer_generator_settings(generator: str) -> ConformerGeneratorSettings | None:
     """Look up settings for a conformer generator.
 
-    :param generator: Conformer generator identifier string.
-    :returns: Settings for the generator, or None if not found.
+    Args:
+        generator: conformer generator identifier string
+
+    Returns:
+        settings for the generator, or None if not found
     """
     return CONFORMER_GENERATOR_SETTINGS.get(generator)
 
@@ -659,8 +674,11 @@ def get_conformer_generator_settings(generator: str) -> ConformerGeneratorSettin
 def get_solubility_method_settings(method: str) -> SolubilityMethodSettings | None:
     """Look up settings for a solubility prediction method.
 
-    :param method: Solubility method identifier string.
-    :returns: Settings for the method, or None if not found.
+    Args:
+        method: solubility method identifier string
+
+    Returns:
+        settings for the method, or None if not found
     """
     return SOLUBILITY_METHOD_SETTINGS.get(method)
 
@@ -668,7 +686,10 @@ def get_solubility_method_settings(method: str) -> SolubilityMethodSettings | No
 def get_cofolding_model_settings(model: str) -> CofoldingModelSettings | None:
     """Look up settings for a protein cofolding model.
 
-    :param model: Cofolding model identifier string.
-    :returns: Settings for the model, or None if not found.
+    Args:
+        model: cofolding model identifier string
+
+    Returns:
+        settings for the model, or None if not found
     """
     return COFOLDING_MODEL_SETTINGS.get(model)

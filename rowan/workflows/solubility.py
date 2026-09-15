@@ -65,12 +65,16 @@ COMMON_SOLVENTS: dict[str, str] = {
 
 
 def _resolve_solvent(solvent: str) -> str:
-    """
-    Convert a solvent name or SMILES to SMILES.
+    """Convert a solvent name or SMILES to SMILES.
 
-    :param solvent: Solvent name (e.g., "ethanol") or SMILES (e.g., "CCO").
-    :returns: SMILES string.
-    :raises ValueError: If solvent is not a recognized name or valid SMILES.
+    Args:
+        solvent: solvent name (e.g., "ethanol") or SMILES (e.g., "CCO")
+
+    Returns:
+        SMILES string
+
+    Raises:
+        ValueError: solvent is not a recognized name or valid SMILES
     """
     # Check if it's a known solvent name (case-insensitive)
     lower = solvent.lower().strip()
@@ -90,12 +94,12 @@ def _resolve_solvent(solvent: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class SolubilityValue:
-    """
-    Solubility measurement at a specific temperature.
+    """Solubility measurement at a specific temperature.
 
-    :param temperature: Temperature in Kelvin.
-    :param solubility: Solubility in log(mol/L).
-    :param uncertainty: Uncertainty in the solubility prediction.
+    Attributes:
+        temperature: temperature in Kelvin
+        solubility: solubility in log(mol/L)
+        uncertainty: uncertainty in the solubility prediction
     """
 
     temperature: float
@@ -105,11 +109,11 @@ class SolubilityValue:
 
 @dataclass(frozen=True, slots=True)
 class SolubilityEntry:
-    """
-    Solubility results for a single solvent.
+    """Solubility results for a single solvent.
 
-    :param solvent: Solvent SMILES.
-    :param values: Solubility values at each temperature.
+    Attributes:
+        solvent: solvent SMILES
+        values: solubility values at each temperature
     """
 
     solvent: str
@@ -198,32 +202,33 @@ def submit_solubility_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a solubility workflow to the API.
+    """Submits a solubility workflow to the API.
 
-    :param initial_smiles: Molecule to calculate solubility for. Accepts a SMILES
-        string or any molecule type (RowanMolecule, stjames.Molecule, RDKit Mol, or dict).
-        The molecule must have a SMILES string associated with it, as solubility models
-        are 2D/SMILES-based and do not use 3D coordinates.
-    :param method: Solubility prediction method:
-        - "fastsolv": ML-based solid solubility. Supports arbitrary solvents and temperatures.
-        - "kingfisher": ML-based aqueous solubility. Water only, 298.15K only.
-        - "esol": ESOL regression for aqueous solubility. Water only, 298.15K only.
-    :param solvents: List of solvent names or SMILES. Common names like "ethanol",
-        "water", "thf" are recognized (see COMMON_SOLVENTS). For fastsolv, any solvent
-        SMILES is accepted. For kingfisher/esol, must be ["water"] or ["O"].
-    :param temperatures: List of temperatures in Kelvin. For fastsolv, any temperatures.
-        For kingfisher/esol, must be [298.15] (room temperature).
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If the molecule has no SMILES, or solvents/temperatures are
-        incompatible with the method.
-    :raises requests.HTTPError: If the request to the API fails.
+    Args:
+        initial_smiles: molecule with SMILES for solubility prediction
+        method: solubility prediction method:
+            - "fastsolv": ML-based solid solubility. Supports arbitrary solvents and temperatures.
+            - "kingfisher": ML-based aqueous solubility. Water only, 298.15K only.
+            - "esol": ESOL regression for aqueous solubility. Water only, 298.15K only
+        solvents: list of solvent names or SMILES. Common names like "ethanol",
+            "water", "thf" are recognized (see COMMON_SOLVENTS). For fastsolv, any solvent
+            SMILES is accepted. For kingfisher/esol, must be ["water"] or ["O"]
+        temperatures: list of temperatures in Kelvin. For fastsolv, any temperatures.
+            For kingfisher/esol, must be [298.15] (room temperature)
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: molecule has no SMILES, or solvents/temperatures are
+            incompatible with the method
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
@@ -270,20 +275,23 @@ def submit_solubility_workflow_group(
     """Submit a batch of solubility workflows as one submission group.
 
     All molecules use the same method, solvents, and temperatures. A batch may contain
-    up to 5,000 molecules. Each molecule is represented by its own ``Workflow``, and all
-    returned workflows share a ``submission_group_uuid``. Use ``batch_poll_status()`` to
-    monitor their UUIDs together and ``retrieve_workflows()`` to retrieve their records.
+    up to 5,000 molecules. Each molecule is represented by its own `Workflow`, and all
+    returned workflows share a `submission_group_uuid`. Use `batch_poll_status()` to
+    monitor their UUIDs together and `retrieve_workflows()` to retrieve their records.
 
-    :param initial_smileses: nonempty list of up to 5,000 solute SMILES strings
-    :param method: solubility prediction method
-    :param solvents: solvent names or SMILES strings
-    :param temperatures: temperatures in Kelvin
-    :param names: optional workflow names; when provided, one per SMILES string
-    :param folder_uuid: UUID of the folder in which to store the workflows
-    :param folder: folder in which to store the workflows
-    :param max_credits: maximum credits to use per workflow
-    :param webhook_url: URL Rowan will POST to when each workflow completes
-    :returns: submitted workflows in one submission group
+    Args:
+        initial_smileses: nonempty list of up to 5,000 solute SMILES strings
+        method: solubility prediction method
+        solvents: solvent names or SMILES strings
+        temperatures: temperatures in Kelvin
+        names: optional workflow names; when provided, one per SMILES string
+        folder_uuid: UUID of the folder in which to store the workflows
+        folder: folder in which to store the workflows
+        max_credits: maximum credits to use per workflow
+        webhook_url: URL Rowan will POST to when each workflow completes
+
+    Returns:
+        submitted workflows in one submission group
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

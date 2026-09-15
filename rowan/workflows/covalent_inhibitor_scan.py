@@ -14,16 +14,16 @@ from .base import Workflow, WorkflowResult, register_result
 
 @dataclass(frozen=True, slots=True)
 class CovalentInhibitorScanPoint:
-    """
-    A point on the covalent inhibitor reactivity profile.
+    """A point on the covalent inhibitor reactivity profile.
 
-    :param index: window index.
-    :param distance: bias center for this window, in Å.
-    :param force_constant: harmonic bias force constant, in kcal/mol/Å².
-    :param free_energy: unbiased free energy at this center, in kcal/mol, if available.
-    :param mean_distance: mean sampled reactive-bond distance, in Å, if available.
-    :param n_samples: production samples contributing to this window.
-    :param molecule: final sampled geometry of the model region, if available.
+    Attributes:
+        index: window index
+        distance: bias center for this window, in Å
+        force_constant: harmonic bias force constant, in kcal/mol/Å²
+        free_energy: unbiased free energy at this center, in kcal/mol, if available
+        mean_distance: mean sampled reactive-bond distance, in Å, if available
+        n_samples: production samples contributing to this window
+        molecule: final sampled geometry of the model region, if available
     """
 
     index: int
@@ -37,13 +37,13 @@ class CovalentInhibitorScanPoint:
 
 @dataclass(frozen=True, slots=True)
 class UmbrellaSamplingConvergence:
-    """
-    Diagnostics saying whether a reactivity profile can be trusted.
+    """Diagnostics saying whether a reactivity profile can be trusted.
 
-    :param overlap_matrix: MBAR overlap between windows; low overlap between neighbours
-        means the profile should not be trusted.
-    :param round_trips: replicas that traversed the whole coordinate and returned.
-    :param worst_pair_acceptance: lowest exchange acceptance over neighbouring pairs, if available.
+    Attributes:
+        overlap_matrix: MBAR overlap between windows; low overlap between neighbours
+            means the profile should not be trusted
+        round_trips: replicas that traversed the whole coordinate and returned
+        worst_pair_acceptance: lowest exchange acceptance over neighbouring pairs, if available
     """
 
     overlap_matrix: tuple[tuple[float, ...], ...]
@@ -94,10 +94,10 @@ class CovalentInhibitorScanResult(WorkflowResult):
         return self._workflow.barrier
 
     def get_energies(self) -> list[tuple[float, float | None]]:
-        """
-        Get bias-center distances paired with free energies.
+        """Get bias-center distances paired with free energies.
 
-        :returns: List of (distance, free_energy) tuples, in Å and kcal/mol respectively.
+        Returns:
+            list of (distance, free_energy) tuples, in Å and kcal/mol respectively
         """
         return [(p.distance, p.free_energy) for p in self.points]
 
@@ -115,33 +115,37 @@ def submit_covalent_inhibitor_scan_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a covalent inhibitor scan workflow to the API.
+    """Submits a covalent inhibitor scan workflow to the API.
 
-    .. warning::
+    Warning:
         This workflow is in beta. Its interface and behavior may change.
 
     Seeds windows along the reactive bond distance with a steered pull, samples them via
     ML/MM umbrella sampling, and combines them into a free energy profile.
 
-    :param protein: covalently docked protein-ligand complex (protein plus the ligand as a
-        non-polymer residue). Can be a UUID or a Protein object.
-    :param protein_reactive_atom_index: 0-based index of the reacting protein atom, in PDB
-        record order.
-    :param ligand_reactive_atom_index: 0-based index of the reacting ligand atom, in PDB
-        record order.
-    :param reactant_smiles: SMILES of the neutral reactant ligand, used to rebuild the ligand
-        as a separate non-covalent molecule at the MM level.
-    :param settings: settings controlling the umbrella sampling. Defaults to
-        `stjames.UmbrellaSamplingScanSettings()`.
-    :param name: name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: if True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        protein: covalently docked protein-ligand complex (protein plus the ligand as a
+            non-polymer residue). Can be a UUID or a Protein object
+        protein_reactive_atom_index: 0-based index of the reacting protein atom, in PDB
+            record order
+        ligand_reactive_atom_index: 0-based index of the reacting ligand atom, in PDB
+            record order
+        reactant_smiles: SMILES of the neutral reactant ligand, used to rebuild the ligand
+            as a separate non-covalent molecule at the MM level
+        settings: settings controlling the umbrella sampling. Defaults to
+            `stjames.UmbrellaSamplingScanSettings()`
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")

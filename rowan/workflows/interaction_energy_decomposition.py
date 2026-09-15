@@ -20,10 +20,10 @@ from .base import (
 
 
 def _validate_fragment_separation(molecule: StructureInput, fragment1_indices: list[int]) -> None:
-    """
-    Validate that no atom in fragment 1 is covalently bonded to an atom outside fragment 1.
+    """Validate that no atom in fragment 1 is covalently bonded to an atom outside fragment 1.
 
-    :raises ValueError: If a cross-fragment covalent bond is detected.
+    Raises:
+        ValueError: a cross-fragment covalent bond is detected
     """
     stj_mol = molecule_to_stjames(molecule)
     xyz = stj_mol.to_xyz()
@@ -103,27 +103,31 @@ def submit_interaction_energy_decomposition_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits an interaction energy decomposition (SAPT0) workflow to the API.
+    """Submits an interaction energy decomposition (SAPT0) workflow to the API.
 
     Decomposes the interaction energy between two molecular fragments into
     electrostatic, exchange, dispersion, and induction components.
 
-    :param initial_molecule: Dimer molecule to decompose.
-    :param fragment1_indices: Atom indices (1-indexed) defining fragment 1.
-        Fragment 2 is all remaining atoms.
-    :param method: Energy decomposition method. Currently only ``"sapt0"`` is supported.
-    :param basis_set: Basis set for the calculation. Defaults to ``"jun-cc-pVDZ"``.
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises ValueError: If both folder and folder_uuid are provided, or if fragment 1
-        contains atoms covalently bonded to atoms outside fragment 1.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: dimer molecule to decompose
+        fragment1_indices: atom indices (1-indexed) defining fragment 1.
+            Fragment 2 is all remaining atoms
+        method: energy decomposition method. Currently only `"sapt0"` is supported
+        basis_set: basis set for the calculation. Defaults to `"jun-cc-pVDZ"`
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        ValueError: both folder and folder_uuid are provided, or if fragment 1
+            contains atoms covalently bonded to atoms outside fragment 1
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:

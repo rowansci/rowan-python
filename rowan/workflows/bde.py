@@ -71,30 +71,35 @@ def submit_bde_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow:
-    """
-    Submits a Bond-Dissociation Energy (BDE) workflow to the API.
+    """Submits a Bond-Dissociation Energy (BDE) workflow to the API.
 
-    :param initial_molecule: Molecule to calculate BDEs for.
-    :param mode: Level of theory to run the calculation at, given as a method string:
-        - `omol25_conserving_s` — neural network potential (default)
-        - `g_xtb//gfn2_xtb` — semiempirical
-        - `r2scan3c//gfn2_xtb` — DFT single point on a semiempirical geometry
-    :param multistage_opt_settings: Explicit method sequence to use instead of the one `mode` would
-        pick — the optimization stage(s) followed by a final singlepoint, given as a
-        `MultiStageOptSettings`. When omitted, the sequence is built automatically from `mode`. When
-        supplied, it replaces that sequence.
-    :param fragment_indices: 1-indexed atoms of each fragment to dissociate. Each fragment must
-        connect to the rest of the molecule by a single bond.
-    :param all_CH: Whether to dissociate all C-H bonds.
-    :param all_CX: Whether to dissociate all C-X bonds (X = halogen).
-    :param name: Name of the workflow.
-    :param folder_uuid: UUID of the folder to place the workflow in.
-    :param folder: Folder object to store the workflow in.
-    :param max_credits: Maximum number of credits to use for the workflow.
-    :param webhook_url: URL that Rowan will POST to when the workflow completes.
-    :param is_draft: If True, submit the workflow as a draft without starting execution.
-    :returns: Workflow object representing the submitted workflow.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        initial_molecule: molecule to calculate BDEs for
+        mode: level of theory to run the calculation at, given as a method string:
+            - `omol25_conserving_s` – neural network potential (default)
+            - `g_xtb//gfn2_xtb` – semiempirical
+            - `r2scan3c//gfn2_xtb` – DFT single point on a semiempirical geometry
+        multistage_opt_settings: explicit method sequence to use instead of the one `mode` would
+            pick – the optimization stage(s) followed by a final singlepoint, given as a
+            `MultiStageOptSettings`. When omitted, the sequence is built automatically from `mode`.
+            When
+            supplied, it replaces that sequence
+        fragment_indices: 1-indexed atoms of each fragment to dissociate. Each fragment must
+            connect to the rest of the molecule by a single bond
+        all_CH: whether to dissociate all C-H bonds
+        all_CX: whether to dissociate all C-X bonds (X = halogen)
+        name: name of the workflow
+        folder_uuid: UUID of the folder to place the workflow in
+        folder: destination folder
+        max_credits: maximum credits for the workflow
+        webhook_url: URL that Rowan will POST to when the workflow completes
+        is_draft: save as a draft without starting execution
+
+    Returns:
+        submitted workflow
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     require_coordinates(initial_molecule)
     if folder and folder_uuid:
@@ -133,35 +138,41 @@ def submit_bde_workflow(
 
 
 def find_ch_bonds(molecule: StructureInput, distance_max: float = 1.2) -> list[tuple[int, int]]:
-    """
-    Find all C-H bonds in a molecule.
+    """Find all C-H bonds in a molecule.
 
-    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
-    :param distance_max: Maximum C-H distance to consider a bond (A).
-    :returns: List of (carbon_index, hydrogen_index) tuples (1-based indices).
+    Args:
+        molecule: molecule to search (Molecule, stjames.Molecule, or dict)
+        distance_max: maximum C-H distance to consider a bond (A)
 
-    Example::
+    Returns:
+        list of (carbon_index, hydrogen_index) tuples (1-based indices)
 
+    Examples:
+        ```python
         mol = Molecule.from_smiles("CCO")  # ethanol
         bonds = find_ch_bonds(mol)
         # [(1, 4), (1, 5), (1, 6), (2, 7), (2, 8)]
+        ```
     """
     stj = molecule_to_stjames(molecule)
     return list(_find_CH_bonds(stj, distance_max))
 
 
 def find_cx_bonds(molecule: StructureInput) -> list[tuple[int, int]]:
-    """
-    Find all C-X bonds in a molecule (X = F, Cl, Br, I, At, Ts).
+    """Find all C-X bonds in a molecule (X = F, Cl, Br, I, At, Ts).
 
-    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
-    :returns: List of (carbon_index, halogen_index) tuples (1-based indices).
+    Args:
+        molecule: molecule to search (Molecule, stjames.Molecule, or dict)
 
-    Example::
+    Returns:
+        list of (carbon_index, halogen_index) tuples (1-based indices)
 
+    Examples:
+        ```python
         mol = Molecule.from_smiles("CCCl")  # chloroethane
         bonds = find_cx_bonds(mol)
         # [(2, 3)]
+        ```
     """
     stj = molecule_to_stjames(molecule)
     return list(_find_CX_bonds(stj))
@@ -173,22 +184,25 @@ def find_bonds(
     element_b: int,
     distance_max: float,
 ) -> list[tuple[int, int]]:
-    """
-    Find all bonds between two element types in a molecule.
+    """Find all bonds between two element types in a molecule.
 
-    :param molecule: Molecule to search (Molecule, stjames.Molecule, or dict).
-    :param element_a: Atomic number of first element.
-    :param element_b: Atomic number of second element.
-    :param distance_max: Maximum distance to consider a bond (A).
-    :returns: List of (atom_a_index, atom_b_index) tuples (1-based indices).
+    Args:
+        molecule: molecule to search (Molecule, stjames.Molecule, or dict)
+        element_a: atomic number of first element
+        element_b: atomic number of second element
+        distance_max: maximum distance to consider a bond (A)
 
-    Example::
+    Returns:
+        list of (atom_a_index, atom_b_index) tuples (1-based indices)
 
+    Examples:
+        ```python
         mol = Molecule.from_smiles("O")  # water
         bonds = find_bonds(mol, 8, 1, 1.1)  # O-H bonds
         # [(1, 2), (1, 3)]
+        ```
 
-    Same-element searches return unique undirected bonds without self-pairs::
+    Same-element searches return unique undirected bonds without self-pairs:
 
         >>> peroxide = stjames.Molecule.from_smiles("OO")
         >>> find_bonds(peroxide, 8, 8, 1.7)

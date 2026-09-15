@@ -16,15 +16,15 @@ def _parse_molecules(data: list[dict]) -> list[Molecule]:
 
 
 class Calculation(BaseModel):
-    """
-    Rowan calculation result.
+    """Rowan calculation result.
 
-    :param uuid: UUID of the calculation.
-    :param name: Name of the calculation.
-    :param status: Status code of the calculation.
-    :param elapsed: Execution time in seconds.
-    :param engine: Compute engine used.
-    :param molecules: Molecules (geometries) from this calculation.
+    Attributes:
+        uuid: UUID of the calculation
+        name: name of the calculation
+        status: status code of the calculation
+        elapsed: execution time in seconds
+        engine: compute engine used
+        molecules: molecules (geometries) from this calculation
     """
 
     uuid: str
@@ -57,11 +57,13 @@ class Calculation(BaseModel):
         return None
 
     def refresh(self, in_place: bool = True) -> Self:
-        """
-        Fetch the latest calculation data from the API.
+        """Fetch the latest calculation data from the API.
 
-        :param in_place: If True, update this instance in-place. If False, return new instance.
-        :returns: Updated Calculation object.
+        Args:
+            in_place: update this instance in place rather than return a new instance
+
+        Returns:
+            updated Calculation object
         """
         try:
             with api_client() as client:
@@ -92,13 +94,17 @@ class Calculation(BaseModel):
 
 
 def retrieve_calculation(uuid: str) -> Calculation:
-    """
-    Retrieve a calculation from the API by UUID.
+    """Retrieve a calculation from the API by UUID.
 
-    :param uuid: UUID of the calculation to retrieve.
-    :returns: Calculation object with the fetched data.
-    :raises requests.HTTPError: If the API request fails.
-    :raises TimeoutError: If the response times out.
+    Args:
+        uuid: UUID of the calculation to retrieve
+
+    Returns:
+        calculation object with the fetched data
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
+        TimeoutError: response times out
     """
     try:
         with api_client() as client:

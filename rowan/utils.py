@@ -41,7 +41,7 @@ def read_only_api_requests() -> Generator[None, None, None]:
 
 
 def _enforce_read_only_api_requests(request: httpx.Request) -> None:
-    """Reject non-read HTTP requests while :func:`read_only_api_requests` is active."""
+    """Reject non-read HTTP requests while `read_only_api_requests` is active."""
     if _read_only_api_requests.get() and request.method not in {"GET", "HEAD"}:
         raise PermissionError(
             f"Read-only API context permits only GET/HEAD requests, not {request.method} "
@@ -62,10 +62,16 @@ def api_credentials(
     Nested contexts restore the previous credentials when they exit, and concurrent threads or
     asynchronous tasks remain isolated from one another.
 
-    :param api_key: Rowan API key
-    :param project_uuid: active project UUID, if any
-    :yields: control while the credentials are active
-    :raises ValueError: API key is empty
+    Args:
+        api_key: Rowan API key
+        project_uuid: active project UUID, if any
+        reveal_api_key: whether `get_api_key` may reveal these credentials
+
+    Yields:
+        control while the credentials are active
+
+    Raises:
+        ValueError: API key is empty
     """
     if not api_key:
         raise ValueError("API key cannot be empty.")
@@ -106,10 +112,10 @@ def get_api_key() -> str:
 
 
 def get_project_uuid() -> str | None:
-    """
-    Get the active project UUID from the module-level attribute rowan.project_uuid.
+    """Get the active project UUID from the module-level attribute rowan.project_uuid.
 
-    :returns: Project UUID string, or None if not set.
+    Returns:
+        project UUID string, or None if not set
     """
     if (context := _api_context.get()) is not None:
         return context.project_uuid
@@ -119,13 +125,14 @@ def get_project_uuid() -> str | None:
 
 
 def smiles_to_stjames(smiles: str) -> stjames.Molecule:
-    """
-    Convert a SMILES string to a `stjames.Molecule` object.
+    """Convert a SMILES string to a `stjames.Molecule` object.
 
-    :param smiles: String representing the SMILES notation of the molecule.
-    :returns: `stjames.Molecule` object created from the given SMILES string.
-    """
+    Args:
+        smiles: string representing the SMILES notation of the molecule
 
+    Returns:
+        `stjames.Molecule` object created from the given SMILES string
+    """
     return stjames.Molecule.from_smiles(smiles)
 
 

@@ -1,5 +1,4 @@
-"""
-Run an scan calculation on a molecule using Rowan.
+"""Run an scan calculation on a molecule using Rowan.
 
 See documentation at: https://docs.rowansci.com/science/workflows/scan
 """

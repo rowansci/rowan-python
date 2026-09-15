@@ -13,16 +13,16 @@ if TYPE_CHECKING:
 
 
 class Folder(BaseModel):
-    """
-    A class representing a folder in the Rowan API.
+    """A class representing a folder in the Rowan API.
 
-    :ivar uuid: UUID of the folder.
-    :ivar name: Name of the folder.
-    :ivar parent_uuid: UUID of the parent folder.
-    :ivar notes: Folder notes.
-    :ivar starred: Whether the folder is starred.
-    :ivar public: Whether the folder is public.
-    :ivar created_at: Date and time the folder was created.
+    Attributes:
+        uuid: UUID of the folder
+        name: name of the folder
+        parent_uuid: UUID of the parent folder
+        notes: folder notes
+        starred: whether the folder is starred
+        public: whether the folder is public
+        created_at: date and time the folder was created
     """
 
     uuid: str
@@ -37,14 +37,18 @@ class Folder(BaseModel):
         return f"<Folder name='{self.name}' created_at='{self.created_at}' uuid='{self.uuid}'>"
 
     def fetch_latest(self, in_place: bool = False) -> Self:
-        """
-        Fetch the latest folder data from the API.
+        """Fetch the latest folder data from the API.
 
         This method refreshes the folder object with the latest data from the API.
 
-        :param in_place: Whether to update the current instance in-place.
-        :returns: Updated instance (self).
-        :raises HTTPError: If the API request fails.
+        Args:
+            in_place: whether to update the current instance in-place
+
+        Returns:
+            updated instance (self)
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         with api_client() as client:
             response = client.get(f"/folder/{self.uuid}")
@@ -72,16 +76,17 @@ class Folder(BaseModel):
         starred: bool | None = None,
         public: bool | None = None,
     ) -> Self:
-        """
-        Update a folder.
+        """Update a folder.
 
-        :param name: New name of the folder.
-        :param parent_uuid: UUID of the new parent folder.
-        :param notes: Description of the folder.
-        :param starred: Whether the folder is starred.
-        :param public: Whether the folder is public.
+        Args:
+            name: new name of the folder
+            parent_uuid: UUID of the new parent folder
+            notes: description of the folder
+            starred: whether the folder is starred
+            public: whether the folder is public
 
-        :returns: Updated folder object.
+        Returns:
+            updated folder object
         """
         payload = {
             "name": name if name is not None else self.name,
@@ -104,87 +109,108 @@ class Folder(BaseModel):
         return self
 
     def delete(self) -> None:
-        """
-        Delete the folder and all its contents.
+        """Delete the folder and all its contents.
 
         This is a destructive action, it will delete all the folders and
         workflows that are inside this folder.
 
-        :raises requests.HTTPError: if the request to the API fails.
+        Raises:
+            httpx.HTTPStatusError: request to the API fails
         """
         with api_client() as client:
             response = client.delete(f"/folder/{self.uuid}")
             response.raise_for_status()
 
     def print_folder_tree(self, max_depth: int = 10, show_uuids: bool = False) -> None:
-        """
-        Retrieves a folder tree from the API.
+        """Retrieves a folder tree from the API.
 
-        :param max_depth: Maximum depth of the folder tree.
-        :param show_uuids: Whether to show the UUIDs of the folders.
-        :raises HTTPError: If the API request fails.
+        Args:
+            max_depth: maximum depth of the folder tree
+            show_uuids: whether to show the UUIDs of the folders
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         print_folder_tree(self.uuid, max_depth, show_uuids)
 
     def children(self, size: int = 100) -> list[Folder]:
-        """
-        List all child folders directly inside this folder.
+        """List all child folders directly inside this folder.
 
-        :param size: Maximum number of child folders to return.
-        :returns: List of child Folder objects.
-        :raises HTTPError: If the API request fails.
+        Args:
+            size: maximum number of child folders to return
+
+        Returns:
+            list of child Folder objects
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         return list_folders(parent_uuid=self.uuid, size=size)
 
     def workflows(self, size: int = 100) -> list[Workflow]:
-        """
-        List all workflows directly inside this folder.
+        """List all workflows directly inside this folder.
 
-        :param size: Maximum number of workflows to return.
-        :returns: List of Workflow objects.
-        :raises HTTPError: If the API request fails.
+        Args:
+            size: maximum number of workflows to return
+
+        Returns:
+            list of Workflow objects
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         from .workflows.base import list_workflows
 
         return list_workflows(parent_uuid=self.uuid, size=size)
 
     def contents(self, size: int = 100) -> list[Folder | Workflow]:
-        """
-        List everything directly inside this folder, both child folders and workflows.
+        """List everything directly inside this folder, both child folders and workflows.
 
-        Folders come first, followed by workflows. For a single type, use :func:`children`
-        or :func:`workflows`.
+        Folders come first, followed by workflows. For a single type, use `children`
+        or `workflows`.
 
-        :param size: Maximum number of items of each type to return.
-        :returns: List of Folder and Workflow objects.
-        :raises HTTPError: If the API request fails.
+        Args:
+            size: maximum number of items of each type to return
+
+        Returns:
+            list of Folder and Workflow objects
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         return [*self.children(size=size), *self.workflows(size=size)]
 
     def parent(self) -> Folder | None:
-        """
-        Retrieve the parent folder, or None if this is a root folder.
+        """Retrieve the parent folder, or None if this is a root folder.
 
-        :returns: Parent Folder, or None if there is no parent.
-        :raises HTTPError: If the API request fails.
+        Returns:
+            parent Folder, or None if there is no parent
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
         """
         if self.parent_uuid is None:
             return None
         return retrieve_folder(self.parent_uuid)
 
     def __truediv__(self, name: str) -> Folder:
-        """
-        Traverse into a child folder by name using the ``/`` operator.
+        """Traverse into a child folder by name using the `/` operator.
 
-        Example::
-
+        Examples:
+            ```python
             root = rowan.root_folder()
             subfolder = root / "CDK2" / "docking"
+            ```
 
-        :param name: Exact name of the child folder to navigate into.
-        :returns: Child Folder with the given name.
-        :raises ValueError: If no child with that name exists, or if multiple children share
-            the same name (use :func:`children` and select by UUID to disambiguate).
+        Args:
+            name: exact name of the child folder to navigate into
+
+        Returns:
+            child Folder with the given name
+
+        Raises:
+            ValueError: no child with that name exists, or if multiple children share
+                the same name (use `children` and select by UUID to disambiguate)
         """
         matches = [f for f in self.children(size=200) if f.name == name]
         if not matches:
@@ -199,12 +225,16 @@ class Folder(BaseModel):
 
 
 def retrieve_folder(uuid: str) -> Folder:
-    """
-    Retrieves a folder from the API by UUID. Folder UUID can be found in the folder's URL.
+    """Retrieves a folder from the API by UUID. Folder UUID can be found in the folder's URL.
 
-    :param uuid: UUID of the folder to retrieve.
-    :returns: Folder object representing the retrieved folder.
-    :raises HTTPError: If the API request fails.
+    Args:
+        uuid: UUID of the folder to retrieve
+
+    Returns:
+        folder object representing the retrieved folder
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     with api_client() as client:
         response = client.get(f"/folder/{uuid}")
@@ -220,20 +250,24 @@ def list_folders(
     page: int = 0,
     size: int = 10,
 ) -> list[Folder]:
-    """
-    Retrieve a list of folders based on the specified criteria.
+    """Retrieve a list of folders based on the specified criteria.
 
-    If no ``parent_uuid`` is given and a project is active (via :func:`set_project` or
-    ``rowan.project_uuid``), lists folders rooted at that project's root folder.
+    If no `parent_uuid` is given and a project is active (via `set_project` or
+    `rowan.project_uuid`), lists folders rooted at that project's root folder.
 
-    :param parent_uuid: UUID of the parent folder to filter by.
-    :param name_contains: Substring to search for in folder names.
-    :param public: Filter folders by their public status.
-    :param starred: Filter folders by their starred status.
-    :param page: Pagination parameter to specify the page number.
-    :param size: Pagination parameter to specify the number of items per page.
-    :returns: List of Folder objects that match the search criteria.
-    :raises requests.HTTPError: if the request to the API fails.
+    Args:
+        parent_uuid: UUID of the parent folder to filter by
+        name_contains: substring to search for in folder names
+        public: filter folders by their public status
+        starred: filter folders by their starred status
+        page: pagination parameter to specify the page number
+        size: pagination parameter to specify the number of items per page
+
+    Returns:
+        list of Folder objects that match the search criteria
+
+    Raises:
+        httpx.HTTPStatusError: request to the API fails
     """
     if parent_uuid is None:
         if project_uuid := get_project_uuid():
@@ -270,18 +304,20 @@ def create_folder(
     starred: bool = False,
     public: bool = False,
 ) -> Folder:
-    """
-    Create a new folder.
+    """Create a new folder.
 
-    If no ``parent_uuid`` is given and a project is active (via :func:`set_project` or
-    ``rowan.project_uuid``), the folder is created inside that project's root folder.
+    If no `parent_uuid` is given and a project is active (via `set_project` or
+    `rowan.project_uuid`), the folder is created inside that project's root folder.
 
-    :param name: Name of the folder.
-    :param parent_uuid: UUID of the parent folder.
-    :param notes: Description of the folder.
-    :param starred: Whether the folder is starred.
-    :param public: Whether the folder is public.
-    :returns: Newly created folder.
+    Args:
+        name: name of the folder
+        parent_uuid: UUID of the parent folder
+        notes: description of the folder
+        starred: whether the folder is starred
+        public: whether the folder is public
+
+    Returns:
+        newly created folder
     """
     if parent_uuid is None:
         if project_uuid := get_project_uuid():
@@ -304,22 +340,25 @@ def create_folder(
 
 
 def root_folder() -> Folder:
-    """
-    Get the root folder of the active project.
+    """Get the root folder of the active project.
 
     The root folder is the top of the folder tree you navigate and store workflows in. Use the
-    active project set via :func:`set_project` (or ``rowan.project_uuid``), falling back to the
+    active project set via `set_project` (or `rowan.project_uuid`), falling back to the
     default project.
 
-    Example::
-
+    Examples:
+        ```python
         root = rowan.root_folder()
         for child in root.children():
             print(child.name)
         batch = root / "CDK2" / "docking"
+        ```
 
-    :returns: Root Folder of the active or default project.
-    :raises HTTPError: If the API request fails.
+    Returns:
+        root Folder of the active or default project
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     if project_uuid := get_project_uuid():
         root_uuid = retrieve_project(project_uuid).root_folder_uuid
@@ -330,22 +369,27 @@ def root_folder() -> Folder:
 
 
 def get_folder(path: str, create: bool = True) -> Folder:
-    """
-    Get a folder by name or nested path within the default project.
+    """Get a folder by name or nested path within the default project.
 
     This is the easiest way to get a folder to use as a location for calculations.
     By default, any missing folders along the path are created automatically.
 
-    Example::
-
+    Examples:
+        ```python
         folder = rowan.get_folder("CDK2/docking/batch_1")
         workflow = rowan.submit_docking_workflow(..., folder_uuid=folder.uuid)
+        ```
 
-    :param path: Folder name or ``/``-separated path, e.g. ``"project/subdir/run1"``.
-    :param create: If True (default), create missing folders. If False, raise ValueError if any
-        segment is not found.
-    :returns: Deepest :class:`Folder` in the path.
-    :raises ValueError: If the path is empty, or ``create=False`` and a folder is not found.
+    Args:
+        path: folder name or `/`-separated path, e.g. `"project/subdir/run1"`
+        create: create missing folders; otherwise raise ValueError if any
+            segment is not found
+
+    Returns:
+        deepest `Folder` in the path
+
+    Raises:
+        ValueError: path is empty, or `create=False` and a folder is not found
     """
     segments = [s for s in path.split("/") if s]
     if not segments:
@@ -370,13 +414,15 @@ def get_folder(path: str, create: bool = True) -> Folder:
 
 
 def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) -> None:
-    """
-    Retrieves a folder tree from the API.
+    """Retrieves a folder tree from the API.
 
-    :param uuid: UUID of the root of the folder tree.
-    :param max_depth: Maximum depth of the folder tree.
-    :param show_uuids: Whether to show the UUIDs of the folders.
-    :raises HTTPError: If the API request fails.
+    Args:
+        uuid: UUID of the root of the folder tree
+        max_depth: maximum depth of the folder tree
+        show_uuids: whether to show the UUIDs of the folders
+
+    Raises:
+        httpx.HTTPStatusError: API request fails
     """
     params: dict[str, Any] = {
         "max_depth": max_depth,
