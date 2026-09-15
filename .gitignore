@@ -2,6 +2,7 @@
 .env
 # Variant env files (.env.test, .env.single-tenant, ...); .envrc is tracked for direnv
 .env.*
+.app.json
 
 # macOS
 .DS_Store
@@ -208,3 +209,6 @@ cyp/
 msa_directory/
 
 notes.md
+
+# Machine-specific agent settings
+.claude/settings.local.json

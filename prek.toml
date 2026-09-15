@@ -1,0 +1,76 @@
+exclude = '(^\.venv/|^\.pixi/|\.dat$|\.patch$)'
+default_stages = ["pre-commit", "pre-push"]
+
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-toml" },
+  { id = "check-yaml", args = ["--unsafe"] },
+  { id = "end-of-file-fixer" },
+  { id = "trailing-whitespace" },
+]
+
+[[repos]]
+repo = "local"
+
+# Enable Markdown formatting/linting in the style migration.
+# [[repos.hooks]]
+# id = "rumdl-fmt"
+# name = "rumdl-fmt"
+# language = "system"
+# entry = "uv run rumdl fmt ."
+# types = ["markdown"]
+# pass_filenames = false
+#
+# [[repos.hooks]]
+# id = "rumdl-check"
+# name = "rumdl-check"
+# language = "system"
+# entry = "uv run rumdl check . --fix"
+# types = ["markdown"]
+# pass_filenames = false
+#
+
+[[repos.hooks]]
+id = "ruff-format"
+name = "ruff-format"
+language = "system"
+entry = "uv run ruff format ."
+types = ["python"]
+pass_filenames = false
+
+[[repos.hooks]]
+id = "ruff-check"
+name = "ruff-check"
+language = "system"
+entry = "uv run ruff check . --fix"
+types = ["python"]
+pass_filenames = false
+
+# Replace mypy with ty in a separate type-checker migration.
+# [[repos.hooks]]
+# id = "ty"
+# name = "ty"
+# language = "system"
+# entry = "uv run ty check"
+# types = ["python"]
+# pass_filenames = false
+#
+
+[[repos.hooks]]
+id = "mypy"
+name = "mypy"
+language = "system"
+entry = "uv run mypy ."
+types = ["python"]
+pass_filenames = false
+stages = ["pre-commit"]
+
+[[repos.hooks]]
+id = "pytest"
+stages = ["pre-push"]
+name = "pytest"
+language = "system"
+entry = "uv run pytest"
+types = ["python"]
+pass_filenames = false

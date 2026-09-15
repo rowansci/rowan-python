@@ -3,6 +3,7 @@ name = "rowan-python"
 version = "3.1.16"
 description = "Rowan Python Library"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 authors = [
     { name = "Corin Wagen", email = "corin@rowansci.com" },
@@ -23,42 +24,27 @@ dependencies = [
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
-[tool.pixi.workspace]
-channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64"]
-
-[tool.pixi.pypi-dependencies]
-rowan-python = { path = ".", editable = true }
-# Autopopulated from [project.dependencies], see https://pixi.sh/latest/advanced/pyproject_toml/#dependency-section
-
-[tool.pixi.feature.dev.pypi-dependencies]
-pytest = ">=7.0"
-pytest-cov = ">=5.0"
-ruff = ">=0.5"
-mypy = ">=1.10"
-pre-commit = ">=3.7"
-ipython = "*"
-mkdocs-material = "*"
-mkdocstrings-python = "*"
-griffe-pydantic = "*"
-python-dotenv = "*"
-
-[tool.pixi.environments]
-default = { solve-group = "default" }
-dev = { features = ["dev"], solve-group = "default"}
-
-[tool.pixi.feature.dev.tasks]
-fmt = { cmd="ruff format ." }
-lint = { cmd="ruff check . --fix" }
-types = { cmd="mypy ." }
-test = { cmd="pytest" }
-mkdocs-serve = { cmd="mkdocs serve" }
-mkdocs-build = { cmd="mkdocs build --clean" }
-all = { depends-on = ["fmt", "lint", "types", "test"] }
+[dependency-groups]
+dev = [
+    "ipython",
+    "mypy>=1.10",
+    "prek>=0.3.13",
+    "pytest>=9",
+    "pytest-cov>=7",
+    "python-dotenv",
+    "ruff>=0.15",
+    "rumdl>=0.1.91",
+    "ty>=0.0.34",
+]
+docs = [
+    "griffe-pydantic",
+    "mkdocs-material",
+    "mkdocstrings-python",
+]
 
 [tool.ruff]
 line-length = 100
-exclude = ["*.ipynb"]
+extend-exclude = ["*.ipynb", "*.md"]
 
 [tool.ruff.lint]
 select = [
@@ -71,6 +57,12 @@ select = [
     "W",  # pycodestyle warnings
     "C4", # comprehensions
     "PL", # pylint
+    # Cookiecutter rules deferred until the style migration:
+    # "PT",  # flake8-pytest-style
+    # "PIE", # misc lints
+    # "PYI", # flake8-pyi
+    # "TID", # tidy imports
+    # "TC",  # type-checking imports
     "RUF", # Ruff-specific rules
     "RSE", # flake8-raise
     "ICN001", # unconventional-import-alias
@@ -94,9 +86,9 @@ ignore = [
     "RUF003",  # String contains ambiguous unicode character
     "PLC0206", # Extracting value from dictionary without calling `.items()`
     "PLC0415",
+    # "PT013",  # Incorrect import of pytest (enable with PT rules)
 
-    # To remove
-    #"B905",
+    # Existing exceptions retained until the style migration.
     "D100",
     "D101",
     "D102",
@@ -119,6 +111,7 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+# convention = "google"  # Enable after converting the existing docstrings.
 
 [tool.mypy]
 exclude = ["examples"]
@@ -136,6 +129,35 @@ follow_imports_for_stubs = true
 testpaths = ["rowan", "tests"]
 addopts = "--doctest-modules --durations=5"
 doctest_optionflags = "NORMALIZE_WHITESPACE"
+markers = [
+    "regression: tests to make sure bugs stay closed",
+]
+# Keep all tests enabled until regression tests are classified in a follow-up.
+# addopts = "--doctest-modules --durations=5 -m 'not regression'"
+
+
+[tool.coverage.run]
+source = ["rowan"]
+
+[tool.coverage.report]
+exclude_lines = [
+    'pragma: no cover',
+    'def __repr__',
+    'if self\.debug',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if 0:',
+    'if __name__ == .__main__.:',
+    '^\s*\.\.\.',
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["rowan"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/AGENTS.md",
+    "/CLAUDE.md",
+    "/.agents",
+    "/.claude",
+]

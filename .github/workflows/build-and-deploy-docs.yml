@@ -14,19 +14,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: master
 
-      - name: Install Pixi
-        uses: prefix-dev/setup-pixi@v0.9.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.1.0
         with:
-          pixi-version: "latest"
-          activate-environment: true
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --no-dev --group docs
 
       - name: Build MkDocs site
-        run: pixi run mkdocs-build
+        run: uv run --no-sync mkdocs build --clean
 
       - name: Install SSH Key
         uses: shimataro/ssh-key-action@v2

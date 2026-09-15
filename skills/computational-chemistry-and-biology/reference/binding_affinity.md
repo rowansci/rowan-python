@@ -4,7 +4,7 @@
 
 Choose one input mode:
 
-**Holo protein:** pass a `protein` containing the bound ligand, use `ligand_residue_name` to identify it, and provide exactly one `ligand_smiles` entry for its topology and formal charge.
+**Holo protein:** pass a `protein` containing the bound ligand and use `ligand_residue_name` to identify it.
 
 **Protein + external poses:** pass a `protein` and one or more aligned `ligand_structures`. For ML scoring, include each molecule's `smiles` when known so bond orders can be assigned reliably.
 
@@ -63,7 +63,6 @@ for name, score in zip(ligands.keys(), result.scores):
 rowan.submit_binding_affinity_workflow(
     protein=protein.uuid,
     ligand_residue_name="LIG",
-    ligand_smiles=["CCO"],
     binding_affinity_settings=rowan.SinglePointEnergySettings(truncation_radius=8.0),
 )
 

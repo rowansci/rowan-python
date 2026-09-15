@@ -2,9 +2,20 @@
 
 This document provides essential guidance for AI agents working on this repository.
 
+## AI skills
+
+Shared development conventions live in `.agents/skills/`. Read `write-code`,
+`write-docstrings`, and `write-tests` when working on the corresponding code.
+These files and this guide are tracked development resources, excluded from Python distributions.
+Keep personal guidance in global agent settings or locally excluded files.
+
+The cookiecutter migration is staged: keep existing docstrings and lint exceptions;
+use mypy until the ty migration. Markdown checks and Codecov uploads remain disabled.
+Do not apply the deferred conventions as a repository-wide cleanup.
+
 ## Repository overview
 
-rowan-python-internal is the private Python SDK for the Rowan computational chemistry platform. It wraps the stjames data model library and provides user-facing workflow submission and result retrieval.
+rowan-python is the Python SDK for the Rowan computational chemistry platform. It wraps the stjames data model library and provides user-facing workflow submission and result retrieval.
 
 Structure:
 - `rowan/` - source code (flat layout)
@@ -23,26 +34,31 @@ Python version: >=3.12
 
 ```bash
 # Setup
-pixi install                    # Install dependencies
+uv sync --locked               # Install dependencies
+uv run prek install --hook-type pre-commit --hook-type pre-push
 
 # Code quality (these are the pre-commit hooks)
-pixi run fmt                    # Format code (ruff format)
-pixi run lint                   # Lint code (ruff check --fix)
-pixi run types                  # Type check (mypy)
+uv run ruff format .           # Format code
+uv run ruff check . --fix      # Lint code
+uv run mypy .                  # Type check
 
 # Testing
-pixi run test                   # Run tests (pytest with doctests)
-pixi run all                    # Run fmt + lint + types + test
+uv run pytest                  # Run tests and doctests
+uv run prek run --all-files    # Run pre-commit checks
+
+# Documentation
+uv run --group docs mkdocs serve
+uv run --group docs mkdocs build --clean
 
 # Run a specific example
-pixi run python examples/basic_calculation.py
+uv run python examples/basic_calculation.py
 ```
 
 ## Before every commit
 
-- Run `pixi run fmt`, `pixi run lint`, `pixi run types`
-- Pre-commit hooks (`.pre-commit-config.yaml`) run these automatically on commit
-- No pytest in pre-commit hooks — tests run in CI
+- Run `uv run ruff format .`, `uv run ruff check . --fix`, `uv run mypy .`
+- Pre-commit hooks (`prek.toml`) run these automatically on commit
+- Tests run on pre-push and in CI
 
 ## Code conventions
 
@@ -119,14 +135,16 @@ File: `.github/workflows/test.yml`
 Triggers: all PRs, pushes to `master`
 
 Checks:
-1. `pixi run fmt` - format check
-2. `pixi run lint` - lint check
-3. `pixi run types` - type check
+1. `uv run ruff format --check --diff .` - format check
+2. `uv run ruff check .` - lint check
+3. `uv run mypy .` - type check
+4. `uv run pytest --cov --cov-report=xml` - tests, doctests, and coverage
+5. `uv run prek run --all-files check-toml check-yaml trailing-whitespace end-of-file-fixer` - file checks
 
-Matrix: Python 3.14, ubuntu-latest
+Matrix: Python 3.12 and 3.14, ubuntu-latest
 
 ## Additional resources
 
-- pixi documentation: https://pixi.sh
+- uv documentation: https://docs.astral.sh/uv/
 - ruff documentation: https://docs.astral.sh/ruff
 - pytest documentation: https://docs.pytest.org

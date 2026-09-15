@@ -1,0 +1,21 @@
+[global]
+
+disable = [
+    "MD013",  # line length
+    "MD033",  # no inline HTML
+]
+
+exclude = [
+    ".git",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+]
+
+respect-gitignore = true
+
+[per-file-ignores]
+# Skill files start with frontmatter, not headings
+".claude/**/*.md" = ["MD041"]
+".agents/**/*.md" = ["MD041"]
