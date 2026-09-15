@@ -64,6 +64,7 @@ def test_submit_binding_affinity_workflow_holo_protein_ml_settings(
     binding_affinity_module.submit_binding_affinity_workflow(
         protein="protein-uuid",
         ligand_residue_name="LIG",
+        ligand_smiles=["CCO"],
         binding_affinity_settings=settings,
         folder_uuid="folder-uuid",
     )
@@ -74,7 +75,7 @@ def test_submit_binding_affinity_workflow_holo_protein_ml_settings(
     assert workflow_data["ligand_residue_name"] == "LIG"
     assert workflow_data["binding_affinity_settings"] == settings_json
     assert workflow_data["protein_sequences"] == []
-    assert workflow_data["ligand_smiles"] == []
+    assert workflow_data["ligand_smiles"] == ["CCO"]
 
 
 def test_submit_binding_affinity_workflow_nesso_sequence_smiles(monkeypatch: MonkeyPatch) -> None:
