@@ -198,6 +198,25 @@ def _mso_for_final_method(
     )
 
 
+def _release_ts_optimization_constraints(
+    multistage_opt_settings: MultiStageOptSettings,
+) -> MultiStageOptSettings:
+    """Remove constraints from transition-state refinement stages."""
+    optimization_settings = [
+        stage.model_copy(
+            update={
+                "opt_settings": stage.opt_settings.model_copy(update={"constraints": ()}),
+            }
+        )
+        if stage.opt_settings.transition_state and stage.opt_settings.constraints
+        else stage
+        for stage in multistage_opt_settings.optimization_settings
+    ]
+    return multistage_opt_settings.model_copy(
+        update={"optimization_settings": optimization_settings}
+    )
+
+
 def submit_conformer_search_workflow(
     initial_molecule: StructureInput | SMILES | None = None,
     conf_gen_settings: ConformerGenSettings | None = None,
@@ -247,7 +266,8 @@ def submit_conformer_search_workflow(
         multistage_opt_settings: optimization stages and singlepoint settings
             for ranking conformers. When provided, takes precedence over
             `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
-            built from those three params
+            built from those three params. Constraints remain active during conformer
+            generation, but are omitted from transition-state refinement stages
         conformer_clustering_settings: cluster the generated ensemble (ReSCoSS k-means on
             3D-shape descriptors) and keep only representative conformers for downstream
             optimization. Not supported with `initial_conformers`
@@ -340,6 +360,7 @@ def submit_conformer_search_workflow(
         multistage_opt_settings = _mso_for_final_method(
             final_method, solvent=solvent, transition_state=transition_state
         )
+    multistage_opt_settings = _release_ts_optimization_constraints(multistage_opt_settings)
 
     workflow = stjames.ConformerSearchWorkflow(
         initial_molecule=mol_dict,
