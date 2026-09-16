@@ -364,10 +364,10 @@ class Protein(BaseModel):
         separately by the MD workflow from the provided SMILES. Pass a binder's
         `small_molecule_residues` to exclude those as well.
 
-        A name is matched case-insensitively and excludes only the first residue
-        with that name, so further copies are still validated. Integer entries are
-        0-based indices into the protein's sorted non-polymer records, and reference
-        a record without naming it.
+        A name is matched case-insensitively and excludes every residue with that
+        name, including multiple copies. Integer entries are 0-based indices into
+        the protein's sorted non-polymer records, and reference a record without
+        naming it.
 
         Run validation on the structure returned by `submit_protein_preparation_workflow`.
         The preparation workflow strips and reassigns hydrogens before returning the structure.
