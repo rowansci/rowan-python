@@ -20,7 +20,9 @@ FINISHED_RBFE_UUID = "your-completed-rbfe-uuid"
 
 folder = rowan.get_folder("examples")
 
-finished = rowan.retrieve_workflow(FINISHED_RBFE_UUID).result()
+finished = rowan.retrieve_workflow(
+    FINISHED_RBFE_UUID, result_type=rowan.RelativeBindingFreeEnergyPerturbationResult
+).result()
 print(f"Finished study: {len(finished.ligands)} ligands, {len(finished.edges)} edges with ddG")
 
 # Combine the finished study's ligands with the newly designed one(s) to score.
@@ -46,6 +48,8 @@ print(
 )
 
 result = resubmit.result()
+if result.ligand_dg_results is None:
+    raise ValueError("RBFE returned no ligand free energies")
 for name in new_ligands:
     dg = result.ligand_dg_results[name]
     print(f"{name}: dG = {dg.dg:.2f} +/- {dg.dg_err:.2f} kcal/mol")

@@ -29,6 +29,12 @@ workflow = rowan.submit_basic_calculation_workflow(
 )
 print(f"https://labs.rowansci.com/calculation/{workflow.uuid}")
 result = workflow.result()
+if result.xrd_peaks is None:
+    raise ValueError("Calculation returned no XRD peaks")
+if result.band_structure is None:
+    raise ValueError("Calculation returned no band structure")
+if result.density_of_states is None:
+    raise ValueError("Calculation returned no density of states")
 
 print(f"Symmetry:  space group {result.symmetry}")
 print(f"XRD peaks: {len(result.xrd_peaks)} reflections")

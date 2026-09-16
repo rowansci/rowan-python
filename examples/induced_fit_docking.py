@@ -15,7 +15,10 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare ABL1",
     folder=folder,
 )
-prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
+preparation_result = preparation_workflow.result()
+prepared_protein_uuid = preparation_result.prepared_protein_uuid
+if prepared_protein_uuid is None:
+    raise ValueError("Protein preparation returned no prepared protein")
 
 # Pocket is [[center_x, center_y, center_z], [size_x, size_y, size_z]] in Å.
 center = [44.59, 79.75, 39.59]

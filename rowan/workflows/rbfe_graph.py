@@ -1,5 +1,6 @@
 """RBFE graph workflow - build perturbation graphs for relative binding free energy calculations."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
@@ -90,7 +91,7 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
 
 
 def submit_relative_binding_free_energy_graph_workflow(
-    ligands: dict[str, StructureInput],
+    ligands: Mapping[str, StructureInput],
     mode: Literal["greedy", "star_map"] = "greedy",
     hub_compound_id: str | None = None,
     greedy_scoring: Literal["best", "jaccard", "dummy_atoms"] = "best",
@@ -106,7 +107,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[RelativeBindingFreeEnergyGraphResult]:
     """Submits an RBFE graph construction workflow to the API.
 
     Builds a perturbation graph connecting ligands for relative binding free
@@ -200,4 +201,4 @@ def submit_relative_binding_free_energy_graph_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[RelativeBindingFreeEnergyGraphResult](**response.json())

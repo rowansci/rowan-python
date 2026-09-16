@@ -10,7 +10,10 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare crambin",
     folder=folder,
 )
-prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
+preparation_result = preparation_workflow.result()
+prepared_protein_uuid = preparation_result.prepared_protein_uuid
+if prepared_protein_uuid is None:
+    raise ValueError("Protein preparation returned no prepared protein")
 
 md_workflow = rowan.submit_protein_md_workflow(
     protein=prepared_protein_uuid,
@@ -21,7 +24,8 @@ md_workflow = rowan.submit_protein_md_workflow(
 )
 
 print(f"View MD workflow privately at: https://labs.rowansci.com/protein-md/{md_workflow.uuid}")
-trajectory = md_workflow.result().trajectories[0]
+md_result = md_workflow.result()
+trajectory = md_result.trajectories[0]
 print(f"Protein RMSD: {trajectory.protein_rmsd}")
 print(f"Protein RMSF: {trajectory.rmsf}")
 print(f"Potential energy: {trajectory.potential_energy} Hartree")

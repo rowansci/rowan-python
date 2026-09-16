@@ -70,7 +70,7 @@ def submit_bde_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[BDEResult]:
     """Submits a Bond-Dissociation Energy (BDE) workflow to the API.
 
     Args:
@@ -134,7 +134,7 @@ def submit_bde_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[BDEResult](**response.json())
 
 
 def find_ch_bonds(molecule: StructureInput, distance_max: float = 1.2) -> list[tuple[int, int]]:

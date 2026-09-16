@@ -70,7 +70,7 @@ def submit_pocket_detection_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[PocketDetectionResult]:
     """Submits a pocket-detection workflow to the API.
 
     Args:
@@ -114,4 +114,4 @@ def submit_pocket_detection_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[PocketDetectionResult](**response.json())

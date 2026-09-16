@@ -11,7 +11,7 @@ folder = rowan.get_folder("examples")
 
 workflow = rowan.submit_redox_potential_workflow(
     initial_molecule=rowan.Molecule.from_smiles("C1=CC=C(C=C1)C(=O)O"),
-    mode="reckless",
+    mode=rowan.Mode.RECKLESS,
     name="Benzoic Acid Redox Potential",
     oxidation=True,
     reduction=True,

@@ -18,6 +18,8 @@ def compute_energy_with_solvent_correction(
 
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{opt_workflow.uuid}")
     opt_result = opt_workflow.result()
+    if opt_result.molecule is None:
+        raise ValueError("Optimization returned no molecule")
 
     sp_workflow = rowan.submit_basic_calculation_workflow(
         initial_molecule=opt_result.molecule,
@@ -31,6 +33,8 @@ def compute_energy_with_solvent_correction(
     print(f"View workflow privately at: https://labs.rowansci.com/calculation/{sp_workflow.uuid}")
     sp_result = sp_workflow.result()
 
+    if sp_result.energy is None:
+        raise ValueError("Single-point calculation returned no energy")
     return sp_result.energy
 
 

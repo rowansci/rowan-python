@@ -1,6 +1,6 @@
 """Basic calculation workflow - perform quantum chemical calculations."""
 
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict
 
 import stjames
 from stjames import (
@@ -202,7 +202,7 @@ def settings_from_preset(preset: PresetName, **overrides: Any) -> stjames.Settin
     """
     if preset not in _PRESETS:
         raise ValueError(f"Unknown preset {preset!r}. Choose from: {list(_PRESETS)}")
-    base = _PRESETS[cast(PresetName, preset)]
+    base = _PRESETS[preset]
     return Settings.model_validate({**base.model_dump(), **overrides})
 
 
@@ -225,7 +225,7 @@ def submit_basic_calculation_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[BasicCalculationResult]:
     """Submit a basic-calculation workflow to the API.
 
     Args:
@@ -347,4 +347,4 @@ def submit_basic_calculation_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[BasicCalculationResult](**response.json())

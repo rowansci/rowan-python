@@ -28,7 +28,7 @@ def _validate_fragment_separation(molecule: StructureInput, fragment1_indices: l
     stj_mol = molecule_to_stjames(molecule)
     xyz = stj_mol.to_xyz()
 
-    rdmol = Chem.MolFromXYZBlock(xyz)  # type: ignore[attr-defined]
+    rdmol = Chem.MolFromXYZBlock(xyz)
     if rdmol is None:
         return  # Can't determine connectivity, skip validation
     rdDetermineBonds.DetermineConnectivity(rdmol)
@@ -102,7 +102,7 @@ def submit_interaction_energy_decomposition_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[InteractionEnergyDecompositionResult]:
     """Submits an interaction energy decomposition (SAPT0) workflow to the API.
 
     Decomposes the interaction energy between two molecular fragments into
@@ -164,4 +164,4 @@ def submit_interaction_energy_decomposition_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[InteractionEnergyDecompositionResult](**response.json())

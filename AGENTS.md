@@ -10,7 +10,7 @@ These files and this guide are tracked development resources, excluded from Pyth
 Keep personal guidance in global agent settings or locally excluded files.
 
 The cookiecutter migration is staged: use Google-style docstrings and keep existing lint exceptions;
-use mypy until the ty migration. Markdown checks and Codecov uploads remain disabled.
+use ty for type checking. Markdown checks and Codecov uploads remain disabled.
 Do not apply the deferred conventions as a repository-wide cleanup.
 
 ## Repository overview
@@ -40,7 +40,7 @@ uv run prek install --hook-type pre-commit --hook-type pre-push
 # Code quality (these are the pre-commit hooks)
 uv run ruff format .           # Format code
 uv run ruff check . --fix      # Lint code
-uv run mypy .                  # Type check
+uv run ty check                # Type check
 
 # Testing
 uv run pytest                  # Run tests and doctests
@@ -56,7 +56,7 @@ uv run python examples/basic_calculation.py
 
 ## Before every commit
 
-- Run `uv run ruff format .`, `uv run ruff check . --fix`, `uv run mypy .`
+- Run `uv run ruff format .`, `uv run ruff check . --fix`, `uv run ty check`
 - Pre-commit hooks (`prek.toml`) run these automatically on commit
 - Tests run on pre-push and in CI
 
@@ -128,7 +128,7 @@ Triggers: all PRs, pushes to `master`
 Checks:
 1. `uv run ruff format --check --diff .` - format check
 2. `uv run ruff check .` - lint check
-3. `uv run mypy .` - type check
+3. `uv run ty check` - type check
 4. `uv run pytest --cov --cov-report=xml` - tests, doctests, and coverage
 5. `uv run prek run --all-files check-toml check-yaml trailing-whitespace end-of-file-fixer` - file checks
 

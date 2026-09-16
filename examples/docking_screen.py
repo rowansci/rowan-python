@@ -24,7 +24,10 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare CDK2",
     folder=folder,
 )
-prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
+preparation_result = preparation_workflow.result()
+prepared_protein_uuid = preparation_result.prepared_protein_uuid
+if prepared_protein_uuid is None:
+    raise ValueError("Protein preparation returned no prepared protein")
 
 for ligand in ligands:
     workflow = rowan.submit_docking_workflow(
@@ -50,6 +53,8 @@ for workflow, result in workflow_results:
 
     sorted_scores = sorted(result.scores, key=lambda s: s.score)
     for score in sorted_scores:
+        if score.pose is None:
+            continue
         pose_energy = rowan.retrieve_calculation_molecules(score.pose)[0]["energy"]
         if pose_energy is None:
             continue

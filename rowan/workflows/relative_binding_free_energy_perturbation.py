@@ -274,7 +274,7 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[RelativeBindingFreeEnergyPerturbationResult]:
     """Submits a relative binding free energy perturbation (RBFE) workflow to the API.
 
     Runs FEP simulations along edges of the perturbation graph to predict
@@ -384,4 +384,4 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[RelativeBindingFreeEnergyPerturbationResult](**response.json())

@@ -27,14 +27,13 @@ requires = ["hatchling"]
 [dependency-groups]
 dev = [
     "ipython",
-    "mypy>=1.10",
     "prek>=0.3.13",
     "pytest>=9",
     "pytest-cov>=7",
     "python-dotenv",
     "ruff>=0.15",
     "rumdl>=0.1.91",
-    "ty>=0.0.34",
+    "ty>=0.0.81",
 ]
 docs = [
     "griffe-pydantic",
@@ -107,18 +106,6 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-[tool.mypy]
-exclude = ["examples"]
-plugins = ["pydantic.mypy"]
-warn_unused_ignores = false
-
-# The rdkit wheel ships its own .pyi stubs with invalid syntax; skip them and treat rdkit
-# as untyped rather than let the broken stubs abort the type check.
-[[tool.mypy.overrides]]
-module = ["rdkit", "rdkit.*"]
-follow_imports = "skip"
-follow_imports_for_stubs = true
 
 [tool.pytest.ini_options]
 testpaths = ["rowan", "tests"]

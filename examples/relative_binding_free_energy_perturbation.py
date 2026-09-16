@@ -14,7 +14,10 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare TYK2",
     folder=folder,
 )
-prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
+preparation_result = preparation_workflow.result()
+prepared_protein_uuid = preparation_result.prepared_protein_uuid
+if prepared_protein_uuid is None:
+    raise ValueError("Protein preparation returned no prepared protein")
 
 # Step 1: build the perturbation graph from TYK2 ligands with 3D coordinates
 ligands = rowan.load_named_ligands(data_dir / "tyk2_ligands.sdf")

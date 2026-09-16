@@ -34,6 +34,8 @@ print(f"View folder privately at: https://labs.rowansci.com/folder/{folder.uuid}
 workflow_results = [(w, w.result()) for w in workflows]
 
 for workflow, result in workflow_results:
+    if result.affinity_score is None:
+        raise ValueError("Cofolding returned no affinity score")
     results[workflow.name] = result.affinity_score.probability_binary
 
 print(results)

@@ -21,6 +21,8 @@ print(
     f"View cofolding workflow privately at: https://labs.rowansci.com/protein-cofolding/{cofolding_workflow.uuid}"
 )
 cofolding_result = cofolding_workflow.result()
+if cofolding_result.predicted_refined_structure_uuid is None:
+    raise ValueError("Cofolding returned no refined structure")
 
 # Cofolding predictions lack hydrogens — prepare and retain the ligand for MD
 preparation_workflow = rowan.submit_protein_preparation_workflow(
@@ -29,7 +31,10 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare cofolded CDK2 complex",
     folder=folder,
 )
-prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
+preparation_result = preparation_workflow.result()
+prepared_protein_uuid = preparation_result.prepared_protein_uuid
+if prepared_protein_uuid is None:
+    raise ValueError("Protein preparation returned no prepared protein")
 
 md_workflow = rowan.submit_pose_analysis_md_workflow(
     protein=prepared_protein_uuid,

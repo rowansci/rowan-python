@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from itertools import batched
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Self
+from typing import Any, Callable, ClassVar, Self, cast, overload
 
 import httpx
 import stjames
@@ -118,7 +118,7 @@ class WorkflowResult:
     _workflow: Any = field(default=None, init=False)
     _cache: dict[str, Any] = field(default_factory=dict, init=False)
 
-    _stjames_class: ClassVar[type | None] = None
+    _stjames_class: ClassVar[type[BaseModel] | None] = None
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}>"
@@ -127,7 +127,7 @@ class WorkflowResult:
         """Parse workflow data into stjames object for typed access."""
         if self._stjames_class is not None:
             try:
-                obj = self._stjames_class.model_validate(self.workflow_data)  # type: ignore[attr-defined]
+                obj = self._stjames_class.model_validate(self.workflow_data)
                 object.__setattr__(self, "_workflow", obj)
             except ValidationError as e:
                 if not self.complete:
@@ -197,7 +197,7 @@ def create_result(
     )
 
 
-class Workflow(BaseModel):
+class Workflow[R: WorkflowResult](BaseModel):
     """Rowan workflow base model, returned by submit workflow functions.
 
     Workflow data is not loaded by default to avoid unnecessary downloads that could impact
@@ -432,7 +432,7 @@ Workflow:  {self.name}
             stjames.Status.STOPPED,
         }
 
-    def result(self, wait: bool = True, poll_interval: int = 5) -> "WorkflowResult":
+    def result(self, wait: bool = True, poll_interval: int = 5) -> R:
         """Return the typed result, optionally waiting for completion.
 
         Follows the concurrent.futures.Future.result() pattern.
@@ -475,9 +475,9 @@ Workflow:  {self.name}
                 f"Workflow '{self.name}' has no results yet (status={status}, uuid={self.uuid})"
             )
         complete = self.status == stjames.Status.COMPLETED_OK
-        return create_result(self.data, self.workflow_type, self.uuid, complete=complete)
+        return cast(R, create_result(self.data, self.workflow_type, self.uuid, complete=complete))
 
-    def stream_result(self, poll_interval: int = 5) -> Iterator["WorkflowResult"]:
+    def stream_result(self, poll_interval: int = 5) -> Iterator[R]:
         """Poll the workflow and yield results until complete.
 
         Yields partial results at each poll interval while running, then yields
@@ -782,7 +782,7 @@ def submit_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[WorkflowResult]:
     """Submits a workflow to the API.
 
     Args:
@@ -841,16 +841,28 @@ def submit_workflow(
         return Workflow(**response.json())
 
 
-def retrieve_workflow(uuid: str) -> Workflow:
+@overload
+def retrieve_workflow(uuid: str) -> Workflow[WorkflowResult]: ...
+
+
+@overload
+def retrieve_workflow[R: WorkflowResult](uuid: str, *, result_type: type[R]) -> Workflow[R]: ...
+
+
+def retrieve_workflow(
+    uuid: str, *, result_type: type[WorkflowResult] = WorkflowResult
+) -> Workflow[WorkflowResult]:
     """Retrieve a workflow from the API by UUID.
 
     Args:
         uuid: UUID of the workflow to retrieve
+        result_type: expected result class for the retrieved workflow
 
     Returns:
         workflow object with the fetched data
 
     Raises:
+        ValueError: workflow result does not match `result_type`
         httpx.HTTPStatusError: API request fails
     """
     with api_client() as client:
@@ -858,10 +870,16 @@ def retrieve_workflow(uuid: str) -> Workflow:
         response.raise_for_status()
         data = response.json()
 
-    return Workflow.model_validate(data)
+    workflow = Workflow[WorkflowResult].model_validate(data)
+    registered_type = RESULT_REGISTRY.get(workflow.workflow_type, WorkflowResult)
+    if not issubclass(registered_type, result_type):
+        raise ValueError(
+            f"Workflow {uuid} returns {registered_type.__name__}, not {result_type.__name__}"
+        )
+    return workflow
 
 
-def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
+def retrieve_workflows(uuids: list[str]) -> list[Workflow[WorkflowResult]]:
     """Retrieve a list of workflows from the API.
 
     Args:
@@ -873,7 +891,7 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow]:
     Raises:
         httpx.HTTPStatusError: API request fails
     """
-    workflows: list[Workflow] = []
+    workflows: list[Workflow[WorkflowResult]] = []
     with api_client() as client:
         for batch in batched(uuids, 100):
             response = client.post("/workflow/batch_retrieve", json={"uuids": list(batch)})
@@ -932,7 +950,7 @@ def list_workflows(
     workflow_type: stjames.WORKFLOW_NAME | None = None,
     page: int = 0,
     size: int = 10,
-) -> list[Workflow]:
+) -> list[Workflow[WorkflowResult]]:
     """List workflows subject to the specified criteria.
 
     Args:
@@ -992,7 +1010,7 @@ def batch_submit_workflow(
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
     webhook_url: str | None = None,
-) -> list[Workflow]:
+) -> list[Workflow[WorkflowResult]]:
     """Submits a batch of workflows to the API.
 
     Each workflow will be submitted with the same workflow type, workflow data,
@@ -1063,7 +1081,7 @@ def submit_workflow_group(
     folder_uuid: str | Folder | None = None,
     max_credits: int | None = None,
     webhook_url: str | None = None,
-) -> list[Workflow]:
+) -> list[Workflow[WorkflowResult]]:
     """Submit workflows as one execution group."""
     if isinstance(folder_uuid, Folder):
         folder_uuid = folder_uuid.uuid

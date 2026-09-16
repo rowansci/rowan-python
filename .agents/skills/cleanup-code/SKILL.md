@@ -31,6 +31,6 @@ Use the `write-code` skill to understand code conventions.
 7. Run the full check suite:
    - `ruff format .`
    - `ruff check .`
-   - `uv run mypy .`
+   - `uv run ty check`
    - `pytest`
 8. All checks must pass before finishing.

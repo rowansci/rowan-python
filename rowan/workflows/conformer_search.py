@@ -1,5 +1,6 @@
 """Conformer-search workflow - find low-energy molecular conformations."""
 
+from collections.abc import Sequence
 from typing import Any
 
 import stjames
@@ -205,14 +206,14 @@ def submit_conformer_search_workflow(
     transition_state: bool = False,
     multistage_opt_settings: MultiStageOptSettings | None = None,
     conformer_clustering_settings: ConformerClusteringSettings | None = None,
-    initial_conformers: list[StructureInput] | None = None,
+    initial_conformers: Sequence[StructureInput] | None = None,
     name: str = "Conformer Search Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[ConformerSearchResult]:
     """Submits a conformer-search workflow to the API.
 
     Runs in one of two modes:
@@ -347,8 +348,6 @@ def submit_conformer_search_workflow(
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
         conformer_clustering_settings=conformer_clustering_settings,
-        solvent=solvent,
-        transition_state=transition_state,
     )
 
     workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
@@ -374,4 +373,4 @@ def submit_conformer_search_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[ConformerSearchResult](**response.json())

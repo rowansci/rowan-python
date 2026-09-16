@@ -13,7 +13,8 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare TG2",
     folder=folder,
 )
-protein = preparation_workflow.result().get_prepared_protein()
+preparation_result = preparation_workflow.result()
+protein = preparation_result.get_prepared_protein()
 
 center = [-1.079, -3.081, 18.122]
 size = [22.22, 14.08, 21.74]

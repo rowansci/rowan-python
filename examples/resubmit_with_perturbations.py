@@ -11,8 +11,11 @@ import rowan
 folder = rowan.get_folder("examples")
 
 # --- Option 1: random noise ---
-wf = rowan.retrieve_workflow("your-workflow-uuid")
-mol = wf.result().molecule
+wf = rowan.retrieve_workflow("your-workflow-uuid", result_type=rowan.MultiStageOptResult)
+wf_result = wf.result()
+mol = wf_result.molecule
+if mol is None:
+    raise ValueError("Workflow returned no molecule")
 
 perturbed_mol = mol.perturb()
 resubmit = rowan.submit_multistage_optimization_workflow(
@@ -24,8 +27,15 @@ print(f"https://labs.rowansci.com/multistage-opt/{resubmit.uuid}")
 
 # --- Option 2: displace along a vibrational mode ---
 # Requires a prior frequency calculation. Imaginary modes have negative frequency.
-ts_wf = rowan.retrieve_workflow("your-ts-freq-workflow-uuid")
-ts_mol = ts_wf.result().molecule
+ts_wf = rowan.retrieve_workflow(
+    "your-ts-freq-workflow-uuid", result_type=rowan.BasicCalculationResult
+)
+ts_wf_result = ts_wf.result()
+ts_mol = ts_wf_result.molecule
+if ts_mol is None:
+    raise ValueError("Frequency calculation returned no molecule")
+if ts_mol.vibrational_modes is None:
+    raise ValueError("Frequency calculation returned no vibrational modes")
 
 imaginary_mode = next(m for m in ts_mol.vibrational_modes if m.frequency < 0)
 

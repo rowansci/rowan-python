@@ -296,7 +296,7 @@ def submit_protein_cofolding_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[ProteinCofoldingResult]:
     """Submits a protein-cofolding workflow to the API.
 
     Predicts the 3D structure of protein-protein, protein-ligand, protein-DNA,
@@ -401,4 +401,4 @@ def submit_protein_cofolding_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[ProteinCofoldingResult](**response.json())

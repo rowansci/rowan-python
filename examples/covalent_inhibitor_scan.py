@@ -16,7 +16,8 @@ preparation_workflow = rowan.submit_protein_preparation_workflow(
     name="Prepare BTK inhibitor complex",
     folder=folder,
 )
-protein = preparation_workflow.result().get_prepared_protein()
+preparation_result = preparation_workflow.result()
+protein = preparation_result.get_prepared_protein()
 
 # Protein preparation normalizes 4YHF's residue numbering: Cys481 becomes residue 101,
 # while the retained 4C9 ligand remains residue 701.

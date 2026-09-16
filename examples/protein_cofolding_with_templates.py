@@ -56,6 +56,7 @@ boltz_workflow = rowan.submit_protein_cofolding_workflow(
 for label, workflow in [("OpenFold-3", openfold_workflow), ("Boltz-2", boltz_workflow)]:
     print(f"\n{label}")
     print(f"  View at: https://labs.rowansci.com/protein-cofolding/{workflow.uuid}")
-    for i, pred in enumerate(workflow.result().predictions):
+    result = workflow.result()
+    for i, pred in enumerate(result.predictions):
         ptm = pred.scores.ptm if pred.scores else None
         print(f"  sample {i}: ptm={ptm}")

@@ -11,8 +11,8 @@ Use this skill when writing, reviewing, or editing code.
 
 Follow the staged migration in [AGENTS.md](../../../AGENTS.md). Apply style guidance
 within the requested work; do not rewrite existing code to satisfy deferred rules.
-Keep existing lint exceptions and commented-out migration settings. Use mypy;
-ty, rumdl, and additional Ruff rules are deferred until requested. Use Google-style docstrings.
+Keep existing lint exceptions and commented-out migration settings. Use ty;
+rumdl and additional Ruff rules are deferred until requested. Use Google-style docstrings.
 
 
 ## Purpose
@@ -90,7 +90,7 @@ Via ruff
 
 ## Essential commands
 
-Code quality tools (ruff, mypy, pytest) are configured per-package in `pyproject.toml`.
+Code quality tools (ruff, ty, pytest) are configured per-package in `pyproject.toml`.
 
 ```bash
 # Setup
@@ -99,7 +99,7 @@ prek install                    # Install git hooks
 # Code quality
 ruff format .                   # Format code
 ruff check .                    # Lint code
-uv run mypy .                        # Type check
+uv run ty check                 # Type check
 prek -a                         # Run all prek hooks
 prek run <hook-id>              # Run specific hook
 
@@ -128,8 +128,8 @@ See the skill `write-tests` for more detail, but only if actively writing tests
 
 ## CI/CD
 
-CI runs the non-mutating Ruff checks, mypy, file checks, and pytest with coverage.
-The template's rumdl and ty checks are deferred until separate migrations. Run `prek -a` to reproduce most
+CI runs the non-mutating Ruff checks, ty, file checks, and pytest with coverage.
+The template's rumdl checks are deferred until a separate migration. Run `prek -a` to reproduce most
 of the set locally.
 
 ## Git development guidelines
@@ -202,7 +202,7 @@ Type issues:
 
 - Add missing type annotations
 - Fix type mismatches
-- Use `uv run mypy .` to verify locally
+- Use `uv run ty check` to verify locally
 
 Test failures:
 

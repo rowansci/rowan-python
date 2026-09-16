@@ -113,7 +113,7 @@ def submit_macropka_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[MacropKaResult]:
     """Submits a macropKa workflow to the API.
 
     Args:
@@ -172,4 +172,4 @@ def submit_macropka_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[MacropKaResult](**response.json())

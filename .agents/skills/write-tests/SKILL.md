@@ -13,7 +13,7 @@ format in [AGENTS.md](../../../AGENTS.md).
 ## Core Principles
 
 - **Only write tests that provide real information.** Avoid testing trivial things like object construction or obvious attribute access. Test behavior and computations.
-- **Don't check types in tests.** Types are verified by the static type checker (`mypy`). Avoid using `isinstance`, `type()`, or other type assertions in tests.
+- **Don't check types in tests.** Types are verified by the static type checker (`ty`). Avoid using `isinstance`, `type()`, or other type assertions in tests.
 - **Write doctests to explain function usage.** Doctests are a quick way to show how to use a function and expected output; they also are quick smoke tests.
 
 ## File and Function Structure
@@ -171,7 +171,7 @@ from numpy.testing import assert_almost_equal as aae
 
 ## What NOT to Test
 
-- Type correctness (use `uv run mypy .` instead)
+- Type correctness (use `uv run ty check` instead)
 - That a function returns something (trivial)
 - Exact exception message text (fragile)
 - Behavior of external libraries

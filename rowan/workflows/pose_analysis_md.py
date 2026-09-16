@@ -150,7 +150,7 @@ def submit_pose_analysis_md_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[PoseAnalysisMDResult]:
     """Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
 
     Args:
@@ -250,4 +250,4 @@ def submit_pose_analysis_md_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[PoseAnalysisMDResult](**response.json())

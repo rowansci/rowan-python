@@ -15,6 +15,8 @@ redox_potential_workflows = []
 
 for conformer in csearch_result.conformer_uuids[:10]:
     uuid = conformer[0]
+    if uuid is None:
+        raise ValueError("Conformer has no calculation UUID")
     molecule = rowan.retrieve_calculation_molecules(uuid)[0]
     rowan_molecule = rowan.Molecule.model_validate(molecule)
     redox_potential_workflows.append(

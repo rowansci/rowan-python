@@ -242,7 +242,7 @@ def submit_docking_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[DockingResult]:
     """Submits a docking workflow to the API.
 
     Args:
@@ -311,7 +311,7 @@ def submit_docking_workflow(
         )
 
     if docking_settings is None:
-        docking_settings = stjames.VinaSettings(**legacy_vina_kwargs)
+        docking_settings = stjames.VinaSettings.model_validate(legacy_vina_kwargs)
 
     workflow = stjames.DockingWorkflow(
         initial_molecule=mol_dict,
@@ -340,4 +340,4 @@ def submit_docking_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[DockingResult](**response.json())

@@ -28,19 +28,14 @@ from .constants import to_relative_kcal
 def _validate_multiplicity(mol_dict: dict[str, Any], multiplicity: int) -> None:
     """Validate that a spin multiplicity is compatible with the molecule.
 
-    Uses stjames.Molecule.check_electron_sanity() for validation.
-
     Args:
-        mol_dict: molecule dict with atomic_numbers and charge
+        mol_dict: serialized molecule with atoms and charge
         multiplicity: spin multiplicity to validate
 
     Raises:
         ValueError: multiplicity is invalid for this molecule
     """
-    # Create a copy with the test multiplicity and validate using stjames
-    test_dict = {**mol_dict, "multiplicity": multiplicity}
-    mol = stjames.Molecule(**test_dict)
-    mol.check_electron_sanity()  # type: ignore[operator]
+    stjames.Molecule.model_validate({**mol_dict, "multiplicity": multiplicity})
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,7 +146,7 @@ def submit_spin_states_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[SpinStatesResult]:
     """Submits a spin-states workflow to the API.
 
     Defaults to a `r2scan_3c//gfn2_xtb` stack. Pass an explicit
@@ -259,4 +254,4 @@ def submit_spin_states_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[SpinStatesResult](**response.json())

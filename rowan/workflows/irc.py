@@ -101,13 +101,13 @@ class IRCResult(WorkflowResult):
     def _get_forward_calculations(self) -> list[Calculation]:
         """Fetch the calculation(s) holding the forward IRC path (cached)."""
         if "forward_calcs" not in self._cache:
-            self._cache["forward_calcs"] = self._retrieve_path(self._workflow.irc_forward)  # type: ignore[arg-type]
+            self._cache["forward_calcs"] = self._retrieve_path(self._workflow.irc_forward)
         return self._cache["forward_calcs"]
 
     def _get_backward_calculations(self) -> list[Calculation]:
         """Fetch the calculation(s) holding the backward IRC path (cached)."""
         if "backward_calcs" not in self._cache:
-            self._cache["backward_calcs"] = self._retrieve_path(self._workflow.irc_backward)  # type: ignore[arg-type]
+            self._cache["backward_calcs"] = self._retrieve_path(self._workflow.irc_backward)
         return self._cache["backward_calcs"]
 
     @staticmethod
@@ -132,7 +132,7 @@ class IRCResult(WorkflowResult):
             Legacy workflows stored the path as one calculation per step; these
             are still read transparently for back-compatibility.
         """
-        return self._path_molecules(self._workflow.irc_forward, self._get_forward_calculations())  # type: ignore[arg-type]
+        return self._path_molecules(self._workflow.irc_forward, self._get_forward_calculations())
 
     @property
     def backward_molecules(self) -> list[Molecule]:
@@ -142,7 +142,7 @@ class IRCResult(WorkflowResult):
             Legacy workflows stored the path as one calculation per step; these
             are still read transparently for back-compatibility.
         """
-        return self._path_molecules(self._workflow.irc_backward, self._get_backward_calculations())  # type: ignore[arg-type]
+        return self._path_molecules(self._workflow.irc_backward, self._get_backward_calculations())
 
     def get_forward_energies(self, relative: bool = False) -> list[float]:
         """Get energies along the forward IRC path.
@@ -229,7 +229,7 @@ def submit_irc_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[IRCResult]:
     """Submits an Intrinsic Reaction Coordinate (IRC) workflow to the API.
 
     Args:
@@ -312,4 +312,4 @@ def submit_irc_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[IRCResult](**response.json())

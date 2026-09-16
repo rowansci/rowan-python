@@ -6,9 +6,9 @@
 [![Downloads](https://img.shields.io/pypi/dm/rowan-python.svg)](https://pypi.python.org/pypi/rowan-python/)
 [![License](https://img.shields.io/github/license/rowansci/rowan-python)](LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/rowansci/rowan-python/test.yml?branch=master&logo=github-actions)](https://github.com/rowansci/rowan-python/actions)
+[![Typing: ty](https://img.shields.io/badge/typing-ty-EFC621.svg)](https://github.com/astral-sh/ty)
 <!-- Enable these badges with the corresponding tooling/services.
 [![Markdown style: rumdl](https://img.shields.io/badge/md%20style-rumdl-000000.svg)](https://rumdl.dev)
-[![Typing: ty](https://img.shields.io/badge/typing-ty-EFC621.svg)](https://github.com/astral-sh/ty)
 [![Codecov](https://img.shields.io/codecov/c/github/rowansci/rowan-python)](https://codecov.io/gh/rowansci/rowan-python)
 -->
 

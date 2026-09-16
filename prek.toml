@@ -47,21 +47,11 @@ entry = "uv run ruff check . --fix"
 types = ["python"]
 pass_filenames = false
 
-# Replace mypy with ty in a separate type-checker migration.
-# [[repos.hooks]]
-# id = "ty"
-# name = "ty"
-# language = "system"
-# entry = "uv run ty check"
-# types = ["python"]
-# pass_filenames = false
-#
-
 [[repos.hooks]]
-id = "mypy"
-name = "mypy"
+id = "ty"
+name = "ty"
 language = "system"
-entry = "uv run mypy ."
+entry = "uv run ty check"
 types = ["python"]
 pass_filenames = false
 stages = ["pre-commit"]

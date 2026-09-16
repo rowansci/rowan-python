@@ -9,9 +9,13 @@ import rowan
 #   2. The last segment of the workflow URL in the Rowan UI:
 #      https://labs.rowansci.com/.../<uuid>
 #   3. Listed via rowan.list_workflows()
-workflow = rowan.retrieve_workflow("your-workflow-uuid")
+workflow = rowan.retrieve_workflow(
+    "your-workflow-uuid", result_type=rowan.RelativeBindingFreeEnergyPerturbationResult
+)
 
 result = workflow.result()
+if result.ligand_dg_results is None:
+    raise ValueError("RBFE returned no ligand free energies")
 print(result)
 # <RelativeBindingFreeEnergyPerturbationResult ligands=16>
 

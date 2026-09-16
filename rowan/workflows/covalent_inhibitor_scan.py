@@ -114,7 +114,7 @@ def submit_covalent_inhibitor_scan_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[CovalentInhibitorScanResult]:
     """Submits a covalent inhibitor scan workflow to the API.
 
     Warning:
@@ -176,4 +176,4 @@ def submit_covalent_inhibitor_scan_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[CovalentInhibitorScanResult](**response.json())

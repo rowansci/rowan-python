@@ -70,7 +70,7 @@ def submit_protein_preparation_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
-) -> Workflow:
+) -> Workflow[ProteinPreparationResult]:
     """Submit a protein-preparation workflow to the API.
 
     Full protein preparation can take around ten minutes, depending on the structure and
@@ -134,4 +134,4 @@ def submit_protein_preparation_workflow(
     with api_client() as client:
         response = client.post("/workflow", json=data)
         response.raise_for_status()
-        return Workflow(**response.json())
+        return Workflow[ProteinPreparationResult](**response.json())

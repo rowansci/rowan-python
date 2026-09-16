@@ -410,7 +410,8 @@ def get_folder(path: str, create: bool = True) -> Folder:
                 raise ValueError(f"Folder {segment!r} not found")
             folder = create_folder(name=segment, parent_uuid=current_uuid)
         current_uuid = folder.uuid
-    return folder  # type: ignore[return-value]
+    assert folder is not None
+    return folder
 
 
 def print_folder_tree(uuid: str, max_depth: int = 10, show_uuids: bool = False) -> None:
