@@ -6,9 +6,10 @@ from typing import Literal
 import stjames
 from stjames import ConformerGenSettingsUnion
 
-from ..folder import Folder
-from ..types import SMILES
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.types import SMILES
+from rowan.utils import api_client
+
 from .base import (
     Solvent,
     StructureInput,

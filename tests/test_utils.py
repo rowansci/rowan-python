@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 
 import httpx
-from pytest import MonkeyPatch, raises
+import pytest
 
 import rowan
 from rowan.utils import (
@@ -17,7 +17,7 @@ from rowan.utils import (
 )
 
 
-def test_api_credentials_override_global_configuration(monkeypatch: MonkeyPatch) -> None:
+def test_api_credentials_override_global_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     """Prefer context-local credentials without changing global configuration."""
     monkeypatch.setattr(rowan, "api_key", "global-key")
     monkeypatch.setattr(rowan, "project_uuid", "global-project")
@@ -58,7 +58,7 @@ def test_api_credentials_isolate_async_tasks() -> None:
 
 def test_api_credentials_reject_empty_key() -> None:
     """Reject empty context-local API keys."""
-    with raises(ValueError, match="cannot be empty"):
+    with pytest.raises(ValueError, match="cannot be empty"):
         with api_credentials(""):
             pass
 
@@ -66,11 +66,13 @@ def test_api_credentials_reject_empty_key() -> None:
 def test_api_credentials_can_hide_the_active_key_from_sdk_helpers() -> None:
     """Allow transports to authenticate without exposing their credential to generic callers."""
     with api_credentials("context-key", reveal_api_key=False):
-        with raises(PermissionError, match="not available"):
+        with pytest.raises(PermissionError, match="not available"):
             get_api_key()
 
 
-def test_read_only_api_requests_rejects_mutating_http_methods(monkeypatch: MonkeyPatch) -> None:
+def test_read_only_api_requests_rejects_mutating_http_methods(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Keep generic integrations from gaining Rowan write authority."""
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -85,12 +87,12 @@ def test_read_only_api_requests_rejects_mutating_http_methods(monkeypatch: Monke
 
     with api_credentials("test-key"), read_only_api_requests(), api_client() as http_client:
         assert http_client.get("/workflow").status_code == 200
-        with raises(PermissionError, match="only GET/HEAD"):
+        with pytest.raises(PermissionError, match="only GET/HEAD"):
             http_client.post("/workflow", json={})
 
 
 def test_download_file_streams_to_an_atomic_temporary_file(
-    monkeypatch: MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Write response chunks without materializing the complete download in memory."""
 

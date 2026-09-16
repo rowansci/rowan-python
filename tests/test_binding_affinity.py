@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 import stjames
 from pydantic import ValidationError
-from pytest import MonkeyPatch
 
 import rowan
 from rowan.workflows import binding_affinity as binding_affinity_module
@@ -34,7 +33,7 @@ def _workflow_response() -> dict[str, Any]:
     }
 
 
-def _mock_client(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_client(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     client_mock = MagicMock()
     client_mock.post.return_value.json.return_value = _workflow_response()
 
@@ -54,7 +53,7 @@ def _mock_client(monkeypatch: MonkeyPatch) -> MagicMock:
     ],
 )
 def test_submit_binding_affinity_workflow_holo_protein_ml_settings(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     settings: rowan.BindingAffinitySettings,
     settings_json: dict[str, Any],
 ) -> None:
@@ -77,7 +76,9 @@ def test_submit_binding_affinity_workflow_holo_protein_ml_settings(
     assert workflow_data["ligand_smiles"] == []
 
 
-def test_submit_binding_affinity_workflow_nesso_sequence_smiles(monkeypatch: MonkeyPatch) -> None:
+def test_submit_binding_affinity_workflow_nesso_sequence_smiles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Submit a NESSO binding affinity workflow using sequence/SMILES input, no PDB."""
     client_mock = _mock_client(monkeypatch)
 

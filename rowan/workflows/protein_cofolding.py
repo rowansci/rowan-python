@@ -4,9 +4,10 @@ from dataclasses import dataclass
 
 import stjames
 
-from ..folder import Folder
-from ..protein import Protein, retrieve_protein
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.protein import Protein, retrieve_protein
+from rowan.utils import api_client
+
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 
 CofoldingModel = stjames.CofoldingModel

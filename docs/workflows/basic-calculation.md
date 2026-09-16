@@ -16,7 +16,7 @@ workflow = rowan.submit_basic_calculation_workflow(
 )
 ```
 
-Pass an [`OptimizationSettings`](settings.md#stjames.opt_settings.OptimizationSettings) object or
+Pass an [`OptimizationSettings`](settings.md) object or
 an equivalent dictionary to `opt_settings`. `optimize_cell` defaults to `False`; set it to `True`
 only when optimizing a periodic cell.
 

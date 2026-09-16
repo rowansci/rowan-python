@@ -6,8 +6,9 @@ import stjames
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 
-from ..folder import Folder
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.utils import api_client
+
 from .base import (
     StructureInput,
     Workflow,

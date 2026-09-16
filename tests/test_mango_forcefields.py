@@ -5,8 +5,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch
 from stjames.workflows.relative_binding_free_energy_perturbation import (
     RBFEGraph,
     RBFEGraphEdge,
@@ -36,7 +36,9 @@ def _workflow_response(workflow_type: str) -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch, module: object, workflow_type: str) -> MagicMock:
+def _mock_submission(
+    monkeypatch: pytest.MonkeyPatch, module: object, workflow_type: str
+) -> MagicMock:
     """Replace a workflow module's API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response(workflow_type)
@@ -49,7 +51,7 @@ def _mock_submission(monkeypatch: MonkeyPatch, module: object, workflow_type: st
     return client
 
 
-def test_protein_md_accepts_mango_without_changing_default(monkeypatch: MonkeyPatch) -> None:
+def test_protein_md_accepts_mango_without_changing_default(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize Mango for protein MD while retaining Sage 2.3.0 by default."""
     client = _mock_submission(monkeypatch, protein_md_module, "protein_md")
     protein_md_module.submit_protein_md_workflow(
@@ -68,7 +70,7 @@ def test_protein_md_accepts_mango_without_changing_default(monkeypatch: MonkeyPa
 
 
 def test_pose_analysis_md_accepts_mango_without_changing_default(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Serialize Mango for pose-analysis MD while retaining Sage 2.3.0 by default."""
     client = _mock_submission(monkeypatch, pose_analysis_md_module, "pose_analysis_md")
@@ -88,7 +90,7 @@ def test_pose_analysis_md_accepts_mango_without_changing_default(
     )
 
 
-def test_rbfe_accepts_mango_without_changing_default(monkeypatch: MonkeyPatch) -> None:
+def test_rbfe_accepts_mango_without_changing_default(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize Mango for RBFE while retaining Sage 2.0.0 by default."""
     client = _mock_submission(
         monkeypatch,

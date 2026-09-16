@@ -38,4 +38,4 @@ print([p.distance for p in result.backward_path])
 - `optimize_inputs` (default `True`): pre-optimize the reactant and product before the search. Leave it on for most cases; turn it off when you have manually arranged the endpoints in the reaction channel, since optimization would relax them out of that arrangement.
 - `optimize_ts` (default `True`): optimize the located TS guess to a true transition state.
 
-Double-ended TS searches fail fairly often, which is normal for the method. If a search fails, retry with different endpoints or settings, or email support@rowansci.com.
+Double-ended TS searches fail fairly often, which is normal for the method. If a search fails, retry with different endpoints or settings, or email <support@rowansci.com>.

@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 import pytest
 import stjames
 from pydantic import ValidationError
-from pytest import MonkeyPatch
 
 import rowan
 from rowan.workflows import protein_cofolding as cofolding_module
@@ -32,7 +31,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the cofolding API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -55,7 +54,7 @@ def test_cofolding_types_are_available_from_rowan() -> None:
     assert rowan.BondConstraint is stjames.BondConstraint
 
 
-def test_cofolding_typed_sequences_and_bond_constraints(monkeypatch: MonkeyPatch) -> None:
+def test_cofolding_typed_sequences_and_bond_constraints(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize modifications and a covalent constraint through the public API."""
     client = _mock_submission(monkeypatch)
     protein = rowan.ProteinSequence(
@@ -89,7 +88,7 @@ def test_cofolding_typed_sequences_and_bond_constraints(monkeypatch: MonkeyPatch
     assert payload["bond_constraints"][0]["atom_1"]["atom_name"] == "OG"
 
 
-def test_cofolding_decaf_model_is_serialized(monkeypatch: MonkeyPatch) -> None:
+def test_cofolding_decaf_model_is_serialized(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize the DeCAF model through the public API."""
     client = _mock_submission(monkeypatch)
 
@@ -101,7 +100,7 @@ def test_cofolding_decaf_model_is_serialized(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_cofolding_bond_constraints_reject_pose_refinement(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Delegate incompatible bond-constraint settings to StJames validation."""
     _mock_submission(monkeypatch)

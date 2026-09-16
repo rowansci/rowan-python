@@ -7,8 +7,9 @@ from typing import Literal, Protocol
 
 from stjames.pdb import PDB
 
-from ..protein import Protein, retrieve_protein
-from ..utils import api_client, download_file
+from rowan.protein import Protein, retrieve_protein
+from rowan.utils import api_client, download_file
+
 from .base import WorkflowResult
 
 

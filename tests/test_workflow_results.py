@@ -2,15 +2,15 @@
 
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch, fixture, raises
 
 import rowan
 from rowan.workflows import admet, base
 
 
-@fixture
-def workflow_client(monkeypatch: MonkeyPatch) -> MagicMock:
+@pytest.fixture
+def workflow_client(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Mock an ADMET workflow submission and completed response."""
     client = MagicMock()
     client.__enter__.return_value = client
@@ -56,7 +56,7 @@ def test_retrieve_expected_result(workflow_client: MagicMock) -> None:
 
 def test_retrieve_wrong_result(workflow_client: MagicMock) -> None:
     """Reject a UUID belonging to another workflow kind."""
-    with raises(ValueError):
+    with pytest.raises(ValueError, match="returns ADMETResult, not DockingResult"):
         rowan.retrieve_workflow("workflow-uuid", result_type=rowan.DockingResult)
 
 

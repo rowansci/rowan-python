@@ -4,11 +4,12 @@ from dataclasses import dataclass
 
 import stjames
 
-from ..folder import Folder
-from ..molecule import Molecule
-from ..protein import Protein
-from ..types import ProteinUUID
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.protein import Protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
+
 from .base import Workflow, WorkflowResult, register_result
 
 

@@ -5,8 +5,9 @@ from dataclasses import dataclass
 
 import stjames
 
-from ..folder import Folder
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.utils import api_client
+
 from .base import (
     StructureInput,
     Workflow,

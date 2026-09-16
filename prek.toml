@@ -13,23 +13,22 @@ hooks = [
 [[repos]]
 repo = "local"
 
-# Enable Markdown formatting/linting in the style migration.
-# [[repos.hooks]]
-# id = "rumdl-fmt"
-# name = "rumdl-fmt"
-# language = "system"
-# entry = "uv run rumdl fmt ."
-# types = ["markdown"]
-# pass_filenames = false
-#
-# [[repos.hooks]]
-# id = "rumdl-check"
-# name = "rumdl-check"
-# language = "system"
-# entry = "uv run rumdl check . --fix"
-# types = ["markdown"]
-# pass_filenames = false
-#
+[[repos.hooks]]
+id = "rumdl-fmt"
+name = "rumdl-fmt"
+language = "system"
+entry = "uv run rumdl fmt ."
+types = ["markdown"]
+pass_filenames = false
+
+[[repos.hooks]]
+id = "rumdl-check"
+name = "rumdl-check"
+language = "system"
+entry = "uv run rumdl check . --fix"
+types = ["markdown"]
+pass_filenames = false
+
 
 [[repos.hooks]]
 id = "ruff-format"

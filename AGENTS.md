@@ -10,7 +10,7 @@ These files and this guide are tracked development resources, excluded from Pyth
 Keep personal guidance in global agent settings or locally excluded files.
 
 The cookiecutter migration is staged: use Google-style docstrings and keep existing lint exceptions;
-use ty for type checking. Markdown checks and Codecov uploads remain disabled.
+use ty for type checking.
 Do not apply the deferred conventions as a repository-wide cleanup.
 
 ## Repository overview
@@ -18,6 +18,7 @@ Do not apply the deferred conventions as a repository-wide cleanup.
 rowan-python is the Python SDK for the Rowan computational chemistry platform. It wraps the stjames data model library and provides user-facing workflow submission and result retrieval.
 
 Structure:
+
 - `rowan/` - source code (flat layout)
 - `rowan/workflows/` - workflow submission functions and result types
 - `examples/` - usage examples for each workflow
@@ -25,6 +26,7 @@ Structure:
 - `.github/workflows/` - CI/CD configuration
 
 Key relationships:
+
 - **stjames** (`../stjames`) - data model dependency, imported as `stjames`. Defines workflow models, settings, validation, and engine compatibility.
 - **rowan-python** - public version of this repo. Push via `git push public master` from this repo.
 
@@ -82,6 +84,7 @@ formatting and description conventions.
 ### Code formatting
 
 Via ruff:
+
 - Line length: 100
 - Indentation: 4 spaces
 
@@ -94,21 +97,27 @@ Via ruff:
 ## Workflow development guidelines
 
 ### Validation
+
 - Use stjames validation when possible. Don't duplicate validation that stjames model validators already handle (e.g. engine/method compatibility, solvent checks). Only add rowan-side validation when stjames doesn't cover it.
 
 ### stjames type aliasing
+
 - Users should never need to `import stjames` directly. All user-facing stjames types must be aliased in `rowan/__init__.py`. If an example requires a stjames import, that's a signal the type needs to be aliased.
 
 ### Serialization
+
 - Use `serialize_as_any=True` on `model_dump` when the workflow has union-typed fields (e.g. `ConformerGenSettingsUnion`, `MultiStageOptSettings` containing `Settings` subfields). Without it, pydantic may silently drop subclass-specific fields during serialization.
 
 ### Defaults
+
 - When hardcoding a default value for a stjames field, make sure it matches the corresponding default in the stjames workflow model.
 
 ### Type hints in function signatures
+
 - Don't use pydantic-specific types (`PositiveInt`, `NonNegativeInt`, etc.) in plain function signatures. They don't enforce constraints outside pydantic models and are misleading. Use plain `int`, `float`, etc. — stjames validates downstream when the model is constructed.
 
 ### Testing
+
 - After editing a workflow, run its relevant example before committing (not on every change) to catch breakage early.
 
 ## Git authorization policy
@@ -126,6 +135,7 @@ File: `.github/workflows/test.yml`
 Triggers: all PRs, pushes to `master`
 
 Checks:
+
 1. `uv run ruff format --check --diff .` - format check
 2. `uv run ruff check .` - lint check
 3. `uv run ty check` - type check
@@ -136,6 +146,6 @@ Matrix: Python 3.12 and 3.14, ubuntu-latest
 
 ## Additional resources
 
-- uv documentation: https://docs.astral.sh/uv/
-- ruff documentation: https://docs.astral.sh/ruff
-- pytest documentation: https://docs.pytest.org
+- uv documentation: <https://docs.astral.sh/uv/>
+- ruff documentation: <https://docs.astral.sh/ruff>
+- pytest documentation: <https://docs.pytest.org>

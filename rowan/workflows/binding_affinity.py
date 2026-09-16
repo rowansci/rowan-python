@@ -6,10 +6,11 @@ from typing import Any
 import stjames
 from stjames import BindingAffinitySettings, ProteinSequence, SinglePointEnergySettings
 
-from ..folder import Folder
-from ..protein import Protein
-from ..types import ProteinUUID, StructureInput
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.protein import Protein
+from rowan.types import ProteinUUID, StructureInput
+from rowan.utils import api_client
+
 from .base import (
     Message,
     Workflow,

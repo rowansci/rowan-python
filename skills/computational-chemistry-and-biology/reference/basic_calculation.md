@@ -155,6 +155,7 @@ wf = rowan.submit_basic_calculation_workflow(
 ```
 
 `PBCDFTSettings` fields (all optional — auto-derived from pseudopotentials when omitted):
+
 - `plane_wave_cutoff`: kinetic-energy cutoff in Hartree
 - `kpoints`: Monkhorst–Pack grid as `(nx, ny, nz)`
 - `smearing_type`: `rowan.PBCDFTSmearing.MARZARI_VANDERBILT` (recommended for metals)

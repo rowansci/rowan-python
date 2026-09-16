@@ -41,9 +41,8 @@ jobs:
           uv run prek run --all-files --show-diff-on-failure --color=always \
             check-toml check-yaml trailing-whitespace end-of-file-fixer
 
-      # Enable Markdown checks after the style migration.
-      # - run: uv run rumdl fmt --check --diff .
-      # - run: uv run rumdl check .
+      - run: uv run rumdl fmt --check --diff .
+      - run: uv run rumdl check .
 
       - run: uv run ruff format --check --diff .
       - run: uv run ruff check .

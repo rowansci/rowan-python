@@ -4,8 +4,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch
 
 import rowan
 from rowan.workflows import conformer_search as conformer_search_module
@@ -30,7 +30,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the conformer-search API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -44,7 +44,7 @@ def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
 
 
 def test_conformer_constraints_are_released_for_ts_refinement(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Keep generation constrained while releasing TS refinement constraints."""
     client = _mock_submission(monkeypatch)

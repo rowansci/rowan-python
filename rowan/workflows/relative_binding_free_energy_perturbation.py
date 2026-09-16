@@ -8,11 +8,12 @@ from typing import Literal
 import stjames
 from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, TMDRBFESettings
 
-from ..folder import Folder
-from ..molecule import Molecule
-from ..protein import Protein
-from ..types import ProteinUUID
-from ..utils import api_client, download_file
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.protein import Protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client, download_file
+
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
 

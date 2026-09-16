@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch, approx, raises
 
 import rowan
 from rowan.workflows import docking as docking_module
@@ -49,7 +49,9 @@ def _docking_result(
     )
 
 
-def test_submit_docking_workflow_posts_induced_fit_settings(monkeypatch: MonkeyPatch) -> None:
+def test_submit_docking_workflow_posts_induced_fit_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Induced-fit settings reach the workflow payload on DockingWorkflow, not VinaSettings."""
     client = MagicMock()
     client.post.return_value.json.return_value = {
@@ -105,10 +107,10 @@ def test_docking_result_scores_expose_induced_fit_fields() -> None:
     )
 
     [score] = result.scores
-    assert score.score == approx(-7.5)
-    assert score.receptor_strain == approx(1.234)
-    assert score.geometry_penalty == approx(0.0)
-    assert score.induced_fit_score == approx(-6.266)
+    assert score.score == pytest.approx(-7.5)
+    assert score.receptor_strain == pytest.approx(1.234)
+    assert score.geometry_penalty == pytest.approx(0.0)
+    assert score.induced_fit_score == pytest.approx(-6.266)
     assert score.induced_receptor_pdb == "22222222-2222-2222-2222-222222222222"
     assert repr(result) == "<DockingResult poses=1 best_score=-6.266>"
 
@@ -124,7 +126,7 @@ def test_docking_result_scores_defaults_induced_fit_fields_to_none() -> None:
     assert score.induced_receptor_pdb is None
 
 
-def test_get_induced_receptor_fetches_by_uuid(monkeypatch: MonkeyPatch) -> None:
+def test_get_induced_receptor_fetches_by_uuid(monkeypatch: pytest.MonkeyPatch) -> None:
     """The induced receptor is fetched via its own UUID, cached, and reused."""
     result = _docking_result(
         induced_fit=True,
@@ -146,5 +148,5 @@ def test_get_induced_receptor_raises_without_uuid() -> None:
     """A rigid pose has no induced receptor to fetch."""
     result = _docking_result()
 
-    with raises(ValueError, match="no induced receptor"):
+    with pytest.raises(ValueError, match="no induced receptor"):
         result.get_induced_receptor(0)

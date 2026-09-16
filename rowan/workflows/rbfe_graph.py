@@ -7,9 +7,10 @@ from typing import Literal
 import stjames
 from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph
 
-from ..folder import Folder
-from ..molecule import Molecule
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.utils import api_client
+
 from .base import (
     StructureInput,
     Workflow,

@@ -4,8 +4,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch
 
 import rowan
 from rowan.workflows import macropka as macropka_module
@@ -31,7 +31,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the macropKa API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -49,7 +49,7 @@ def _molecule() -> stjames.Molecule:
     return stjames.Molecule.from_xyz("2\nhydrogen\nH 0 0 0\nH 0 0 0.74")
 
 
-def test_macropka_starling_ii_payload(monkeypatch: MonkeyPatch) -> None:
+def test_macropka_starling_ii_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     """Expose both macroscopic pKa models while retaining Starling as the default."""
     client = _mock_submission(monkeypatch)
 

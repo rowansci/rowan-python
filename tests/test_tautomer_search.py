@@ -4,13 +4,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
-from pytest import MonkeyPatch
+import pytest
 
 import rowan
 from rowan.workflows import tautomer_search as tautomer_module
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the workflow API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = {
@@ -37,7 +37,7 @@ def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
     return client
 
 
-def test_submit_tautomer_search_screening_window(monkeypatch: MonkeyPatch) -> None:
+def test_submit_tautomer_search_screening_window(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize the default and overridden tautomer screening windows."""
     client = _mock_submission(monkeypatch)
     molecule = rowan.Molecule.from_xyz("2\nhydrogen\nH 0 0 0\nH 0 0 0.74")

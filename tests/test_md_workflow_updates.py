@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 
 import pytest
 import stjames
-from pytest import MonkeyPatch
 from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 import rowan
@@ -38,7 +37,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch, module: object) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch, module: object) -> MagicMock:
     """Replace a workflow module's API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -93,7 +92,7 @@ def test_md_trajectory_constructors_preserve_their_previous_signatures() -> None
     assert pose_trajectory.median_structure_frame_index is None
 
 
-def test_protein_md_uses_new_defaults_and_forcefields(monkeypatch: MonkeyPatch) -> None:
+def test_protein_md_uses_new_defaults_and_forcefields(monkeypatch: pytest.MonkeyPatch) -> None:
     """Use the updated MD defaults and serialize public force-field types."""
     client = _mock_submission(monkeypatch, protein_md_module)
     protein_md_module.submit_protein_md_workflow(
@@ -112,7 +111,7 @@ def test_protein_md_uses_new_defaults_and_forcefields(monkeypatch: MonkeyPatch) 
 
 
 def test_protein_md_exposes_binder_and_representative_structure_results(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Expose binder analyses and cache fetched mean structures."""
     workflow = stjames.ProteinMolecularDynamicsWorkflow(
@@ -181,7 +180,7 @@ def test_protein_md_accepts_legacy_binder_schema() -> None:
     assert legacy_result._workflow.small_molecules == {"LIG": "CC"}
 
 
-def test_protein_md_serializes_general_binders(monkeypatch: MonkeyPatch) -> None:
+def test_protein_md_serializes_general_binders(monkeypatch: pytest.MonkeyPatch) -> None:
     """Serialize protein, small-molecule, and combined binders."""
     client = _mock_submission(monkeypatch, protein_md_module)
 
@@ -208,7 +207,9 @@ def test_protein_md_serializes_general_binders(monkeypatch: MonkeyPatch) -> None
         assert workflow_payload.get("small_molecules") == small_molecules
 
 
-def test_pose_analysis_md_uses_new_defaults_and_forcefields(monkeypatch: MonkeyPatch) -> None:
+def test_pose_analysis_md_uses_new_defaults_and_forcefields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Apply the updated controls and defaults to pose-analysis MD."""
     client = _mock_submission(monkeypatch, pose_analysis_md_module)
     pose_analysis_md_module.submit_pose_analysis_md_workflow(
@@ -276,11 +277,11 @@ def test_pose_analysis_md_exposes_trajectory_analysis_results() -> None:
 
 
 @pytest.mark.parametrize(
-    "file_format,response_error",
+    ("file_format", "response_error"),
     [("mmcif", None), ("mmcif", "atom_count"), ("mmcif", "truncated"), ("pdb", None)],
 )
 def test_medoid_structure_download_combines_frame_and_topology(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     file_format: Literal["mmcif", "pdb"],
     response_error: str | None,

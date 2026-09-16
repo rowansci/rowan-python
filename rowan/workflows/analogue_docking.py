@@ -4,12 +4,13 @@ from typing import Literal
 
 import stjames
 
-from ..calculation import Calculation, retrieve_calculation
-from ..folder import Folder
-from ..molecule import Molecule
-from ..protein import Protein, retrieve_protein
-from ..types import ProteinUUID
-from ..utils import api_client
+from rowan.calculation import Calculation, retrieve_calculation
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.protein import Protein, retrieve_protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
+
 from .base import (
     StructureInput,
     Workflow,

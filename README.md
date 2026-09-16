@@ -12,19 +12,23 @@
 [![Codecov](https://img.shields.io/codecov/c/github/rowansci/rowan-python)](https://codecov.io/gh/rowansci/rowan-python)
 -->
 
-
-
-The Rowan Python library provides convenient access to the Rowan API from applications written in the Python language.
+The Rowan Python library is the Python SDK for running Rowan computational chemistry workflows
+programmatically. Use it from scripts and applications to submit calculations, monitor workflow
+progress, retrieve results, and manage molecules, proteins, folders, and projects through the
+Rowan API.
 
 ## Documentation
 
-The documentation is available [here](https://docs.rowansci.com/python-api).
+Read the [Rowan Python API documentation](https://docs.rowansci.com/python-api).
 
 ## Agent skill
 
 Ships with a [computational chemistry and biology skill](skills/computational-chemistry-and-biology/)
 that helps coding agents choose and run Rowan workflows through either Rowan MCP tools or the
 Rowan Python SDK.
+
+When using Rowan MCP tools, always read and follow this skill and its workflow references first.
+The skill provides the scientific guidance and execution requirements for MCP workflows.
 
 ### Claude Code
 
@@ -66,9 +70,6 @@ and extract it into your agent's skills directory.
 To run the examples, you will need to set your ROWAN_API_KEY environment variable or set it directly in the script.
 If running the examples in a cloned version of the repository, you can add your api key to a local `.env` file, which will automatically be loaded into the environment by direnv (if installed).
 
-
 ## Issues
 
 To report issues, please use the "Issues" tab above.
-
-*Corin Wagen, 2023*

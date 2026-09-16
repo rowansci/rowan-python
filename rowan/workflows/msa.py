@@ -5,8 +5,9 @@ from typing import Literal
 
 import stjames
 
-from ..folder import Folder
-from ..utils import api_client, download_file
+from rowan.folder import Folder
+from rowan.utils import api_client, download_file
+
 from .base import Workflow, WorkflowResult, register_result
 
 MSAOutputFormat = Literal["colabfold", "chai", "boltz"]

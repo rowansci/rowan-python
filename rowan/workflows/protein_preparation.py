@@ -4,10 +4,11 @@ from typing import Literal
 
 import stjames
 
-from ..folder import Folder
-from ..protein import Protein, retrieve_protein
-from ..types import ProteinUUID
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.protein import Protein, retrieve_protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
+
 from .base import Workflow, WorkflowResult, register_result
 
 _DEFAULT_RETAIN_NON_POLYMER: dict[str | int, str | None] = {

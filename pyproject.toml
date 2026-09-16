@@ -56,12 +56,11 @@ select = [
     "W",  # pycodestyle warnings
     "C4", # comprehensions
     "PL", # pylint
-    # Cookiecutter rules deferred until the style migration:
-    # "PT",  # flake8-pytest-style
-    # "PIE", # misc lints
-    # "PYI", # flake8-pyi
-    # "TID", # tidy imports
-    # "TC",  # type-checking imports
+    "PT",  # flake8-pytest-style
+    "PIE", # misc lints
+    "PYI", # flake8-pyi
+    "TID", # tidy imports
+    "TC",  # type-checking imports
     "RUF", # Ruff-specific rules
     "RSE", # flake8-raise
     "ICN001", # unconventional-import-alias

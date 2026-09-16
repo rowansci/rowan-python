@@ -5,11 +5,12 @@ from typing import Any
 
 import stjames
 
-from ..calculation import Calculation, retrieve_calculation
-from ..folder import Folder
-from ..molecule import Molecule
-from ..types import SolventInput
-from ..utils import api_client
+from rowan.calculation import Calculation, retrieve_calculation
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.types import SolventInput
+from rowan.utils import api_client
+
 from .base import (
     SMILES,
     ConformerClusteringSettings,

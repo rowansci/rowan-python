@@ -15,11 +15,11 @@ import stjames
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rdkit import Chem
 
-from ..folder import Folder
-from ..molecule import Molecule as RowanMolecule
-from ..project import default_project, retrieve_project
-from ..types import SMILES, StructureInput
-from ..utils import api_client, download_file, get_project_uuid
+from rowan.folder import Folder
+from rowan.molecule import Molecule as RowanMolecule
+from rowan.project import default_project, retrieve_project
+from rowan.types import SMILES, StructureInput
+from rowan.utils import api_client, download_file, get_project_uuid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -475,7 +475,7 @@ Workflow:  {self.name}
                 f"Workflow '{self.name}' has no results yet (status={status}, uuid={self.uuid})"
             )
         complete = self.status == stjames.Status.COMPLETED_OK
-        return cast(R, create_result(self.data, self.workflow_type, self.uuid, complete=complete))
+        return cast("R", create_result(self.data, self.workflow_type, self.uuid, complete=complete))
 
     def stream_result(self, poll_interval: int = 5) -> Iterator[R]:
         """Poll the workflow and yield results until complete.

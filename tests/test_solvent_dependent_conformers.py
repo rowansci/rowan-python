@@ -4,8 +4,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch
 
 import rowan
 from rowan.workflows import solvent_dependent_conformers as sdc_module
@@ -31,7 +31,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the workflow API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -45,7 +45,7 @@ def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
 
 
 def test_submit_solvent_dependent_conformers_tautomer_enumeration(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Serialize the default and enabled tautomer-enumeration settings."""
     client = _mock_submission(monkeypatch)

@@ -4,9 +4,10 @@ from typing import Any
 
 import stjames
 
-from ..folder import Folder
-from ..types import SolventInput
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.types import SolventInput
+from rowan.utils import api_client
+
 from .base import (
     StructureInput,
     Workflow,

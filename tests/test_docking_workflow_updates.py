@@ -5,8 +5,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
 import stjames
-from pytest import MonkeyPatch
 
 from rowan.workflows import analogue_docking as analogue_docking_module
 from rowan.workflows import batch_docking as batch_docking_module
@@ -32,7 +32,7 @@ def _workflow_response() -> dict[str, object]:
     }
 
 
-def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
+def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Replace the batch docking API client and return its mock client."""
     client = MagicMock()
     client.post.return_value.json.return_value = _workflow_response()
@@ -45,7 +45,7 @@ def _mock_submission(monkeypatch: MonkeyPatch) -> MagicMock:
     return client
 
 
-def test_batch_docking_submission_controls(monkeypatch: MonkeyPatch) -> None:
+def test_batch_docking_submission_controls(monkeypatch: pytest.MonkeyPatch) -> None:
     """Submit default and opt-in pose-saving and refinement controls."""
     client = _mock_submission(monkeypatch)
 

@@ -1,6 +1,6 @@
-![Rowan](images/RowanLogoLarge.png){ width="320" }
-
 # Rowan Python API
+
+![Rowan](images/RowanLogoLarge.png){ width="320" }
 
 The `rowan` package is the official Python client for the [Rowan](https://rowansci.com) computational
 chemistry platform. Submit workflows, poll or stream results, and manage
@@ -10,21 +10,21 @@ molecules, proteins, folders, and projects—all from plain Python.
 
 === "pip"
 
-    ```bash
-    pip install rowan-python
-    ```
+```bash
+pip install rowan-python
+```
 
 === "pixi"
 
-    ```bash
-    pixi add --pypi rowan-python
-    ```
+```bash
+pixi add --pypi rowan-python
+```
 
 === "uv"
 
-    ```bash
-    uv add rowan-python
-    ```
+```bash
+uv add rowan-python
+```
 
 ## Authentication
 

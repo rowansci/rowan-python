@@ -11,10 +11,11 @@ from stjames import (
     WaterForceField,
 )
 
-from ..folder import Folder
-from ..protein import Protein
-from ..types import ProteinUUID
-from ..utils import api_client
+from rowan.folder import Folder
+from rowan.protein import Protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
+
 from ._molecular_dynamics import _MolecularDynamicsResult
 from .base import Message, Workflow, parse_messages, register_result
 

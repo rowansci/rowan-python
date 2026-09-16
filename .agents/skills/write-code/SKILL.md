@@ -11,9 +11,8 @@ Use this skill when writing, reviewing, or editing code.
 
 Follow the staged migration in [AGENTS.md](../../../AGENTS.md). Apply style guidance
 within the requested work; do not rewrite existing code to satisfy deferred rules.
-Keep existing lint exceptions and commented-out migration settings. Use ty;
-rumdl and additional Ruff rules are deferred until requested. Use Google-style docstrings.
-
+Keep existing lint exceptions and commented-out migration settings. Use ty, Rumdl, and the enabled
+Ruff rules. Use Google-style docstrings.
 
 ## Purpose
 
@@ -128,9 +127,8 @@ See the skill `write-tests` for more detail, but only if actively writing tests
 
 ## CI/CD
 
-CI runs the non-mutating Ruff checks, ty, file checks, and pytest with coverage.
-The template's rumdl checks are deferred until a separate migration. Run `prek -a` to reproduce most
-of the set locally.
+CI runs non-mutating Rumdl and Ruff checks, ty, file checks, and pytest with coverage. Run `prek -a`
+to reproduce most of the set locally.
 
 ## Git development guidelines
 

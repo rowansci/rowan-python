@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, call
 
 import pytest
 import stjames
-from pytest import MonkeyPatch
 
 from rowan.workflows import base
 from rowan.workflows import solubility as solubility_module
@@ -33,7 +32,7 @@ def _workflow_response(index: int) -> dict[str, Any]:
     }
 
 
-def test_submit_solubility_workflow_group_posts_one_group(monkeypatch: MonkeyPatch) -> None:
+def test_submit_solubility_workflow_group_posts_one_group(monkeypatch: pytest.MonkeyPatch) -> None:
     """Submit validated solubility settings in one group request."""
     client = MagicMock()
     client.post.return_value.json.return_value = [_workflow_response(1), _workflow_response(2)]
@@ -72,7 +71,7 @@ def test_submit_solubility_workflow_group_posts_one_group(monkeypatch: MonkeyPat
 
 
 def test_batch_submit_workflow_preserves_individual_submission_behavior(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Keep the established batch helper as repeated individual submissions."""
     submit = MagicMock(side_effect=["first", "second"])
@@ -90,7 +89,7 @@ def test_batch_submit_workflow_preserves_individual_submission_behavior(
     assert submit.call_count == 2
 
 
-def test_retrieve_workflows_uses_bounded_batches(monkeypatch: MonkeyPatch) -> None:
+def test_retrieve_workflows_uses_bounded_batches(monkeypatch: pytest.MonkeyPatch) -> None:
     """Split large full-workflow retrievals into bounded API requests."""
     client = MagicMock()
     first_response = MagicMock()
@@ -123,7 +122,7 @@ def test_retrieve_workflows_uses_bounded_batches(monkeypatch: MonkeyPatch) -> No
 
 @pytest.mark.parametrize("status", [stjames.Status.FAILED, stjames.Status.STOPPED])
 def test_workflow_result_includes_log_for_unsuccessful_workflow(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     status: stjames.Status,
 ) -> None:
     """Include the refreshed workflow log in failed and stopped result errors."""
@@ -148,7 +147,7 @@ def test_workflow_result_includes_log_for_unsuccessful_workflow(
     )
 
 
-def test_workflow_temporary_sharing_lifecycle(monkeypatch: MonkeyPatch) -> None:
+def test_workflow_temporary_sharing_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
     """Start and end temporary workflow sharing."""
     client = MagicMock()
     public_until = "2099-07-17T01:30:00Z"
