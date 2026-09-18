@@ -42,4 +42,7 @@ jobs:
       - name: Deploy with rsync
         run: |
           rsync -avz --delete site/ \
-            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:${{ secrets.DOCS_TARGET_DIR }}
+            ${{ secrets.DOCS_USERNAME }}@${{ secrets.DOCS_IP }}:${{ secrets.DOCS_TARGET_DIR }}/site/
+
+      - name: Verify deployed docs
+        run: curl --fail --silent --show-error --location --retry 5 --retry-delay 5 --retry-all-errors https://docs.rowansci.com/api/python/v3/ -o /dev/null
