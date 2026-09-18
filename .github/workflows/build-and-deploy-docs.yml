@@ -1,8 +1,8 @@
 name: Build & Deploy Rowan Python Docs
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   build-and-deploy-docs:
+    if: github.repository == 'rowansci/rowan-python' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     steps:
