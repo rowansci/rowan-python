@@ -142,6 +142,7 @@ def submit_protein_md_workflow(
     nonbonded_cutoff: float = 8.0,
     ionic_strength_M: float = 0.0,
     water_buffer: float = 8.0,
+    frame_save_interval_ps: float = 10.0,
     save_solvent: bool = False,
     num_solvent_to_save: int | None = None,
     small_molecules: dict[str | int, str | None] | None = None,
@@ -178,6 +179,8 @@ def submit_protein_md_workflow(
         nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in A
         ionic_strength_M: ionic strength of the solution, in M (molar)
         water_buffer: amount of water to add around the protein, in A
+        frame_save_interval_ps: how often to save a frame to the trajectory, in ps; must be
+            an integer multiple of timestep_fs
         save_solvent: whether solvent should be saved
         num_solvent_to_save: keep this many solvent molecules nearest the binder, or all if None;
             only meaningful when save_solvent is True and a binder is present
@@ -246,6 +249,7 @@ def submit_protein_md_workflow(
         nonbonded_cutoff=nonbonded_cutoff,
         ionic_strength_M=ionic_strength_M,
         water_buffer=water_buffer,
+        frame_save_interval_ps=frame_save_interval_ps,
         save_solvent=save_solvent,
         num_solvent_to_save=num_solvent_to_save,
         small_molecules=small_molecules,

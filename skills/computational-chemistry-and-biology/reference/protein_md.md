@@ -54,6 +54,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `nonbonded_cutoff` (default `8.0`): nonbonded cutoff for particle-mesh Ewald, in angstrom.
 - `ionic_strength_M` (default `0.0`): ionic strength of the solution, in molar.
 - `water_buffer` (default `8.0`): amount of water added around the protein, in angstrom.
+- `frame_save_interval_ps` (default `10.0`): how often a frame is written to the trajectory, in ps. Must be an integer multiple of `timestep_fs`. Lower it for finer-grained trajectories at the cost of larger files.
 - `save_solvent` (default `False`): whether to save solvent atoms in the trajectories.
 - `num_solvent_to_save` (default `None`): when `save_solvent=True` and a `binder` is set, keep only the N solvent molecules nearest the binder each frame; `None` keeps all solvent. Ignored when `save_solvent=False` or no `binder`.
 - `small_molecules` (default `None`): SMILES keyed by non-polymer residue name or zero-based index. Use this to parameterize one or more small molecules in the protein; a `None` value selects an existing residue template.
