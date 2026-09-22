@@ -23,10 +23,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.1
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v7.6
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
 
@@ -38,8 +38,11 @@ jobs:
 
       - name: Check TOML/YAML/whitespace
         run: |
-          uv run prek run --all-files --show-diff-on-failure --color=always \
-            check-toml check-yaml trailing-whitespace end-of-file-fixer
+          uv run -- prek run --all-files --show-diff-on-failure --color=always \
+            check-toml \
+            check-yaml \
+            trailing-whitespace \
+            end-of-file-fixer
 
       - run: uv run rumdl fmt --check --diff .
       - run: uv run rumdl check .
@@ -50,9 +53,3 @@ jobs:
       - run: uv run ty check
 
       - run: uv run pytest --cov --cov-report=xml
-
-      # Enable after configuring Codecov and its repository token.
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v5
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}

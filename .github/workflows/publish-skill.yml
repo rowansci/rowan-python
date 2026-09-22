@@ -16,7 +16,7 @@ jobs:
     if: github.repository == 'rowansci/rowan-python'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - name: Zip skill
         run: cd skills && zip -r ../computational-chemistry-and-biology-skill.zip computational-chemistry-and-biology
       - name: Publish/refresh release

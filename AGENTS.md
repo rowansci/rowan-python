@@ -5,7 +5,8 @@ This document provides essential guidance for AI agents working on this reposito
 ## AI skills
 
 Shared development conventions live in `.agents/skills/`. Read `write-code`,
-`write-docstrings`, and `write-tests` when working on the corresponding code.
+`write-docstrings`, `write-tests`, and `write-method-docs` when working on the corresponding code
+or documentation.
 These files and this guide are tracked development resources, excluded from Python distributions.
 Keep personal guidance in global agent settings or locally excluded files.
 
@@ -37,7 +38,7 @@ Python version: >=3.12
 ```bash
 # Setup
 uv sync --locked               # Install dependencies
-uv run prek install --hook-type pre-commit --hook-type pre-push
+uv run prek install
 
 # Code quality (these are the pre-commit hooks)
 uv run ruff format .           # Format code
@@ -46,7 +47,7 @@ uv run ty check                # Type check
 
 # Testing
 uv run pytest                  # Run tests and doctests
-uv run prek run --all-files    # Run pre-commit checks
+uv run prek run --all-files --stage pre-push  # Run all checks, including tests
 
 # Documentation
 uv run --group docs mkdocs serve
@@ -58,7 +59,7 @@ uv run python examples/basic_calculation.py
 
 ## Before every commit
 
-- Run `uv run ruff format .`, `uv run ruff check . --fix`, `uv run ty check`
+- Run `uv run prek run --all-files --stage pre-push`
 - Pre-commit hooks (`prek.toml`) run these automatically on commit
 - Tests run on pre-push and in CI
 
@@ -136,11 +137,11 @@ Triggers: all PRs, pushes to `master`
 
 Checks:
 
-1. `uv run ruff format --check --diff .` - format check
-2. `uv run ruff check .` - lint check
-3. `uv run ty check` - type check
-4. `uv run pytest --cov --cov-report=xml` - tests, doctests, and coverage
-5. `uv run prek run --all-files check-toml check-yaml trailing-whitespace end-of-file-fixer` - file checks
+1. `uv run prek run --all-files check-toml check-yaml trailing-whitespace end-of-file-fixer` - file checks
+2. `uv run rumdl fmt --check --diff .` and `uv run rumdl check .` - Markdown checks
+3. `uv run ruff format --check --diff .` and `uv run ruff check .` - Python checks
+4. `uv run ty check` - type check
+5. `uv run pytest --cov --cov-report=xml` - tests, doctests, and coverage
 
 Matrix: Python 3.12 and 3.14, ubuntu-latest
 

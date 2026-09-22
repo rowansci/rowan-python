@@ -2,15 +2,12 @@
 
 [![pypi](https://img.shields.io/pypi/v/rowan-python.svg)](https://pypi.python.org/pypi/rowan-python)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://docs.astral.sh/uv/)
-[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Downloads](https://img.shields.io/pypi/dm/rowan-python.svg)](https://pypi.python.org/pypi/rowan-python/)
 [![License](https://img.shields.io/github/license/rowansci/rowan-python)](LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/rowansci/rowan-python/test.yml?branch=master&logo=github-actions)](https://github.com/rowansci/rowan-python/actions)
-[![Typing: ty](https://img.shields.io/badge/typing-ty-EFC621.svg)](https://github.com/astral-sh/ty)
-<!-- Enable these badges with the corresponding tooling/services.
+[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![Markdown style: rumdl](https://img.shields.io/badge/md%20style-rumdl-000000.svg)](https://rumdl.dev)
-[![Codecov](https://img.shields.io/codecov/c/github/rowansci/rowan-python)](https://codecov.io/gh/rowansci/rowan-python)
--->
 
 The Rowan Python library is the Python SDK for running Rowan computational chemistry workflows
 programmatically. Use it from scripts and applications to submit calculations, monitor workflow

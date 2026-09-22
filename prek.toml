@@ -1,4 +1,6 @@
+# schema https://www.schemastore.org/prek.json
 exclude = '(^\.venv/|^\.pixi/|\.dat$|\.patch$)'
+default_install_hook_types = ["pre-commit", "pre-push"]
 default_stages = ["pre-commit", "pre-push"]
 
 [[repos]]
@@ -6,12 +8,21 @@ repo = "builtin"
 hooks = [
   { id = "check-toml" },
   { id = "check-yaml", args = ["--unsafe"] },
+  { id = "check-merge-conflict" },
   { id = "end-of-file-fixer" },
   { id = "trailing-whitespace" },
 ]
 
 [[repos]]
 repo = "local"
+
+[[repos.hooks]]
+id = "uv-lock-check"
+name = "uv lock --check"
+language = "system"
+entry = "uv lock --check"
+files = '^(pyproject\.toml|uv\.lock)$'
+pass_filenames = false
 
 [[repos.hooks]]
 id = "rumdl-fmt"
@@ -29,13 +40,12 @@ entry = "uv run rumdl check . --fix"
 types = ["markdown"]
 pass_filenames = false
 
-
 [[repos.hooks]]
 id = "ruff-format"
 name = "ruff-format"
 language = "system"
 entry = "uv run ruff format ."
-types = ["python"]
+types_or = ["python", "pyi"]
 pass_filenames = false
 
 [[repos.hooks]]
@@ -43,7 +53,7 @@ id = "ruff-check"
 name = "ruff-check"
 language = "system"
 entry = "uv run ruff check . --fix"
-types = ["python"]
+types_or = ["python", "pyi"]
 pass_filenames = false
 
 [[repos.hooks]]
@@ -51,15 +61,14 @@ id = "ty"
 name = "ty"
 language = "system"
 entry = "uv run ty check"
-types = ["python"]
+types_or = ["python", "pyi"]
 pass_filenames = false
-stages = ["pre-commit"]
 
 [[repos.hooks]]
 id = "pytest"
-stages = ["pre-push"]
 name = "pytest"
 language = "system"
 entry = "uv run pytest"
-types = ["python"]
+always_run = true
 pass_filenames = false
+stages = ["pre-push"]

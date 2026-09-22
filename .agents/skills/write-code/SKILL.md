@@ -24,7 +24,7 @@ Python version: see `requires-python` in `pyproject.toml`
 
 - Ensure all code has type annotations
 - Use Google-style docstrings (NO types, NO leading articles)
-- Run checks: `prek -a`
+- Run checks: `uv run prek run -a --stage pre-push` (tests run at pre-push)
 - Prek hooks will run automatically and must pass
 
 ## Code conventions
@@ -93,14 +93,14 @@ Code quality tools (ruff, ty, pytest) are configured per-package in `pyproject.t
 
 ```bash
 # Setup
-prek install                    # Install git hooks
+uv run prek install             # Install pre-commit and pre-push hooks
 
 # Code quality
 ruff format .                   # Format code
 ruff check .                    # Lint code
 uv run ty check                 # Type check
-prek -a                         # Run all prek hooks
-prek run <hook-id>              # Run specific hook
+uv run prek run -a --stage pre-push  # Run all hooks, including tests
+uv run prek run <hook-id>       # Run specific hook
 
 # Testing
 pytest                          # Run tests
@@ -127,8 +127,8 @@ See the skill `write-tests` for more detail, but only if actively writing tests
 
 ## CI/CD
 
-CI runs non-mutating Rumdl and Ruff checks, ty, file checks, and pytest with coverage. Run `prek -a`
-to reproduce most of the set locally.
+CI runs non-mutating Rumdl and Ruff checks, ty, file checks, and pytest with coverage. Run
+`uv run prek run -a --stage pre-push` to reproduce the set locally.
 
 ## Git development guidelines
 
