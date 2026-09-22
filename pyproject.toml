@@ -140,7 +140,6 @@ packages = ["rowan"]
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/AGENTS.md",
-    "/CLAUDE.md",
     "/.agents",
     "/.claude",
 ]
