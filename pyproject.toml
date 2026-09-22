@@ -4,6 +4,7 @@ version = "3.2.0"
 description = "Rowan Python Library"
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 authors = [
     { name = "Corin Wagen", email = "corin@rowansci.com" },
@@ -139,7 +140,6 @@ packages = ["rowan"]
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/AGENTS.md",
-    "/CLAUDE.md",
     "/.agents",
     "/.claude",
 ]
