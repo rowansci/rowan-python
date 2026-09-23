@@ -82,7 +82,8 @@ def submit_binding_affinity_workflow(
     input modes are supported:
 
     **Mode 1 – holo protein:** protein already contains the bound ligand. Pass
-    `ligand_residue_name` to identify which residue is the ligand vs. the receptor.
+    `ligand_residue_name` to identify which residue is the ligand vs. the receptor,
+    and exactly one entry in `ligand_smiles` describing that bound ligand.
     Do not pass `ligand_structures`.
 
     **Mode 2 – apo protein + external poses:** protein has no bound ligand. Pass
@@ -101,13 +102,15 @@ def submit_binding_affinity_workflow(
         protein: protein structure. Can be input as a UUID or a Protein object. Required
             unless `protein_sequences` is set (mode 3)
         ligand_residue_name: residue name identifying the ligand in a holo protein PDB
-            (mode 1 only)
+            (mode 1 only); requires exactly one matching `ligand_smiles` entry
         ligand_structures: external ligand poses to score, already in the protein's
             coordinate frame. Must have 3D coordinates (mode 2 only)
         protein_sequences: protein sequences to score against, in place of `protein`
             (mode 3, NESSO only)
-        ligand_smiles: ligand SMILES to score, in place of `ligand_residue_name`/
-            `ligand_structures` (mode 3, NESSO only)
+        ligand_smiles: exactly one SMILES describing the bound ligand with
+            `ligand_residue_name` (mode 1, all methods), or ligand SMILES to score without
+            structural ligand inputs (mode 3, NESSO only). Not accepted with
+            `ligand_structures`
         binding_affinity_settings: settings controlling how binding affinity is
             computed: `SinglePointEnergySettings` (SQM), `GninaAffinitySettings`,
             `AEVPLIGAffinitySettings`, or `NessoAffinitySettings`. Defaults to

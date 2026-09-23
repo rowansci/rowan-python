@@ -4,7 +4,7 @@
 
 Choose one input mode:
 
-**Holo protein:** pass a `protein` containing the bound ligand and use `ligand_residue_name` to identify it.
+**Holo protein:** pass a `protein` containing the bound ligand, use `ligand_residue_name` to identify it, and provide exactly one matching SMILES in `ligand_smiles=[ligand_smiles]`.
 
 **Protein + external poses:** pass a `protein` and one or more aligned `ligand_structures`. For ML scoring, include each molecule's `smiles` when known so bond orders can be assigned reliably.
 
@@ -14,7 +14,8 @@ NESSO also accepts the first two modes, but uses only the protein sequence from 
 
 - Protein: a `rowan.Protein` or its UUID. Create one with `rowan.create_protein_from_pdb_id(...)` or `rowan.upload_protein(...)`.
 - `ligand_structures`: 3D molecules already aligned to the protein, commonly loaded with `rowan.load_named_ligands(...)`.
-- `protein_sequences` and `ligand_smiles`: PDB-free inputs supported only by NESSO.
+- `protein_sequences`: PDB-free protein input supported only by NESSO.
+- `ligand_smiles`: exactly one entry describing the bound ligand when using `ligand_residue_name` (all methods), or ligand inputs for NESSO without structural ligand inputs. Do not pass it with `ligand_structures`.
 
 Four scoring methods, selected via `binding_affinity_settings`:
 
@@ -60,9 +61,13 @@ for name, score in zip(ligands.keys(), result.scores):
 - `rowan.GninaAffinitySettings`, `rowan.AEVPLIGAffinitySettings`, `rowan.NessoAffinitySettings`: no tunable parameters.
 
 ```python
+# Replace the path, residue name, and SMILES with those of your holo complex.
+holo_protein = rowan.upload_protein("Holo complex", "PATH_TO_HOLO_PDB")
+ligand_smiles = "SMILES_OF_BOUND_LIGAND"
 rowan.submit_binding_affinity_workflow(
-    protein=protein.uuid,
+    protein=holo_protein.uuid,
     ligand_residue_name="LIG",
+    ligand_smiles=[ligand_smiles],
     binding_affinity_settings=rowan.SinglePointEnergySettings(truncation_radius=8.0),
 )
 
