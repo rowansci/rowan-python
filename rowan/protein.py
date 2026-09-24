@@ -1,4 +1,3 @@
-import time
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -22,7 +21,6 @@ class Protein(BaseModel):
         created_at: creation date of the protein
         used_in_workflow: whether the protein is used in a workflow
         ancestor_uuid: UUID of the ancestor protein
-        sanitized: whether the protein is sanitized
         name: name of the protein
         data: data of the protein
         public: whether the protein is public
@@ -32,7 +30,6 @@ class Protein(BaseModel):
     created_at: datetime | None = None
     used_in_workflow: bool | None = None
     ancestor_uuid: str | None = None
-    sanitized: int | None = None
     name: str | None = None
     data: dict | None = None
     public: bool | None = None
@@ -188,7 +185,6 @@ class Protein(BaseModel):
         self.data = protein_data.get("data")
         self.public = protein_data.get("public")
         self.pocket = protein_data.get("pocket")
-        self.sanitized = protein_data.get("sanitized")
         self.used_in_workflow = protein_data.get("used_in_workflow")
         self._workflow_uuid = workflow_uuid
         return self
@@ -240,118 +236,6 @@ class Protein(BaseModel):
         with api_client() as client:
             response = client.delete(f"/protein/{self.uuid}")
             response.raise_for_status()
-
-    def sanitize(self, poll_interval: float = 10.0, timeout: float = 300.0) -> None:
-        """Sanitizes a protein and waits for the process to complete.
-
-        Protein sanitization runs asynchronously on the server. This method
-        submits the request then polls until sanitization succeeds, fails, or
-        times out.
-
-        Args:
-            poll_interval: seconds between status checks (default 10)
-            timeout: maximum seconds to wait before raising (default 300)
-
-        Raises:
-            RuntimeError: sanitization fails, is stopped, or times out
-            httpx.HTTPStatusError: any API request fails
-        """
-        with api_client() as client:
-            response = client.post(f"/protein/sanitize/{self.uuid}")
-            response.raise_for_status()
-
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            time.sleep(poll_interval)
-            self.refresh()
-            match self.sanitized:
-                case 2:  # success
-                    return
-                case 3:  # failed
-                    raise RuntimeError(
-                        f"Protein sanitization failed for {self.uuid}. "
-                        "Check the protein in the Rowan UI for details."
-                    )
-                case 4:  # stopped
-                    raise RuntimeError(f"Protein sanitization was stopped for {self.uuid}.")
-                case _:  # 1 (in progress) or None: keep polling
-                    pass
-
-        raise RuntimeError(f"Protein sanitization timed out after {timeout:.0f}s for {self.uuid}.")
-
-    def prepare(
-        self,
-        find_missing_residues: bool = True,
-        add_missing_atoms: bool = True,
-        remove_heterogens: bool = True,
-        keep_waters: bool = False,
-        remove_hydrogens: bool = False,
-        remove_invalid_hydrogens: bool = False,
-        add_hydrogens: bool = True,
-        add_hydrogen_ph: float = 7.0,
-        optimize_hydrogens: bool = True,
-        poll_interval: float = 10.0,
-        timeout: float = 300.0,
-    ) -> None:
-        """Quickly prepare a protein in place using PDBFixer and OpenMM.
-
-        Runs PDBFixer to fix nonstandard residues, add missing atoms/hydrogens,
-        and optionally optimizes hydrogen positions with OpenMM. This is the fast
-        preparation option and typically finishes in about a minute or less. Use
-        `submit_protein_preparation_workflow` for the full protein preparation workflow,
-        which can take around ten minutes but includes Boltz-2 missing-structure modeling,
-        terminal capping, selectable protonation methods, and retained non-polymers.
-
-        Args:
-            find_missing_residues: identify and model missing residues
-            add_missing_atoms: add missing heavy atoms to residues
-            remove_heterogens: remove ligands, salts, and other heterogens
-            keep_waters: preserve water molecules when removing heterogens
-            remove_hydrogens: remove all existing hydrogens before adding new ones
-            remove_invalid_hydrogens: remove hydrogens not matching the forcefield template
-            add_hydrogens: add missing hydrogen atoms
-            add_hydrogen_ph: pH used to determine protonation states when adding hydrogens
-            optimize_hydrogens: optimize hydrogen positions with OpenMM energy minimization
-            poll_interval: seconds between status checks (default 10)
-            timeout: maximum seconds to wait before raising (default 300)
-
-        Raises:
-            RuntimeError: preparation fails, is stopped, or times out
-            httpx.HTTPStatusError: any API request fails
-        """
-        params = {
-            "find_missing_residues": find_missing_residues,
-            "add_missing_atoms": add_missing_atoms,
-            "remove_heterogens": remove_heterogens,
-            "keep_waters": keep_waters,
-            "remove_hydrogens": remove_hydrogens,
-            "remove_invalid_hydrogens": remove_invalid_hydrogens,
-            "add_hydrogens": add_hydrogens,
-            "add_hydrogen_ph": add_hydrogen_ph,
-            "optimize_hydrogens": optimize_hydrogens,
-        }
-        with api_client() as client:
-            response = client.post(f"/protein/prepare/{self.uuid}", params=params)
-            response.raise_for_status()
-
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            time.sleep(poll_interval)
-            self.refresh()
-            match self.sanitized:
-                case 2:
-                    return
-                case 3:
-                    raise RuntimeError(
-                        f"Protein preparation failed for {self.uuid}. "
-                        "Check the protein in the Rowan UI for details."
-                    )
-                case 4:
-                    raise RuntimeError(f"Protein preparation was stopped for {self.uuid}.")
-                case _:
-                    pass
-
-        raise RuntimeError(f"Protein preparation timed out after {timeout:.0f}s for {self.uuid}.")
 
     def validate_protein_forcefield(self, exclude_residues: list[str | int] | None = None) -> None:
         """Validate that this protein can be parameterized with the MD forcefield.

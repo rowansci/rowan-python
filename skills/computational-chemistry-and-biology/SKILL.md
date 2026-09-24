@@ -30,7 +30,7 @@ For higher rigor, start a 3D workflow from the conformer search workflow's lowes
 
 ## Protein inputs
 
-Prepare proteins before docking, MD, or FEP. Use the full protein preparation workflow for comprehensive structure repair and `protein.prepare()` for the faster in-place PDBFixer/OpenMM path. Protein workflows accept either a `rowan.Protein` or `rowan.ProteinUUID`. See [protein preparation](reference/protein_preparation.md) for details.
+Prepare proteins before docking, MD, or FEP using the full protein preparation workflow for comprehensive structure repair. Protein workflows accept either a `rowan.Protein` or `rowan.ProteinUUID`. See [protein preparation](reference/protein_preparation.md) for details.
 
 ### Protein–ligand structure boundary
 

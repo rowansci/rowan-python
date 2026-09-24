@@ -66,17 +66,6 @@ wf = rowan.submit_protein_preparation_workflow(
 
 Stored-protein workflow submissions accept any `rowan.Protein` or `rowan.ProteinUUID`. `ProteinUUID` is a semantic string alias: the API verifies that it identifies an accessible protein record. Prefer passing `prepared_protein_uuid` directly when chaining from protein preparation because it avoids fetching and transferring structure data that the local code does not use. Call `get_prepared_protein()` when you need to inspect, modify, or download the prepared structure; it makes one API call on first access, returns a fully loaded `rowan.Protein`, and caches it.
 
-## Fast protein prep
-
-Use `protein.prepare()` when turnaround matters more than the full protein preparation feature set. Protein prep typically finishes in about a minute or less, while full protein preparation can take around ten minutes depending on the structure and settings. It runs PDBFixer and OpenMM, modifies the existing protein record, and blocks until the operation finishes. It can repair missing residues and atoms, remove heterogens, add hydrogens at a selected pH, and optimize hydrogen positions.
-
-```python
-protein = rowan.create_protein_from_pdb_id("1CRN")
-protein.prepare(add_hydrogen_ph=7.4)
-```
-
-Use `submit_protein_preparation_workflow()` when you need Boltz-2 missing-structure modeling, terminal capping, alternative protonation methods, explicit retained non-polymer handling, or an immutable input with a separate prepared output. Use `protein.prepare()` for the faster in-place path when its smaller feature set is sufficient.
-
 ## validate_protein_forcefield()
 
 Server-side check that the protein can be parameterized by the MD forcefield. Call before any MD workflow (protein MD, pose-analysis MD, RBFE perturbation) to catch parameterization issues early.

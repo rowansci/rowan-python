@@ -75,7 +75,7 @@ def submit_protein_preparation_workflow(
     """Submit a protein-preparation workflow to the API.
 
     Full protein preparation can take around ten minutes, depending on the structure and
-    settings. For a faster PDBFixer/OpenMM-only path, use `Protein.prepare()`.
+    settings.
 
     Args:
         protein: protein to prepare, as a UUID or Protein object
