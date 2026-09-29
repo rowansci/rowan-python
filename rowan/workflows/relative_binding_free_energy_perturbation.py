@@ -140,6 +140,8 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         lambda_vals: list[float] | None = None,
         path: Path | str | None = None,
         name: str | None = None,
+        *,
+        leg: Literal["complex", "solvent"] = "complex",
     ) -> Path:
         """Download DCD trajectory files for a specific perturbation edge.
 
@@ -148,6 +150,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
             lambda_vals: lambda values to download. Defaults to all windows
             path: directory to save the file to. Defaults to current directory
             name: custom name for the tar.gz file (without extension)
+            leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
             path to the downloaded tar.gz file
@@ -163,27 +166,34 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         path = Path(path) if path is not None else Path.cwd()
         path.mkdir(parents=True, exist_ok=True)
 
-        params: dict = {"edge_index": edge_index}
-        if lambda_vals is not None:
-            params["lambda_vals"] = lambda_vals
+        params: dict = {"edge_index": edge_index, "leg": leg}
 
-        file_name = f"{name or f'edge_{edge_index}_trajectories'}.tar.gz"
+        default_name = (
+            f"edge_{edge_index}_trajectories"
+            if leg == "complex"
+            else f"edge_{edge_index}_{leg}_trajectories"
+        )
+        file_name = f"{name or default_name}.tar.gz"
         file_path = path / file_name
         return download_file(
             file_path,
             "POST",
             f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
             params=params,
+            json=lambda_vals,
         )
 
     def download_all_trajectories(
         self,
         path: Path | str | None = None,
+        *,
+        leg: Literal["complex", "solvent"] = "complex",
     ) -> list[Path]:
         """Download DCD trajectory files for all perturbation edges.
 
         Args:
             path: directory to save the files to. Defaults to current directory
+            leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
             list of paths to the downloaded tar.gz files, one per edge
@@ -191,7 +201,9 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         Raises:
             httpx.HTTPStatusError: any API request fails
         """
-        return [self.download_edge_trajectories(i, path=path) for i in range(len(self.edges))]
+        return [
+            self.download_edge_trajectories(i, path=path, leg=leg) for i in range(len(self.edges))
+        ]
 
     @property
     def ligand_dg_results(self) -> dict[str, RelativeBindingFreeEnergyResult] | None:
