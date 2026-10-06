@@ -197,8 +197,15 @@ def default_project() -> Project:
 
     Raises:
         httpx.HTTPStatusError: API request fails
+        ValueError: the user has no default project in the API key's organization
     """
     with api_client() as client:
         response = client.get("/user/me/default_project")
         response.raise_for_status()
-        return Project(**response.json())
+        project = response.json()
+    if project is None:
+        raise ValueError(
+            "You have no default project in this organization. "
+            "Set a default project, or pass a folder or project."
+        )
+    return Project(**project)
