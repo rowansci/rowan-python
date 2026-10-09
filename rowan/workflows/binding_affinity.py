@@ -153,9 +153,15 @@ def submit_binding_affinity_workflow(
         binding_affinity_settings=binding_affinity_settings or SinglePointEnergySettings(),
     )
 
+    workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
+    if isinstance(workflow.binding_affinity_settings, SinglePointEnergySettings):
+        workflow_data["binding_affinity_settings"]["truncation_radius"] = (
+            workflow.binding_affinity_settings.truncation_radius
+        )
+
     data = {
         "workflow_type": "binding_affinity",
-        "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),
+        "workflow_data": workflow_data,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,

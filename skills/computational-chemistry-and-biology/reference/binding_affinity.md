@@ -57,8 +57,18 @@ for name, score in zip(ligands.keys(), result.scores):
 
 - `rowan.SinglePointEnergySettings` (default):
   - `multistage_opt_settings` (default PM6-D3H4X/COSMO optimization + PM6-D3H4X/COSMO2 single-point in water): a `rowan.MultiStageOptSettings` controlling ligand geometry optimization and energy evaluation.
-  - `truncation_radius` (default `6.0` Å): protein residues beyond this distance from the ligand are excluded from the calculation.
+  - `truncation_radius` (default `6.0` Å): selects whole protein residues with any atom within this distance of any submitted ligand atom.
+  - `truncation_residues`: nonempty list of `rowan.ResidueRef` objects identifying polymer residues by chain and residue keys in the submitted protein. Requires `truncation_radius=None`; a radius and explicit residues cannot be supplied together.
 - `rowan.GninaAffinitySettings`, `rowan.AEVPLIGAffinitySettings`, `rowan.NessoAffinitySettings`: no tunable parameters.
+
+For an explicit pocket, pass settings like these, using keys from your protein:
+
+```python
+rowan.SinglePointEnergySettings(
+    truncation_radius=None,
+    truncation_residues=[rowan.ResidueRef("polymer", "A", "A.182")],
+)
+```
 
 ```python
 # Replace the path, residue name, and SMILES with those of your holo complex.

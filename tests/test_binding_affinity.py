@@ -124,3 +124,36 @@ def test_binding_affinity_results_preserve_failed_inputs() -> None:
     )
 
     assert result.scores == [BindingAffinityScore(binding_affinity=-6.5), None]
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        pytest.param(rowan.SinglePointEnergySettings(), id="default-radius"),
+        pytest.param(rowan.SinglePointEnergySettings(truncation_radius=8.0), id="custom-radius"),
+        pytest.param(
+            rowan.SinglePointEnergySettings(
+                truncation_radius=None,
+                truncation_residues=[rowan.ResidueRef("polymer", "A", "A.182")],
+            ),
+            id="explicit-residues",
+        ),
+    ],
+)
+def test_submit_binding_affinity_pocket_roundtrip(
+    monkeypatch: pytest.MonkeyPatch, settings: rowan.SinglePointEnergySettings
+) -> None:
+    """Preserve radius and explicit residue selections through submission JSON."""
+    client = _mock_client(monkeypatch)
+    rowan.submit_binding_affinity_workflow(
+        protein="protein-uuid",
+        ligand_residue_name="LIG",
+        ligand_smiles=["CCO"],
+        binding_affinity_settings=settings,
+    )
+    payload = client.post.call_args.kwargs["json"]["workflow_data"]
+    assert payload["binding_affinity_settings"]["truncation_radius"] == settings.truncation_radius
+    restored = stjames.BindingAffinityWorkflow.model_validate(payload).binding_affinity_settings
+    assert restored.model_dump(mode="json", exclude_none=False) == settings.model_dump(
+        mode="json", exclude_none=False
+    )
