@@ -149,7 +149,7 @@ def submit_protein_md_workflow(
     binder: Binder | None = None,
     protein_restraint_cutoff: float | None = None,
     protein_restraint_constant: float = 100,
-    analysis_interval_ps: float | None = None,
+    analysis_interval_ps: float | None = 100,
     clustering: KMeansClusteringSettings | GreedyClusteringSettings | None = None,
     validate_forcefield: bool = True,
     name: str = "Protein MD Workflow",
@@ -194,8 +194,8 @@ def submit_protein_md_workflow(
         protein_restraint_cutoff: cutoff distance from the binder past which Cα atoms are
             harmonically restrained, in Å; None disables restraints
         protein_restraint_constant: force constant for Cα backbone restraints, in kcal/mol/Å²
-        analysis_interval_ps: interval at which to compute per-frame SASA and polar SASA, in ps.
-            None disables those analyses
+        analysis_interval_ps: interval at which to compute per-frame SASA and polar SASA
+            (default 100), in ps. None disables those analyses
         clustering: how to cluster trajectory frames. None disables clustering; pass a
             KMeansClusteringSettings (num_clusters) or GreedyClusteringSettings (cutoff_angstrom)
         validate_forcefield: validate the protein forcefield

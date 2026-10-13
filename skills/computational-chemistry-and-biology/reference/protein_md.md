@@ -61,7 +61,7 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecule_residues`, identified by residue-name string or 0-based non-polymer residue index), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
 - `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
 - `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
-- `analysis_interval_ps` (default `None`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` (the default) disables those analyses.
+- `analysis_interval_ps` (default `100`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` disables those analyses.
 - `clustering` (default `None`): cluster the trajectory frames. `None` disables it; pass `rowan.KMeansClusteringSettings(num_clusters=10)` or `rowan.GreedyClusteringSettings(cutoff_angstrom=2.0)`.
 - `validate_forcefield` (default `True`): validate the protein forcefield before submitting; raises early if the protein cannot be parameterized or has clashing residues. When a `binder` is set, its small molecules are excluded from validation, whether keyed by residue name or by non-polymer index, since they are parameterized from their SMILES. Cofactors, metals, and glycans outside the binder are still validated — set `False` to skip the pre-check entirely.
 

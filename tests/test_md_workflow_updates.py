@@ -108,6 +108,7 @@ def test_protein_md_uses_new_defaults_and_forcefields(monkeypatch: pytest.Monkey
     assert payload["timestep_fs"] == 4
     assert payload["hydrogen_mass"] == 3
     assert payload["water_buffer"] == 8
+    assert payload["analysis_interval_ps"] == 100
 
 
 def test_protein_md_exposes_binder_and_representative_structure_results(
