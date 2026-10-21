@@ -15,6 +15,7 @@ from stjames import (
     Constraint,
     ConstraintType,
     ConformerClusteringSettings,
+    ConformerProperties,
     ConformerGenSettingsUnion,
     Correction,
     DNASequence,
@@ -83,5 +84,6 @@ from .types import ProteinUUID, RdkitMol, SMILES, StJamesMolecule, StructureInpu
 from .workflows import *
 from .project import *
 from .protein import *
+from .spectra import HARTREE_TO_EV, broaden_spectrum
 from .user import *
 from .utils import *
