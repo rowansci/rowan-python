@@ -18,7 +18,7 @@ def broaden_spectrum(
 ) -> list[float]:
     """Sum line shapes centered on each stick, each with area equal to its intensity.
 
-    Use it on the stick spectra of `ConformerSearchResult.get_ensemble_properties`, for
+    Use it on the stick spectra of `ConformerSearchResult.ensemble_properties`, for
     example excitation energies with oscillator or rotatory strengths for UV-vis or ECD,
     or vibrational frequencies with IR intensities. `grid` and `fwhm` share the units of
     `positions`; convert excitation energies from Hartree with `HARTREE_TO_EV` first to

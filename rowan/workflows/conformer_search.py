@@ -1,6 +1,5 @@
 """Conformer-search workflow - find low-energy molecular conformations."""
 
-import math
 from collections.abc import Sequence
 from typing import Any
 
@@ -30,7 +29,7 @@ from .base import (
     register_result,
     require_coordinates,
 )
-from .constants import ENSEMBLE_TEMPERATURE, boltzmann_weights, to_relative_kcal
+from .constants import to_relative_kcal
 
 ConformerProperties = stjames.ConformerProperties
 
@@ -101,110 +100,32 @@ class ConformerSearchResult(WorkflowResult):
 
     @property
     def ensemble_properties(self) -> ConformerProperties | None:
-        """Boltzmann-weighted ensemble properties at 298.15 K, as computed by Rowan.
+        """Ensemble properties weighted by `boltzmann_weights`.
 
-        See `get_ensemble_properties` for the fields and for other temperatures.
+        Each property is averaged over the conformers that have it: SASA, polar SASA, Rg,
+        the root-mean-square dipole (Debye), and per-atom Mulliken charges. When the run
+        computed them, it also holds stick spectra with every conformer's lines, each
+        intensity scaled by its conformer's population: `excitation_energies` (Hartree) with
+        `oscillator_strengths` (UV-vis) and `rotatory_strengths` (ECD), and
+        `vibrational_frequencies` (cm^-1) with `ir_intensities` (km/mol). Pass them to
+        `rowan.broaden_spectrum` for the spectrum. Rotatory strengths are omitted when the
+        conformers differ in stereochemistry, since mixing enantiomers cancels the ECD signal.
         """
         return self._workflow.ensemble_properties
 
-    def get_boltzmann_weights(self, temperature: float = ENSEMBLE_TEMPERATURE) -> list[float]:
-        """Compute Boltzmann weights of the conformers from their energies.
+    @property
+    def boltzmann_weights(self) -> list[float]:
+        """Population of each conformer at the weighting temperature (sum to 1.0).
 
-        Args:
-            temperature: temperature in Kelvin
-
-        Returns:
-            weight of each conformer (sum to 1.0), ordered by energy
-
-        Raises:
-            ValueError: temperature is not positive or there are no conformers
+        From free energies when every conformer has frequencies, else from ground-state
+        energies. Empty for workflows run before weights were reported.
         """
-        return boltzmann_weights(list(self._workflow.energies), temperature)
+        return list(self._workflow.boltzmann_weights)
 
-    def get_ensemble_properties(
-        self, temperature: float = ENSEMBLE_TEMPERATURE
-    ) -> ConformerProperties:
-        """Boltzmann-weighted properties of the conformer ensemble.
-
-        Each property is averaged over the conformers that have it. The dipole is the
-        root-mean-square magnitude, and Mulliken charges are averaged per atom. Spectra are
-        stick spectra holding every conformer's lines with weighted intensities:
-        `excitation_energies` (Hartree) with `oscillator_strengths` (UV-vis) and
-        `rotatory_strengths` (ECD), and `vibrational_frequencies` (cm^-1) with
-        `ir_intensities` (km/mol). Pass them to `rowan.broaden_spectrum` for the averaged
-        spectrum. Rotatory strengths are omitted when the conformers differ in
-        stereochemistry, since mixing enantiomers cancels the ECD signal.
-
-        At 298.15 K this returns `ensemble_properties`, computed by Rowan. At other
-        temperatures it reweights the per-conformer values. When the ensemble has charges
-        or spectra, those are read from every conformer's calculation, which makes one API
-        call per conformer on first access.
-
-        Args:
-            temperature: temperature in Kelvin
-
-        Returns:
-            ensemble properties
-
-        Raises:
-            ValueError: temperature is not positive or there are no conformers
-        """
-        weights = self.get_boltzmann_weights(temperature)
-        reference = self._workflow.ensemble_properties
-        if temperature == ENSEMBLE_TEMPERATURE and reference is not None:
-            return reference
-
-        conformer_props = self._workflow.conformer_properties
-        if len(conformer_props) != len(weights):
-            conformer_props = [ConformerProperties()] * len(weights)
-
-        mean_square_dipole = _weighted_mean(
-            weights, [None if p.dipole is None else p.dipole**2 for p in conformer_props]
-        )
-        properties: dict[str, Any] = {
-            "solvent_accessible_surface_area": _weighted_mean(
-                weights, [p.solvent_accessible_surface_area for p in conformer_props]
-            ),
-            "polar_solvent_accessible_surface_area": _weighted_mean(
-                weights, [p.polar_solvent_accessible_surface_area for p in conformer_props]
-            ),
-            "radius_of_gyration": _weighted_mean(
-                weights, [p.radius_of_gyration for p in conformer_props]
-            ),
-            "dipole": None if mean_square_dipole is None else math.sqrt(mean_square_dipole),
-        }
-        if reference is not None and (
-            reference.mulliken_charges
-            or reference.excitation_energies
-            or reference.vibrational_frequencies
-        ):
-            molecules = self._final_molecules()
-            excitations, oscillator, rotatory = _pooled_excitations(
-                weights, molecules, include_rotatory=reference.rotatory_strengths is not None
-            )
-            frequencies, ir_intensities = _pooled_ir(weights, molecules)
-            properties |= {
-                "mulliken_charges": _weighted_mean_lists(
-                    weights, [None if m is None else m.mulliken_charges for m in molecules]
-                ),
-                "excitation_energies": excitations,
-                "oscillator_strengths": oscillator,
-                "rotatory_strengths": rotatory,
-                "vibrational_frequencies": frequencies,
-                "ir_intensities": ir_intensities,
-            }
-        return ConformerProperties(**properties)
-
-    def _final_molecules(self) -> list[stjames.Molecule | None]:
-        """Final molecule of each conformer's calculation, None where unavailable."""
-        molecules: list[stjames.Molecule | None] = []
-        for i in range(self.num_conformers):
-            try:
-                molecule = self.get_conformer(i).molecule
-            except ValueError:
-                molecule = None
-            molecules.append(None if molecule is None else molecule.to_stjames())
-        return molecules
+    @property
+    def weighting_temperature(self) -> float:
+        """Temperature of `boltzmann_weights` and `ensemble_properties` (K)."""
+        return self._workflow.weighting_temperature
 
     def get_conformers(self, n: int | None = None) -> list[Molecule]:
         """Fetch conformer molecules.
@@ -259,148 +180,6 @@ class ConformerSearchResult(WorkflowResult):
         if cache_key not in self._cache:
             self._cache[cache_key] = retrieve_calculation(uuid)
         return self._cache[cache_key]
-
-
-def _renormalized(weights: Sequence[float], present: Sequence[bool]) -> list[float] | None:
-    """Weights restricted to conformers where `present` holds, renormalized to sum to 1.
-
-    Args:
-        weights: Boltzmann weight of every conformer
-        present: whether each conformer has the property
-
-    Returns:
-        renormalized weights with zeros for absent conformers, or None if none is present
-
-    >>> _renormalized([0.5, 0.25, 0.25], [True, False, True])
-    [0.6666666666666666, 0.0, 0.3333333333333333]
-    """
-    total = sum(w for w, p in zip(weights, present, strict=True) if p)
-    if not total:
-        return None
-    return [w / total if p else 0.0 for w, p in zip(weights, present, strict=True)]
-
-
-def _weighted_mean(weights: Sequence[float], values: Sequence[float | None]) -> float | None:
-    """Weighted mean over the conformers that have a value.
-
-    Args:
-        weights: Boltzmann weight of every conformer
-        values: value of each conformer, None where missing
-
-    Returns:
-        weighted mean, or None if no conformer has a value
-
-    >>> _weighted_mean([0.75, 0.25], [1.0, None])
-    1.0
-    """
-    w = _renormalized(weights, [v is not None for v in values])
-    if w is None:
-        return None
-    return sum(wi * v for wi, v in zip(w, values, strict=True) if v is not None)
-
-
-def _weighted_mean_lists(
-    weights: Sequence[float], values: Sequence[Sequence[float] | None]
-) -> list[float] | None:
-    """Element-wise weighted mean of per-conformer lists over the conformers that have one.
-
-    Args:
-        weights: Boltzmann weight of every conformer
-        values: equal-length list of each conformer, None where missing
-
-    Returns:
-        weighted mean list, or None if no conformer has one
-
-    >>> [round(q, 6) for q in _weighted_mean_lists([0.75, 0.25], [[0.2, -0.2], [0.6, -0.6]])]
-    [0.3, -0.3]
-    """
-    w = _renormalized(weights, [v is not None for v in values])
-    if w is None:
-        return None
-    present = [(wi, v) for wi, v in zip(w, values, strict=True) if v is not None]
-    return [sum(wi * v[i] for wi, v in present) for i in range(len(present[0][1]))]
-
-
-def _pooled_excitations(
-    weights: Sequence[float],
-    molecules: Sequence[stjames.Molecule | None],
-    include_rotatory: bool,
-) -> tuple[list[float] | None, list[float] | None, list[float] | None]:
-    """Pool every conformer's excitations with weighted oscillator and rotatory strengths.
-
-    Args:
-        weights: Boltzmann weight of every conformer
-        molecules: final molecule of each conformer, None where unavailable
-        include_rotatory: whether to pool rotatory strengths
-
-    Returns:
-        (excitation energies in Hartree, weighted oscillator strengths, weighted rotatory
-        strengths in 1e-40 esu^2 cm^2); each None when unavailable. Rotatory strengths
-        require every conformer with excited states to have them
-    """
-    has_states = [
-        m is not None
-        and m.excited_state_energies is not None
-        and m.oscillator_strengths is not None
-        for m in molecules
-    ]
-    w = _renormalized(weights, has_states)
-    if w is None:
-        return None, None, None
-
-    energies: list[float] = []
-    oscillator: list[float] = []
-    rotatory: list[float] | None = [] if include_rotatory else None
-    for wi, m in zip(w, molecules, strict=True):
-        if m is None or m.excited_state_energies is None or m.oscillator_strengths is None:
-            continue
-        ground, *excited = m.excited_state_energies
-        energies += [e - ground for e in excited]
-        oscillator += [wi * f for f in m.oscillator_strengths[1:]]
-        if rotatory is not None:
-            if m.rotatory_strengths is None:
-                rotatory = None
-            else:
-                rotatory += [wi * r for r in m.rotatory_strengths[1:]]
-    return energies, oscillator, rotatory
-
-
-def _pooled_ir(
-    weights: Sequence[float], molecules: Sequence[stjames.Molecule | None]
-) -> tuple[list[float] | None, list[float] | None]:
-    """Pool every conformer's real IR lines with weighted intensities.
-
-    Conformers without IR intensities are excluded and the weights renormalized over the
-    rest; imaginary modes are dropped.
-
-    Args:
-        weights: Boltzmann weight of every conformer
-        molecules: final molecule of each conformer, None where unavailable
-
-    Returns:
-        (frequencies in cm^-1, weighted IR intensities in km/mol), or (None, None) when no
-        conformer has IR intensities
-    """
-    has_ir = [
-        m is not None
-        and bool(m.vibrational_modes)
-        and all(mode.ir_intensity is not None for mode in m.vibrational_modes or [])
-        for m in molecules
-    ]
-    w = _renormalized(weights, has_ir)
-    if w is None:
-        return None, None
-
-    frequencies: list[float] = []
-    intensities: list[float] = []
-    for wi, m, ok in zip(w, molecules, has_ir, strict=True):
-        if not ok or m is None:
-            continue
-        for mode in m.vibrational_modes or []:
-            if mode.frequency > 0 and mode.ir_intensity is not None:
-                frequencies.append(mode.frequency)
-                intensities.append(wi * mode.ir_intensity)
-    return frequencies, intensities
 
 
 _FINAL_METHOD_TO_MSO_RECIPE: dict[Method, tuple[Method, Method | None]] = {
@@ -487,6 +266,7 @@ def submit_conformer_search_workflow(
     solvent: SolventInput = None,
     transition_state: bool = False,
     frequencies: bool = False,
+    weighting_temperature: float = 298.15,
     multistage_opt_settings: MultiStageOptSettings | None = None,
     conformer_clustering_settings: ConformerClusteringSettings | None = None,
     initial_conformers: Sequence[StructureInput] | None = None,
@@ -530,6 +310,8 @@ def submit_conformer_search_workflow(
         frequencies: compute vibrational frequencies of each conformer at the optimization
             level, for the ensemble IR spectrum. Ignored if `multistage_opt_settings` is
             provided; set its `frequencies` instead
+        weighting_temperature: temperature for the conformer populations, in Kelvin. With
+            frequencies, populations use free energies at this temperature
         multistage_opt_settings: optimization stages and singlepoint settings
             for ranking conformers. When provided, takes precedence over
             `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
@@ -639,6 +421,7 @@ def submit_conformer_search_workflow(
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
         conformer_clustering_settings=conformer_clustering_settings,
+        weighting_temperature=weighting_temperature,
     )
 
     workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")

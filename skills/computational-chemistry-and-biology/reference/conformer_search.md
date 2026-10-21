@@ -29,26 +29,27 @@ best = result.get_conformers(1)[0]  # lowest-energy conformer, a rowan.Molecule
 
 ## Ensemble properties
 
-`sasa`, `polar_sasa`, `radii_of_gyration`, and `dipoles` give per-conformer values in energy order (`None` where a value could not be computed); `dipoles` are magnitudes about the center of mass, in Debye. `get_boltzmann_weights(temperature=298.15)` returns the conformer populations.
+`sasa`, `polar_sasa`, `radii_of_gyration`, and `dipoles` give per-conformer values in energy order (`None` where a value could not be computed); `dipoles` are magnitudes about the center of mass, in Debye. `boltzmann_weights` are the conformer populations at `weighting_temperature`, from free energies when every conformer has frequencies and from ground-state energies otherwise.
 
-`get_ensemble_properties(temperature=298.15)` returns a `rowan.ConformerProperties` Boltzmann-weighted over the conformers that have each value: SASA, polar SASA, Rg, the root-mean-square dipole, and per-atom Mulliken charges. When the run computed them, it also holds stick spectra with every conformer's lines and weighted intensities: `excitation_energies` (Hartree) with `oscillator_strengths` (UV-vis) and `rotatory_strengths` (ECD), and `vibrational_frequencies` (cm⁻¹) with `ir_intensities` (km/mol). At 298.15 K it returns Rowan's precomputed `ensemble_properties`; at other temperatures it reweights locally, fetching every conformer's calculation when the ensemble has charges or spectra.
+`ensemble_properties` is a `rowan.ConformerProperties` weighted by those populations over the conformers that have each value: SASA, polar SASA, Rg, the root-mean-square dipole, and per-atom Mulliken charges. When the run computed them, it also holds stick spectra with every conformer's lines, each intensity scaled by its conformer's population: `excitation_energies` (Hartree) with `oscillator_strengths` (UV-vis) and `rotatory_strengths` (ECD), and `vibrational_frequencies` (cm⁻¹) with `ir_intensities` (km/mol).
 
 ```python
 import rowan
 
-props = result.get_ensemble_properties(temperature=310)
+props = result.ensemble_properties
 energies_ev = [e * rowan.HARTREE_TO_EV for e in props.excitation_energies]
 grid = [2 + 0.01 * i for i in range(600)]  # eV
 uv_vis = rowan.broaden_spectrum(energies_ev, props.oscillator_strengths, grid, fwhm=0.3)
 ```
 
-Spectra need the matching calculations: set `frequencies=True` for IR, and give `multistage_opt_settings` a TDDFT `singlepoint_settings` (with `excited_state_settings=rowan.TDDFTSettings(...)`) for UV-vis and ECD. ECD is omitted when the conformers differ in stereochemistry, so give a SMILES with every stereocenter assigned. A TDDFT single point does not report dipoles or charges.
+Spectra need the matching calculations: set `frequencies=True` for IR, and give `multistage_opt_settings` a TDDFT `singlepoint_settings` (with `excited_state_settings=rowan.TDDFTSettings(...)`) for UV-vis and ECD. ECD is omitted when the conformers differ in stereochemistry, so give a SMILES with every stereocenter assigned. A TDDFT single point does not report dipoles or charges. The populations are fixed when the workflow runs; resubmit with another `weighting_temperature` for a different temperature.
 
 ## Settings
 
 - `final_method` (default `aimnet2_wb97md3`): method used to rank the final conformers.
 - `solvent` (default gas phase): implicit solvent; introspect `rowan.Solvent` for the available solvents.
-- `frequencies` (default `False`): compute vibrational frequencies of each conformer at the optimization level, for the ensemble IR spectrum.
+- `frequencies` (default `False`): compute vibrational frequencies of each conformer at the optimization level, for the ensemble IR spectrum and free-energy populations.
+- `weighting_temperature` (default 298.15 K): temperature for the conformer populations and their free-energy corrections.
 - `transition_state` (default `False`): optimize each conformer toward a transition state rather than a minimum. Start from a fully optimized transition state, not a guess and not a SMILES. Conformer generation will otherwise relax the transition state to a local minimum, so pass constraints in `conf_gen_settings` to hold the reacting atoms in place during generation; the post-generation TS optimizations then run without constraints.
 - `conf_gen_settings` (default none, currently resolves to OpenConf): override conformer generation. Pick and tune a generator by passing its settings object: `rowan.OpenConfSettings`, `rowan.ETKDGSettings`, `rowan.MonteCarloMultipleMinimumSettings` (MCMM), or `rowan.iMTDGCSettings` (iMTDGC). OpenConf (the default) is Rowan's conformer generator; ETKDG is a fast RDKit knowledge-based generator; iMTDGC runs CREST metadynamics for more thorough sampling of flexible molecules, at higher cost. Each has its own tuning fields; run `help()` on the one you want. `max_confs` is common to every generator and caps how many conformers are kept after generation.
 - `multistage_opt_settings` (default none): override the full optimization-and-ranking stack as a `MultiStageOptSettings`. When supplied, it takes precedence over `final_method`, `solvent`, and `transition_state`, so those are ignored. Omit it and set `final_method`/`solvent`/`transition_state` instead unless you need a stack they cannot express.
