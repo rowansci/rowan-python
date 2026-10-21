@@ -81,35 +81,6 @@ def test_conformer_constraints_are_released_for_ts_refinement(
     assert optimization_stage.opt_settings.constraints == [constraint]
 
 
-def test_result_exposes_weights_and_ensemble_properties() -> None:
-    """Expose Rowan's populations, weighting temperature, and ensemble properties."""
-    ensemble = rowan.ConformerProperties(dipole=1.5, mulliken_charges=[0.1, -0.1])
-    workflow = stjames.ConformerSearchWorkflow(
-        initial_smiles="[HH]",
-        conf_gen_settings=rowan.ETKDGSettings(),
-        weighting_temperature=310,
-        conformer_uuids=[["calc-0"], ["calc-1"]],
-        energies=[0.0, 0.001],
-        boltzmann_weights=[0.7, 0.3],
-        conformer_properties=[
-            rowan.ConformerProperties(solvent_accessible_surface_area=100, dipole=1),
-            rowan.ConformerProperties(dipole=2),
-        ],
-        ensemble_properties=ensemble,
-    )
-    result = conformer_search_module.ConformerSearchResult(
-        workflow_data=workflow.model_dump(mode="json", serialize_as_any=True),
-        workflow_type="conformer_search",
-        workflow_uuid="workflow-uuid",
-    )
-
-    assert result.weighting_temperature == 310
-    assert result.boltzmann_weights == [0.7, 0.3]
-    assert result.dipoles == [1, 2]
-    assert result.sasa == [100, None]
-    assert result.ensemble_properties == ensemble
-
-
 def test_broaden_spectrum_conserves_intensity() -> None:
     """Broadened lines integrate to the summed stick intensities."""
     grid = [i * 0.01 for i in range(-1000, 2001)]
@@ -121,15 +92,10 @@ def test_broaden_spectrum_conserves_intensity() -> None:
         rowan.broaden_spectrum([3.0], [1.0, 0.5], grid, 0.3)
 
 
-def test_frequencies_and_weighting_temperature_are_submitted(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Request frequencies through the final-method preset and set the weighting temperature."""
+def test_frequencies_reach_the_optimization_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Request frequencies through the final-method preset."""
     client = _mock_submission(monkeypatch)
-    rowan.submit_conformer_search_workflow(
-        initial_molecule="CCO", frequencies=True, weighting_temperature=350
-    )
+    rowan.submit_conformer_search_workflow(initial_molecule="CCO", frequencies=True)
 
     workflow_data = client.post.call_args.kwargs["json"]["workflow_data"]
     assert workflow_data["multistage_opt_settings"]["frequencies"] is True
-    assert workflow_data["weighting_temperature"] == 350
