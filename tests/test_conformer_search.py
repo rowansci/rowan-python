@@ -79,3 +79,23 @@ def test_conformer_constraints_are_released_for_ts_refinement(
         == []
     )
     assert optimization_stage.opt_settings.constraints == [constraint]
+
+
+def test_broaden_spectrum_conserves_intensity() -> None:
+    """Broadened lines integrate to the summed stick intensities."""
+    grid = [i * 0.01 for i in range(-1000, 2001)]
+    for lineshape in ("gaussian", "lorentzian"):
+        spectrum = rowan.broaden_spectrum([3.0, 5.0], [1.0, 0.5], grid, 0.3, lineshape)
+        assert sum(spectrum) * 0.01 == pytest.approx(1.5, rel=0.02)
+
+    with pytest.raises(ValueError, match="same length"):
+        rowan.broaden_spectrum([3.0], [1.0, 0.5], grid, 0.3)
+
+
+def test_frequencies_reach_the_optimization_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Request frequencies through the final-method preset."""
+    client = _mock_submission(monkeypatch)
+    rowan.submit_conformer_search_workflow(initial_molecule="CCO", frequencies=True)
+
+    workflow_data = client.post.call_args.kwargs["json"]["workflow_data"]
+    assert workflow_data["multistage_opt_settings"]["frequencies"] is True

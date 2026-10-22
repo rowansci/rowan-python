@@ -31,6 +31,8 @@ from .base import (
 )
 from .constants import to_relative_kcal
 
+ConformerProperties = stjames.ConformerProperties
+
 
 @register_result("conformer_search")
 class ConformerSearchResult(WorkflowResult):
@@ -72,21 +74,58 @@ class ConformerSearchResult(WorkflowResult):
         return to_relative_kcal(energies) if relative else energies
 
     @property
-    def radii_of_gyration(self) -> list[float]:
-        """Radius of gyration for each conformer (A)."""
+    def radii_of_gyration(self) -> list[float | None]:
+        """Radius of gyration for each conformer (A), None where it failed."""
         return [p.radius_of_gyration for p in self._workflow.conformer_properties]
 
     @property
-    def sasa(self) -> list[float]:
-        """Solvent accessible surface area for each conformer (A^2)."""
+    def sasa(self) -> list[float | None]:
+        """Solvent accessible surface area for each conformer (A^2), None where it failed."""
         return [p.solvent_accessible_surface_area for p in self._workflow.conformer_properties]
 
     @property
-    def polar_sasa(self) -> list[float]:
-        """Polar solvent accessible surface area for each conformer (A^2)."""
+    def polar_sasa(self) -> list[float | None]:
+        """Polar solvent accessible surface area for each conformer (A^2), None where it failed."""
         return [
             p.polar_solvent_accessible_surface_area for p in self._workflow.conformer_properties
         ]
+
+    @property
+    def dipoles(self) -> list[float | None]:
+        """Dipole moment magnitude about the center of mass for each conformer (Debye).
+
+        None where the method reports no dipole.
+        """
+        return [p.dipole for p in self._workflow.conformer_properties]
+
+    @property
+    def ensemble_properties(self) -> ConformerProperties | None:
+        """Ensemble properties weighted by `boltzmann_weights`.
+
+        Each property is averaged over the conformers that have it: SASA, polar SASA, Rg,
+        the root-mean-square dipole (Debye), and per-atom Mulliken charges. When the run
+        computed them, it also holds stick spectra with every conformer's lines, each
+        intensity scaled by its conformer's population: `excitation_energies` (Hartree) with
+        `oscillator_strengths` (UV-vis) and `rotatory_strengths` (ECD), and
+        `vibrational_frequencies` (cm^-1) with `ir_intensities` (km/mol). Pass them to
+        `rowan.broaden_spectrum` for the spectrum. Rotatory strengths are omitted when the
+        conformers differ in stereochemistry, since mixing enantiomers cancels the ECD signal.
+        """
+        return self._workflow.ensemble_properties
+
+    @property
+    def boltzmann_weights(self) -> list[float]:
+        """Population of each conformer at the weighting temperature (sum to 1.0).
+
+        From free energies when every conformer has frequencies, else from ground-state
+        energies. Empty for workflows run before weights were reported.
+        """
+        return list(self._workflow.boltzmann_weights)
+
+    @property
+    def weighting_temperature(self) -> float:
+        """Temperature of `boltzmann_weights` and `ensemble_properties` (K)."""
+        return self._workflow.weighting_temperature
 
     def get_conformers(self, n: int | None = None) -> list[Molecule]:
         """Fetch conformer molecules.
@@ -156,6 +195,7 @@ def _mso_for_final_method(
     final_method: Method,
     solvent: SolventInput = None,
     transition_state: bool = False,
+    frequencies: bool = False,
 ) -> MultiStageOptSettings:
     """Build optimization settings for the final method.
 
@@ -163,9 +203,9 @@ def _mso_for_final_method(
     without a named preset.
 
     `solvent` and `transition_state` are merged into each stage's `Settings`
-    when supplied; the named preset itself is independent of them (mirrors how
-    tinbergen's form keeps the preset dropdown separate from the solvent / TS
-    toggles).
+    when supplied, and `frequencies` runs on the optimization stage; the named
+    preset itself is independent of them (mirrors how tinbergen's form keeps the
+    preset dropdown separate from the solvent / TS toggles).
     """
     opt_method, sp_method = _FINAL_METHOD_TO_MSO_RECIPE.get(final_method, (final_method, None))
 
@@ -196,6 +236,7 @@ def _mso_for_final_method(
     return MultiStageOptSettings(
         optimization_settings=[opt_stage],
         singlepoint_settings=sp_stage,
+        frequencies=frequencies,
     )
 
 
@@ -224,6 +265,8 @@ def submit_conformer_search_workflow(
     final_method: Method | str = "aimnet2_wb97md3",
     solvent: SolventInput = None,
     transition_state: bool = False,
+    frequencies: bool = False,
+    weighting_temperature: float = 298.15,
     multistage_opt_settings: MultiStageOptSettings | None = None,
     conformer_clustering_settings: ConformerClusteringSettings | None = None,
     initial_conformers: Sequence[StructureInput] | None = None,
@@ -264,6 +307,11 @@ def submit_conformer_search_workflow(
             `multistage_opt_settings` is provided
         transition_state: whether to optimize the transition state. Ignored
             if `multistage_opt_settings` is provided
+        frequencies: compute vibrational frequencies of each conformer at the optimization
+            level, for the ensemble IR spectrum. Ignored if `multistage_opt_settings` is
+            provided; set its `frequencies` instead
+        weighting_temperature: temperature for the conformer populations, in Kelvin. With
+            frequencies, populations use free energies at this temperature
         multistage_opt_settings: optimization stages and singlepoint settings
             for ranking conformers. When provided, takes precedence over
             `final_method` / `solvent` / `transition_state`. When omitted, an MSO is
@@ -359,7 +407,10 @@ def submit_conformer_search_workflow(
         if isinstance(final_method, str):
             final_method = Method(final_method)
         multistage_opt_settings = _mso_for_final_method(
-            final_method, solvent=solvent, transition_state=transition_state
+            final_method,
+            solvent=solvent,
+            transition_state=transition_state,
+            frequencies=frequencies,
         )
     multistage_opt_settings = _release_ts_optimization_constraints(multistage_opt_settings)
 
@@ -370,6 +421,7 @@ def submit_conformer_search_workflow(
         multistage_opt_settings=multistage_opt_settings,
         conf_gen_settings=conf_gen_settings,
         conformer_clustering_settings=conformer_clustering_settings,
+        weighting_temperature=weighting_temperature,
     )
 
     workflow_data = workflow.model_dump(serialize_as_any=True, mode="json")
