@@ -8,7 +8,7 @@ from typing import Literal, Protocol
 from stjames.pdb import PDB
 
 from rowan.protein import Protein, retrieve_protein
-from rowan.utils import api_client, download_presigned_files
+from rowan.utils import api_client, download_file, download_presigned_files
 
 from .base import WorkflowResult
 
@@ -221,25 +221,50 @@ class _MolecularDynamicsResult(WorkflowResult):
         replicates: list[int],
         name: str | None = None,
         path: Path | str | None = None,
-    ) -> list[Path]:
-        """Download DCD trajectory files for selected replicates.
+    ) -> Path:
+        """Download DCD trajectory files for selected replicates as one `.tar.gz` archive.
+
+        Long trajectories can time out; use `download_trajectory_files` for those.
 
         Args:
             replicates: zero-based replicate indices
-            name: optional subdirectory of `path` to save the files in
+            name: archive filename without the `.tar.gz` extension
+            path: output directory; defaults to the current directory
+
+        Returns:
+            path to the downloaded `.tar.gz` archive
+
+        Raises:
+            httpx.HTTPStatusError: API request fails
+        """
+        directory = Path(path) if path is not None else Path.cwd()
+        file_path = directory / f"{name or 'trajectories'}.tar.gz"
+        return download_file(
+            file_path,
+            "POST",
+            f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
+            json=replicates,
+        )
+
+    def download_trajectory_files(
+        self,
+        replicates: list[int],
+        path: Path | str | None = None,
+    ) -> list[Path]:
+        """Download each selected replicate's DCD file directly from storage.
+
+        Args:
+            replicates: zero-based replicate indices
             path: output directory; defaults to the current directory
 
         Returns:
             paths to the downloaded `.dcd` files, one per replicate
 
         Raises:
-            httpx.HTTPStatusError: API request fails
+            httpx.HTTPStatusError: API or storage request fails
         """
-        directory = Path(path) if path is not None else Path.cwd()
-        if name is not None:
-            directory /= name
         return download_presigned_files(
-            directory,
+            Path(path) if path is not None else Path.cwd(),
             f"/trajectory/{self.workflow_uuid}/trajectory_dcd_urls",
             json=replicates,
         )

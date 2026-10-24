@@ -12,7 +12,7 @@ from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.protein import Protein
 from rowan.types import ProteinUUID
-from rowan.utils import api_client, download_presigned_files
+from rowan.utils import api_client, download_file, download_presigned_files
 
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
@@ -142,19 +142,20 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         name: str | None = None,
         *,
         leg: Literal["complex", "solvent"] = "complex",
-    ) -> list[Path]:
-        """Download DCD trajectory files for a specific perturbation edge.
+    ) -> Path:
+        """Download DCD trajectory files for a specific perturbation edge as one `.tar.gz` archive.
+
+        Long trajectories can time out; use `download_edge_trajectory_files` for those.
 
         Args:
             edge_index: index of the edge (0-based, matching `edges` order)
             lambda_vals: lambda values to download. Defaults to all windows
-            path: directory to save the files to. Defaults to current directory
-            name: subdirectory of `path` for the files.
-                Defaults to `edge_<index>[_<leg>]_trajectories`
+            path: directory to save the file to. Defaults to current directory
+            name: custom name for the tar.gz file (without extension)
             leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
-            paths to the downloaded `.dcd` files, one per lambda window
+            path to the downloaded tar.gz file
 
         Raises:
             IndexError: edge_index is out of range
@@ -164,14 +165,55 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         if edge_index < 0 or edge_index >= len(edges):
             raise IndexError(f"Edge index {edge_index} out of range (0-{len(edges) - 1})")
 
+        path = Path(path) if path is not None else Path.cwd()
+        path.mkdir(parents=True, exist_ok=True)
+
+        params: dict = {"edge_index": edge_index, "leg": leg}
+
         default_name = (
             f"edge_{edge_index}_trajectories"
             if leg == "complex"
             else f"edge_{edge_index}_{leg}_trajectories"
         )
-        directory = (Path(path) if path is not None else Path.cwd()) / (name or default_name)
+        file_name = f"{name or default_name}.tar.gz"
+        file_path = path / file_name
+        return download_file(
+            file_path,
+            "POST",
+            f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
+            params=params,
+            json=lambda_vals,
+        )
+
+    def download_edge_trajectory_files(
+        self,
+        edge_index: int,
+        lambda_vals: list[float] | None = None,
+        path: Path | str | None = None,
+        *,
+        leg: Literal["complex", "solvent"] = "complex",
+    ) -> list[Path]:
+        """Download each lambda window's DCD file for one edge directly from storage.
+
+        Args:
+            edge_index: index of the edge (0-based, matching `edges` order)
+            lambda_vals: lambda values to download. Defaults to all windows
+            path: directory to save the files to. Defaults to current directory
+            leg: thermodynamic leg whose trajectories should be downloaded
+
+        Returns:
+            paths to the downloaded `.dcd` files, one per lambda window
+
+        Raises:
+            IndexError: edge_index is out of range
+            httpx.HTTPStatusError: API or storage request fails
+        """
+        edges = self.edges
+        if edge_index < 0 or edge_index >= len(edges):
+            raise IndexError(f"Edge index {edge_index} out of range (0-{len(edges) - 1})")
+
         return download_presigned_files(
-            directory,
+            Path(path) if path is not None else Path.cwd(),
             f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcd_urls",
             params={"edge_index": edge_index, "leg": leg},
             json=lambda_vals,
@@ -182,7 +224,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         path: Path | str | None = None,
         *,
         leg: Literal["complex", "solvent"] = "complex",
-    ) -> list[list[Path]]:
+    ) -> list[Path]:
         """Download DCD trajectory files for all perturbation edges.
 
         Args:
@@ -190,13 +232,42 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
             leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
-            downloaded `.dcd` paths for each edge, in edge order
+            list of paths to the downloaded tar.gz files, one per edge
 
         Raises:
             httpx.HTTPStatusError: any API request fails
         """
         return [
             self.download_edge_trajectories(i, path=path, leg=leg) for i in range(len(self.edges))
+        ]
+
+    def download_all_trajectory_files(
+        self,
+        path: Path | str | None = None,
+        *,
+        leg: Literal["complex", "solvent"] = "complex",
+    ) -> list[Path]:
+        """Download every edge's DCD files directly from storage.
+
+        Files for each edge go in an `edge_<index>` subdirectory of `path`.
+
+        Args:
+            path: directory to save the files to. Defaults to current directory
+            leg: thermodynamic leg whose trajectories should be downloaded
+
+        Returns:
+            paths to all downloaded `.dcd` files, in edge order
+
+        Raises:
+            httpx.HTTPStatusError: any API or storage request fails
+        """
+        directory = Path(path) if path is not None else Path.cwd()
+        return [
+            file
+            for i in range(len(self.edges))
+            for file in self.download_edge_trajectory_files(
+                i, path=directory / f"edge_{i}", leg=leg
+            )
         ]
 
     @property
