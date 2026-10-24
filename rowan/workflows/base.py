@@ -19,7 +19,7 @@ from rowan.folder import Folder
 from rowan.molecule import Molecule as RowanMolecule
 from rowan.project import default_project, retrieve_project
 from rowan.types import SMILES, StructureInput
-from rowan.utils import api_client, download_file, get_project_uuid
+from rowan.utils import api_client, download_file, download_presigned_files, get_project_uuid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -649,8 +649,8 @@ Workflow:  {self.name}
 
         Args:
             replicates: list of replicate indices to download
-            name: optional custom name for the tar.gz file
-            path: directory to save the file to
+            name: optional subdirectory of `path` to save the files in
+            path: directory to save the files to
         """
         warnings.warn(
             "download_dcd_files() is deprecated. "
@@ -661,15 +661,12 @@ Workflow:  {self.name}
         if self.workflow_type != "pose_analysis_md":
             raise ValueError("This workflow is not a pose analysis molecular dynamics workflow.")
 
-        path = Path(path) if path is not None else Path.cwd()
-
-        path.mkdir(parents=True, exist_ok=True)
-
-        file_path = path / f"{name or self.name}.tar.gz"
-        download_file(
-            file_path,
-            "POST",
-            f"/trajectory/{self.uuid}/trajectory_dcds",
+        directory = Path(path) if path is not None else Path.cwd()
+        if name is not None:
+            directory /= name
+        download_presigned_files(
+            directory,
+            f"/trajectory/{self.uuid}/trajectory_dcd_urls",
             json=replicates,
         )
 

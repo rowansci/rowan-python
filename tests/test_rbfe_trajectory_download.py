@@ -17,22 +17,22 @@ class TrajectoryOptions(TypedDict, total=False):
 
 
 @pytest.mark.parametrize(
-    ("kwargs", "filename"),
+    ("kwargs", "directory"),
     [
-        ({}, "edge_0_trajectories.tar.gz"),
-        ({"leg": "solvent", "lambda_vals": [0.0, 1.0]}, "edge_0_solvent_trajectories.tar.gz"),
+        ({}, "edge_0_trajectories"),
+        ({"leg": "solvent", "lambda_vals": [0.0, 1.0]}, "edge_0_solvent_trajectories"),
     ],
 )
 def test_download_edge_trajectories(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     kwargs: TrajectoryOptions,
-    filename: str,
+    directory: str,
 ) -> None:
     """Preserve complex defaults and send solvent selections in the API request."""
-    expected = tmp_path / filename
+    expected = [tmp_path / directory / "a_b_lambda_0_0.dcd"]
     download = MagicMock(return_value=expected)
-    monkeypatch.setattr(rbfe, "download_file", download)
+    monkeypatch.setattr(rbfe, "download_presigned_files", download)
     result = MagicMock(
         spec=rbfe.RelativeBindingFreeEnergyPerturbationResult,
         edges=[object()],
@@ -45,9 +45,8 @@ def test_download_edge_trajectories(
 
     assert downloaded == expected
     download.assert_called_once_with(
-        expected,
-        "POST",
-        "/trajectory/workflow-uuid/rbfe_trajectory_dcds",
+        tmp_path / directory,
+        "/trajectory/workflow-uuid/rbfe_trajectory_dcd_urls",
         params={"edge_index": 0, "leg": kwargs.get("leg", "complex")},
         json=kwargs.get("lambda_vals"),
     )

@@ -12,7 +12,7 @@ from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.protein import Protein
 from rowan.types import ProteinUUID
-from rowan.utils import api_client, download_file
+from rowan.utils import api_client, download_presigned_files
 
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
@@ -142,18 +142,19 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         name: str | None = None,
         *,
         leg: Literal["complex", "solvent"] = "complex",
-    ) -> Path:
+    ) -> list[Path]:
         """Download DCD trajectory files for a specific perturbation edge.
 
         Args:
             edge_index: index of the edge (0-based, matching `edges` order)
             lambda_vals: lambda values to download. Defaults to all windows
-            path: directory to save the file to. Defaults to current directory
-            name: custom name for the tar.gz file (without extension)
+            path: directory to save the files to. Defaults to current directory
+            name: subdirectory of `path` for the files.
+                Defaults to `edge_<index>[_<leg>]_trajectories`
             leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
-            path to the downloaded tar.gz file
+            paths to the downloaded `.dcd` files, one per lambda window
 
         Raises:
             IndexError: edge_index is out of range
@@ -163,23 +164,16 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         if edge_index < 0 or edge_index >= len(edges):
             raise IndexError(f"Edge index {edge_index} out of range (0-{len(edges) - 1})")
 
-        path = Path(path) if path is not None else Path.cwd()
-        path.mkdir(parents=True, exist_ok=True)
-
-        params: dict = {"edge_index": edge_index, "leg": leg}
-
         default_name = (
             f"edge_{edge_index}_trajectories"
             if leg == "complex"
             else f"edge_{edge_index}_{leg}_trajectories"
         )
-        file_name = f"{name or default_name}.tar.gz"
-        file_path = path / file_name
-        return download_file(
-            file_path,
-            "POST",
-            f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcds",
-            params=params,
+        directory = (Path(path) if path is not None else Path.cwd()) / (name or default_name)
+        return download_presigned_files(
+            directory,
+            f"/trajectory/{self.workflow_uuid}/rbfe_trajectory_dcd_urls",
+            params={"edge_index": edge_index, "leg": leg},
             json=lambda_vals,
         )
 
@@ -188,7 +182,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
         path: Path | str | None = None,
         *,
         leg: Literal["complex", "solvent"] = "complex",
-    ) -> list[Path]:
+    ) -> list[list[Path]]:
         """Download DCD trajectory files for all perturbation edges.
 
         Args:
@@ -196,7 +190,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
             leg: thermodynamic leg whose trajectories should be downloaded
 
         Returns:
-            list of paths to the downloaded tar.gz files, one per edge
+            downloaded `.dcd` paths for each edge, in edge order
 
         Raises:
             httpx.HTTPStatusError: any API request fails

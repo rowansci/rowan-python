@@ -4,7 +4,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Generator, Literal
+from typing import Any, Callable, ContextManager, Generator, Literal
 
 import httpx
 import stjames
@@ -167,24 +167,14 @@ def api_client() -> Generator[httpx.Client, None, None]:
         yield client
 
 
-def download_file(
-    path: Path,
-    method: Literal["GET", "POST"],
-    url: str,
-    *,
-    params: dict[str, Any] | None = None,
-    json: Any = None,
-) -> Path:
-    """Stream an authenticated API response into one local file atomically."""
+def _stream_to_file(path: Path, stream: Callable[[], ContextManager[httpx.Response]]) -> Path:
+    """Write a streamed response into one local file atomically."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path: Path | None = None
     try:
         with NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as output:
             temporary_path = Path(output.name)
-            with (
-                api_client() as client,
-                client.stream(method, url, params=params, json=json) as response,
-            ):
+            with stream() as response:
                 response.raise_for_status()
                 for chunk in response.iter_bytes():
                     output.write(chunk)
@@ -194,6 +184,65 @@ def download_file(
             temporary_path.unlink(missing_ok=True)
         raise
     return path
+
+
+def download_file(
+    path: Path,
+    method: Literal["GET", "POST"],
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    json: Any = None,
+) -> Path:
+    """Stream an authenticated API response into one local file atomically."""
+
+    @contextmanager
+    def stream() -> Generator[httpx.Response, None, None]:
+        with (
+            api_client() as client,
+            client.stream(method, url, params=params, json=json) as response,
+        ):
+            yield response
+
+    return _stream_to_file(path, stream)
+
+
+def download_presigned_files(
+    directory: Path,
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    json: Any = None,
+) -> list[Path]:
+    """Fetch presigned download links from the API and stream each file into `directory`.
+
+    Links are short-lived, so an expired one is refreshed once before giving up.
+    """
+
+    def fetch_links() -> list[dict[str, str]]:
+        with api_client() as client:
+            return client.post(url, params=params, json=json).json()
+
+    def download(link: dict[str, str]) -> Path:
+        # Plain client: the API key must never be sent to S3.
+        @contextmanager
+        def stream() -> Generator[httpx.Response, None, None]:
+            with httpx.Client(timeout=httpx.Timeout(120, read=None)) as client:
+                with client.stream("GET", link["url"]) as response:
+                    yield response
+
+        return _stream_to_file(directory / Path(link["filename"]).name, stream)
+
+    links = fetch_links()
+    paths = []
+    for i, link in enumerate(links):
+        try:
+            paths.append(download(link))
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code != 403:
+                raise
+            paths.append(download(fetch_links()[i]))
+    return paths
 
 
 ATOMIC_NUMBER_TO_ATOMIC_SYMBOL = {
