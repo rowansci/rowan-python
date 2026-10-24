@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "3.2.2"
+version = "3.3.0"
 description = "Rowan Python Library"
 readme = "README.md"
 license = "MIT"
