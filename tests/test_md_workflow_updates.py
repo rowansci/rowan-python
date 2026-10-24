@@ -376,3 +376,26 @@ def test_medoid_structure_download_combines_frame_and_topology(
         "/trajectory/workflow-uuid/compressed_stream",
         params={"replicate": 0, "start_frame": 4, "num_frames": 1},
     )
+
+
+def test_md_trajectory_download_methods(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Keep the tar archive download and add per-file presigned downloads."""
+    archive = MagicMock(return_value=tmp_path / "trajectories.tar.gz")
+    files = MagicMock(return_value=[tmp_path / "md_trajectory_1.dcd"])
+    monkeypatch.setattr("rowan.workflows._molecular_dynamics.download_file", archive)
+    monkeypatch.setattr("rowan.workflows._molecular_dynamics.download_presigned_files", files)
+    result = MagicMock(spec=ProteinMDResult, workflow_uuid="workflow-uuid")
+
+    assert ProteinMDResult.download_trajectories(result, [0], path=tmp_path) == archive.return_value
+    assert (
+        ProteinMDResult.download_trajectory_files(result, [0], path=tmp_path) == files.return_value
+    )
+    archive.assert_called_once_with(
+        tmp_path / "trajectories.tar.gz",
+        "POST",
+        "/trajectory/workflow-uuid/trajectory_dcds",
+        json=[0],
+    )
+    files.assert_called_once_with(
+        tmp_path, "/trajectory/workflow-uuid/trajectory_dcd_urls", json=[0]
+    )

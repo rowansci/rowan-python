@@ -8,7 +8,7 @@ from typing import Literal, Protocol
 from stjames.pdb import PDB
 
 from rowan.protein import Protein, retrieve_protein
-from rowan.utils import api_client, download_file
+from rowan.utils import api_client, download_file, download_presigned_files
 
 from .base import WorkflowResult
 
@@ -222,7 +222,9 @@ class _MolecularDynamicsResult(WorkflowResult):
         name: str | None = None,
         path: Path | str | None = None,
     ) -> Path:
-        """Download DCD trajectory files for selected replicates.
+        """Download DCD trajectory files for selected replicates as one `.tar.gz` archive.
+
+        Long trajectories can time out; use `download_trajectory_files` for those.
 
         Args:
             replicates: zero-based replicate indices
@@ -241,6 +243,29 @@ class _MolecularDynamicsResult(WorkflowResult):
             file_path,
             "POST",
             f"/trajectory/{self.workflow_uuid}/trajectory_dcds",
+            json=replicates,
+        )
+
+    def download_trajectory_files(
+        self,
+        replicates: list[int],
+        path: Path | str | None = None,
+    ) -> list[Path]:
+        """Download each selected replicate's DCD file directly from storage.
+
+        Args:
+            replicates: zero-based replicate indices
+            path: output directory; defaults to the current directory
+
+        Returns:
+            paths to the downloaded `.dcd` files, one per replicate
+
+        Raises:
+            httpx.HTTPStatusError: API or storage request fails
+        """
+        return download_presigned_files(
+            Path(path) if path is not None else Path.cwd(),
+            f"/trajectory/{self.workflow_uuid}/trajectory_dcd_urls",
             json=replicates,
         )
 
