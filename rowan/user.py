@@ -60,7 +60,6 @@ class User(BaseModel):
         email: email of the user
         firstname: first name of the user
         lastname: last name of the user
-        weekly_credits: weekly credits of the user
         credits: credits of the user
         billing_name: billing name of the user
         billing_address: billing address of the user
@@ -79,7 +78,6 @@ class User(BaseModel):
     email: str
     firstname: str | None = None
     lastname: str | None = None
-    weekly_credits: float | None = None
     credits: float | None = None
     billing_name: str | None = None
     billing_address: str | dict | None = None
@@ -124,7 +122,7 @@ class User(BaseModel):
         Returns:
             string showing available credits
         """
-        individual_credits = f"Weekly Credits: {self.weekly_credits}\nCredits: {self.credits}"
+        individual_credits = f"Credits: {self.credits}"
         if self.organization is not None:
             return (
                 individual_credits
