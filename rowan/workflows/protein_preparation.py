@@ -71,6 +71,7 @@ def submit_protein_preparation_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    retain_noncanonical_residues: bool = False,
 ) -> Workflow[ProteinPreparationResult]:
     """Submit a protein-preparation workflow to the API.
 
@@ -97,6 +98,8 @@ def submit_protein_preparation_workflow(
         max_credits: maximum credits for the workflow
         webhook_url: URL that Rowan will POST to when the workflow completes
         is_draft: save as a draft without starting execution
+        retain_noncanonical_residues: preserve modified polymer residues such as SEP/TPO/PTR;
+            False replaces them with their unmodified parent residues
 
     Returns:
         workflow object representing the submitted workflow
@@ -119,6 +122,7 @@ def submit_protein_preparation_workflow(
         protonation_method=protonation_method,
         pH=pH,
         retain_protonation=retain_protonation,
+        retain_noncanonical_residues=retain_noncanonical_residues,
         retain_non_polymer=(dict(retain_non_polymer) if retain_non_polymer is not None else None),
     )
 

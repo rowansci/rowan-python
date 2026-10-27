@@ -53,6 +53,7 @@ print(prepared_protein_uuid)
 - `protonation_method` (default `"openmm"`): use `"openmm"`, `"protonate_utils"`, or `"propka_3"` to add hydrogens.
 - `pH` (default `7.4`): pH used to assign protonation states.
 - `retain_protonation` (default `True`): retain existing protonation states where possible.
+- `retain_noncanonical_residues` (default `False`): preserve modified polymer residues such as phosphorylated SEP/TPO/PTR. When `False`, replace them with their unmodified parent residues. Use OpenMM or PROPKA 3 protonation when retaining phosphorylated residues.
 - `retain_non_polymer` (default `{"NA": None, "CL": None, "MG": None}`): non-polymer residues to preserve, keyed by residue name or 0-based residue index. Map ligands and other non-ion residues to their SMILES for parameterization. Known ions and waters may map to `None`. Pass `None` to remove all non-polymer residues.
 
 Example retaining a ligand and a structural water:
