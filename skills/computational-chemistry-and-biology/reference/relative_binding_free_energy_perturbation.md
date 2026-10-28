@@ -6,6 +6,7 @@ A completed RBFE graph and a prepared protein.
 
 - `graph_result`: a `RelativeBindingFreeEnergyGraphResult` from the RBFE graph workflow, which turns a congeneric ligand series into the graph of ligand pairs FEP transforms between.
 - `protein`: any stored `rowan.Protein` or protein UUID. Upload your own PDB with `rowan.upload_protein(name, path)`, or get one from the PDB with `rowan.create_protein_from_pdb_id(pdb_code, name=..., project_uuid=...)`. Protein preparation is recommended before RBFE; when chaining from it, passing `prepared_protein_uuid` avoids fetching structure data solely for submission.
+- `small_molecules` (default `None`): fixed cofactors present in the prepared protein, mapped from residue names or zero-based indices among all residues ordered by lowest atom ID to SMILES, for example `{"EDO": "OCCO"}`. Known ions and waters may map to `None` to use existing residue templates. These molecules are included in complex simulations rather than treated as candidate ligands.
 
 This workflow runs FEP simulations along the graph edges to predict relative binding free energies across the ligand series.
 
@@ -71,7 +72,7 @@ The `tmd_settings` profile is the intended interface: it sets sensible defaults 
 - `legs` (default all): which thermodynamic-cycle legs to run, a subset of `vacuum`, `solvent`, `complex`.
 - `save_trajectories` (default `False`): save DCD trajectories.
 - `trajectory_save_interval` (default `1000`): when saving trajectories, save a frame every N production frames.
-- `validate_forcefield` (default `True`): validate protein forcefield compatibility before submitting.
+- `validate_forcefield` (default `True`): validate protein forcefield compatibility before submitting, excluding cofactors supplied with SMILES. Template-backed ions and waters are still checked.
 
 ### Advanced sampling parameters
 

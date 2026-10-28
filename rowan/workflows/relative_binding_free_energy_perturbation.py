@@ -352,6 +352,8 @@ def submit_relative_binding_free_energy_perturbation_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    *,
+    small_molecules: dict[str | int, str | None] | None = None,
 ) -> Workflow[RelativeBindingFreeEnergyPerturbationResult]:
     """Submits a relative binding free energy perturbation (RBFE) workflow to the API.
 
@@ -388,13 +390,16 @@ def submit_relative_binding_free_energy_perturbation_workflow(
         save_trajectories: whether to save DCD trajectories
         trajectory_save_interval: save every Nth frame when saving trajectories
         validate_forcefield: validate protein forcefield
-            compatibility before submitting
+            compatibility before submitting, excluding cofactors supplied with SMILES
         name: name of the workflow
         folder_uuid: UUID of the folder to place the workflow in
         folder: destination folder
         max_credits: maximum credits for the workflow
         webhook_url: URL that Rowan will POST to when the workflow completes
         is_draft: save as a draft without starting execution
+        small_molecules: fixed cofactors in the prepared protein, keyed by residue name
+            or zero-based index among all residues ordered by lowest atom ID, and mapped
+            to SMILES. Known ions and waters may map to None to use existing residue templates
 
     Returns:
         submitted workflow
@@ -409,9 +414,6 @@ def submit_relative_binding_free_energy_perturbation_workflow(
         folder_uuid = folder.uuid
 
     protein_uuid = protein.uuid if isinstance(protein, Protein) else protein
-
-    if validate_forcefield:
-        Protein(uuid=protein_uuid).validate_protein_forcefield()
 
     if graph_result.graph is None:
         raise ValueError("RBFEGraphResult has no graph - has the workflow completed successfully?")
@@ -446,8 +448,19 @@ def submit_relative_binding_free_energy_perturbation_workflow(
         graph=graph_result.graph,
         target=protein_uuid,
         protein=protein_uuid,
+        small_molecules=small_molecules,
         settings=settings,
     )
+
+    if validate_forcefield:
+        exclude_residues = [
+            residue
+            for residue, smiles in (workflow.small_molecules or {}).items()
+            if smiles is not None
+        ]
+        Protein(uuid=protein_uuid).validate_protein_forcefield(
+            exclude_residues=exclude_residues or None
+        )
 
     data = {
         "workflow_type": "relative_binding_free_energy_perturbation",
