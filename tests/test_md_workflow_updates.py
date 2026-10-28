@@ -109,6 +109,48 @@ def test_protein_md_uses_new_defaults_and_forcefields(monkeypatch: pytest.Monkey
     assert payload["hydrogen_mass"] == 3
     assert payload["water_buffer"] == 8
     assert payload["analysis_interval_ps"] == 100
+    assert payload["restraints"] == []
+
+
+def test_protein_md_serializes_atom_and_residue_restraints(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Preserve atom references, residue references, and restraint parameters in the API payload."""
+    client = _mock_submission(monkeypatch, protein_md_module)
+    residue = rowan.ResidueRef("polymer", "A", "A.10")
+    atom = rowan.ResidueAtomRef(residue, "CA")
+    rowan.submit_protein_md_workflow(
+        "protein-uuid",
+        restraints=[
+            rowan.MDRestraints(
+                restraint_type=rowan.RestraintType.POSITION,
+                selections=[atom],
+                force_constant=5,
+            ),
+            rowan.MDRestraints(
+                restraint_type=rowan.RestraintType.DISTANCE,
+                selections=[residue, rowan.ResidueRef("non_polymer", "B.101")],
+                force_constant=2,
+                target=8,
+                flat_bottom_range=1,
+            ),
+        ],
+        validate_forcefield=False,
+    )
+    payload = client.post.call_args.kwargs["json"]["workflow_data"]
+    assert payload["restraints"] == [
+        {
+            "restraint_type": "position",
+            "selections": [[["polymer", "A", "A.10"], "CA"]],
+            "force_constant": 5,
+            "flat_bottom_range": 0,
+        },
+        {
+            "restraint_type": "distance",
+            "selections": [["polymer", "A", "A.10"], ["non_polymer", "B.101", None]],
+            "force_constant": 2,
+            "target": 8,
+            "flat_bottom_range": 1,
+        },
+    ]
 
 
 def test_protein_md_exposes_binder_and_representative_structure_results(

@@ -73,7 +73,7 @@ dedicated reference, in which case trust MCP discovery or the installed SDK for 
 - **Pose-analysis MD**: run MD on a docked protein-ligand complex to test pose stability. See [reference/pose_analysis_md.md](reference/pose_analysis_md.md).
 - **Protein binder design**: generate, filter, and rank protein binders for a given protein or small-molecule target. See [reference/protein_binder_design.md](reference/protein_binder_design.md).
 - **Protein co-folding**: predict 3D structures of biomolecules and protein-ligand complexes using AlphaFold 3-style models (Boltz-2, Chai-1r, Boltz-1). See [reference/protein_cofolding.md](reference/protein_cofolding.md).
-- **Protein MD**: run a molecular dynamics simulation on a protein. See [reference/protein_md.md](reference/protein_md.md).
+- **Protein MD**: run a molecular dynamics simulation on a protein, with optional atom or residue restraints. See [reference/protein_md.md](reference/protein_md.md).
 - **Protein preparation**: repair missing protein structure, cap termini, assign protonation states, and retain selected non-polymer residues before docking, MD, or FEP. See [reference/protein_preparation.md](reference/protein_preparation.md).
 - **RBFE graph**: take a list of ligands and generate the graph used by the relative binding free energy perturbation (FEP) workflow. Its edges are the ligand pairs FEP transforms between. See [reference/rbfe_graph.md](reference/rbfe_graph.md).
 - **Redox potential**: predict a molecule's reduction or oxidation potential. See [reference/redox_potential.md](reference/redox_potential.md).

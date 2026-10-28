@@ -8,6 +8,7 @@ from stjames import (
     Binder,
     GreedyClusteringSettings,
     KMeansClusteringSettings,
+    MDRestraints,
     ProteinForceField,
     WaterForceField,
 )
@@ -158,6 +159,7 @@ def submit_protein_md_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    restraints: list[MDRestraints] | None = None,
 ) -> Workflow[ProteinMDResult]:
     """Submits a Protein Molecular Dynamics (MD) workflow to the API.
 
@@ -192,7 +194,7 @@ def submit_protein_md_workflow(
             (one small molecule → heavy-atom RMSD; one binder chain → backbone N/CA/C/O RMSD);
             it is empty for multi-molecule, multi-chain, or combined chain+molecule binders
         protein_restraint_cutoff: cutoff distance from the binder past which Cα atoms are
-            harmonically restrained, in Å; None disables restraints
+            harmonically restrained, in Å; None disables these Cα restraints
         protein_restraint_constant: force constant for Cα backbone restraints, in kcal/mol/Å²
         analysis_interval_ps: interval at which to compute per-frame SASA and polar SASA
             (default 100), in ps. None disables those analyses
@@ -210,6 +212,9 @@ def submit_protein_md_workflow(
         max_credits: maximum credits for the workflow
         webhook_url: URL that Rowan will POST to when the workflow completes
         is_draft: save as a draft without starting execution
+        restraints: atom or whole-residue restraints applied during minimization,
+            equilibration, and production. Atoms use their positions; residues use
+            their centers of mass. Cannot be combined with protein_restraint_cutoff
 
     Returns:
         submitted workflow
@@ -256,6 +261,7 @@ def submit_protein_md_workflow(
         binder=binder,
         protein_restraint_cutoff=protein_restraint_cutoff,
         protein_restraint_constant=protein_restraint_constant,
+        restraints=restraints or [],
         analysis_interval_ps=analysis_interval_ps,
         clustering=clustering,
     )

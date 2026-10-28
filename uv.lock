@@ -1181,7 +1181,7 @@ requires-dist = [
     { name = "nest-asyncio" },
     { name = "rdkit" },
     { name = "setuptools" },
-    { name = "stjames", specifier = ">=0.0.289" },
+    { name = "stjames", specifier = ">=0.0.290" },
 ]
 
 [package.metadata.requires-dev]
@@ -1275,7 +1275,7 @@ wheels = [
 
 [[package]]
 name = "stjames"
-version = "0.0.289"
+version = "0.0.290"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "more-itertools" },
@@ -1283,9 +1283,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/fd/8a26e27cd610b1f8f613529abd8c5eb62abe93cbe098c250cebc89119776/stjames-0.0.289.tar.gz", hash = "sha256:3fc6c33624a235e22fec83994b290202221e57b3b7cb45e20a788be906d8105e", size = 1444955, upload-time = "2026-10-21T21:48:28.335Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/8c/74e75b10dc773685bb335d36f954ce0b55e207cec9b29063b115dd8a0b9c/stjames-0.0.290.tar.gz", hash = "sha256:bc3569e83b0bc86e7d1af996aaa7a267ae8714bb9a960db684cae46047871a87", size = 1446791, upload-time = "2026-10-22T15:21:42.263Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/2c/eb38c516b0b1361e6515268e61733beead0350baa3889cd7b33d3b6e9b25/stjames-0.0.289-py3-none-any.whl", hash = "sha256:0f3c7f0b979156c9c3ecad1a287150fe835ee1b6c285335284112c6936528c74", size = 201458, upload-time = "2026-10-21T21:48:26.996Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/28/77860a49425356bfd1dc7202a3dadfb87b3ffc850a0c84e70a371865e2f6/stjames-0.0.290-py3-none-any.whl", hash = "sha256:fbb5ac3bae58cf8afa3b3d6dbadffc0711874d664c17c27ed76c8aa69595d086", size = 203031, upload-time = "2026-10-22T15:21:40.6Z" },
 ]
 
 [[package]]

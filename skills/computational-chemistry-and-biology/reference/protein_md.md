@@ -59,11 +59,53 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 - `num_solvent_to_save` (default `None`): when `save_solvent=True` and a `binder` is set, keep only the N solvent molecules nearest the binder each frame; `None` keeps all solvent. Ignored when `save_solvent=False` or no `binder`.
 - `small_molecules` (default `None`): SMILES keyed by non-polymer residue name or zero-based index. Use this to parameterize one or more small molecules in the protein; a `None` value selects an existing residue template.
 - `binder` (default `None`): a `rowan.Binder` specifying the binder within the complex — protein/peptide chains (`chain_ids`), small molecules (`small_molecule_residues`, identified by residue-name string or 0-based non-polymer residue index), or both. Enables per-frame MM/GBSA and binder RMSD analyses (see result fields).
-- `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
+- `restraints` (default `None`): a list of `rowan.MDRestraints` for atoms or whole residues. See [restraints](#restraints).
+- `protein_restraint_cutoff` (default `None`): distance from the binder past which Cα atoms are harmonically restrained, in angstrom; `None` disables these Cα restraints. Useful for keeping the binding site mobile while stabilizing the rest of the protein.
 - `protein_restraint_constant` (default `100`): force constant for the Cα backbone restraints, in kcal/mol/Å².
 - `analysis_interval_ps` (default `100`): interval at which to compute per-frame SASA and polar SASA, in ps. `None` disables those analyses.
 - `clustering` (default `None`): cluster the trajectory frames. `None` disables it; pass `rowan.KMeansClusteringSettings(num_clusters=10)` or `rowan.GreedyClusteringSettings(cutoff_angstrom=2.0)`.
 - `validate_forcefield` (default `True`): validate the protein forcefield before submitting; raises early if the protein cannot be parameterized or has clashing residues. When a `binder` is set, its small molecules are excluded from validation, whether keyed by residue name or by non-polymer index, since they are parameterized from their SMILES. Cofactors, metals, and glycans outside the binder are still validated — set `False` to skip the pre-check entirely.
+
+## Restraints
+
+Pass a list of `rowan.MDRestraints`; each adds one spring during minimization, equilibration, and production. Leave `protein_restraint_cutoff=None`.
+
+Select an atom with `rowan.ResidueAtomRef` or a whole residue with `rowan.ResidueRef`. Atoms use their positions; residues use their centers of mass, including added hydrogens. Use separate restraints to hold atoms individually.
+
+| `restraint_type` | Selections | `target` |
+| --- | --- | --- |
+| `"position"` | 1 | Omit; uses the position before minimization |
+| `"distance"` | 2 | ≥ 0 Å |
+| `"angle"` | 3 | 0–180°; middle selection is the vertex |
+| `"dihedral"` | 4 | -180–180°; selections in torsion order |
+
+- `force_constant`: positive, in kcal/mol/Å² for position/distance or kcal/mol/rad² for angle/dihedral.
+- `flat_bottom_range` (default `0`): ± tolerance in Å or degrees; for position, allowed displacement from the starting point. `target=8, flat_bottom_range=1` permits 7–9 Å. Dihedrals wrap: 179° and -179° differ by 2°.
+- Use IDs and atom names from the submitted protein. For non-polymer residues, use e.g. `rowan.ResidueRef("non_polymer", "B.101")`.
+
+```python
+residue_10 = rowan.ResidueRef("polymer", "A", "A.10")
+residue_25 = rowan.ResidueRef("polymer", "A", "A.25")
+ca_10 = rowan.ResidueAtomRef(residue_10, "CA")
+
+restraints = [
+    rowan.MDRestraints(restraint_type="position", selections=[ca_10], force_constant=5),
+    rowan.MDRestraints(
+        restraint_type="distance",
+        selections=[residue_10, residue_25],
+        force_constant=5,
+        target=8,
+        flat_bottom_range=1,
+    ),
+]
+wf = rowan.submit_protein_md_workflow(
+    protein=prepared_protein_uuid,
+    restraints=restraints,
+    num_trajectories=1,
+    simulation_time_ns=1,
+    folder=folder,
+)
+```
 
 ## Result fields
 

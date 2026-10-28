@@ -28,6 +28,7 @@ from stjames import (
     iMTDSettings,
     InducedFitSettings,
     KMeansClusteringSettings,
+    MDRestraints,
     Method,
     Mode,
     MSAFormat,
@@ -42,6 +43,7 @@ from stjames import (
     ProteinSequence,
     ProteinForceField,
     ResidueModification,
+    RestraintType,
     RNASequence,
     ScanSettings,
     Settings,
@@ -68,7 +70,7 @@ from stjames.engine_compatibility import (
     METHOD_ENGINES,
     get_supported_corrections,
 )
-from stjames.pdb import ResidueRef
+from stjames.pdb import ResidueAtomRef, ResidueRef
 from stjames.optimization.band_method import NEBSettings
 from stjames.optimization.interpolation import Interpolation
 from stjames.optimization.string_method import FSMSettings, StringMethodSettings
