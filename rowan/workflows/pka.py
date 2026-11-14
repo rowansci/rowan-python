@@ -200,9 +200,10 @@ def submit_pka_workflow(
 
     if method == "chemprop_nevolianis2025":
         protonate_elements = []
-    else:
-        protonate_elements = protonate_elements or [7]
-    deprotonate_elements = deprotonate_elements or [7, 8, 16]
+    elif protonate_elements is None:
+        protonate_elements = [7]
+    if deprotonate_elements is None:
+        deprotonate_elements = [7, 8, 16]
 
     workflow = stjames.pKaWorkflow(
         initial_molecule=mol_dict,

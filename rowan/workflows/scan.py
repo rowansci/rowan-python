@@ -68,19 +68,20 @@ class ScanResult(WorkflowResult):
         scan_settings = self._workflow.scan_settings
         scan_settings_2d = getattr(self._workflow, "scan_settings_2d", None) or []
         calculations = self.scan_points
+        energies_by_uuid = {calc.uuid: calc.energy for calc in calculations}
+        energies: list[float | None] = [
+            energies_by_uuid[uuid] if uuid else None for uuid in self._workflow.scan_points
+        ]
 
         # Compute coordinate values
         if scan_settings_2d or not scan_settings or len(scan_settings) == 0:
-            coords = [float(i) for i in range(len(calculations))]
+            coords = [float(i) for i in range(len(energies))]
         else:
             settings = scan_settings[0]
             start = settings.start
             stop = settings.stop
             num = settings.num
             coords = [start + i * (stop - start) / (num - 1) for i in range(num)]
-
-        # Get energies
-        energies: list[float | None] = [calc.energy for calc in calculations]
 
         if relative:
             valid_energies = [e for e in energies if e is not None]
