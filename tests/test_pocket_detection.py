@@ -1,16 +1,16 @@
 """Tests for pocket detection submission and mixed-solvent MD results."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from stjames.workflows import pocket_detection as stjames_pocket_detection
 
 import rowan
 from rowan.workflows import pocket_detection
 from rowan.workflows.pocket_detection import MixMDPocketDiagnostics, PocketDetectionResult
+from stjames.workflows import pocket_detection as stjames_pocket_detection
 
 REFERENCE_UUID = "3f2b8c1e-5d4a-4b6e-9f10-2a3b4c5d6e7f"
 MAP_UUID = "8a7b6c5d-4e3f-4a1b-9c8d-7e6f5a4b3c2d"
@@ -37,7 +37,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     }
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(pocket_detection, "api_client", mock_api_client)

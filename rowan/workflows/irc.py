@@ -3,6 +3,10 @@
 import warnings
 from typing import Any
 
+from rowan.calculation import Calculation, retrieve_calculation
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.utils import api_client
 from stjames import (
     BasisSet,
     Engine,
@@ -12,11 +16,6 @@ from stjames import (
     Settings,
     SolventSettings,
 )
-
-from rowan.calculation import Calculation, retrieve_calculation
-from rowan.folder import Folder
-from rowan.molecule import Molecule
-from rowan.utils import api_client
 
 from .base import (
     StructureInput,

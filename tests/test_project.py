@@ -1,6 +1,6 @@
 """Tests for project retrieval."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
@@ -14,7 +14,7 @@ def _mock_client(monkeypatch: pytest.MonkeyPatch, payload: dict[str, str] | None
     client.get.return_value.json.return_value = payload
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(project_module, "api_client", mock_api_client)

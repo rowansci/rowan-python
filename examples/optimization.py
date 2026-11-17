@@ -14,6 +14,7 @@ workflow = rowan.submit_basic_calculation_workflow(
     method="GFN2-xTB",
     tasks=["optimize", "frequencies"],
     engine="xtb",
+    thermochem_settings=rowan.ThermochemistrySettings(temperature=310),
     name="Water Optimization",
     folder=folder,
 )
@@ -34,3 +35,5 @@ for mol in mols:
 print("\nFrequencies:")
 for vibrational_mode in mols[-1].vibrational_modes or []:
     print(f"{vibrational_mode.frequency:8.3f}")
+
+print(f"\nGibbs free energy correction at 310 K: {mols[-1].thermal_free_energy_correction} H")

@@ -3,7 +3,6 @@
 from typing import Literal
 
 import stjames
-
 from rowan.calculation import Calculation, retrieve_calculation
 from rowan.folder import Folder
 from rowan.molecule import Molecule

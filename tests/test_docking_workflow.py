@@ -1,14 +1,14 @@
 """Tests for the docking workflow, focused on induced-fit docking support."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
 
 import rowan
+import stjames
 from rowan.workflows import docking as docking_module
 
 
@@ -71,7 +71,7 @@ def test_submit_docking_workflow_posts_induced_fit_settings(
     }
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(docking_module, "api_client", mock_api_client)

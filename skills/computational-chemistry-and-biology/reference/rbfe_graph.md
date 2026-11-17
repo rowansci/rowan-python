@@ -75,9 +75,10 @@ When enabled, an oversized edge `a -> b` is split `a -> I -> b`, where `I` recom
 
 - `mode` (default `greedy`): graph construction strategy, `greedy` or `star_map`.
 - `hub_compound_id` (default none): the ligand name used as the hub when `mode="star_map"`.
-- `greedy_scoring` (default `best`): how greedy mode scores candidate edges. `best` tries both other methods and keeps the graph with the fewest dummy atoms; `jaccard` scores by Jaccard distance of the atom-mapping overlap; `dummy_atoms` scores by the number of dummy atoms.
+- `greedy_scoring` (default `dummy_atoms` with SepTop planning enabled, otherwise `best`): how greedy mode scores candidate edges. `best` tries both other methods and keeps the graph with the fewest dummy atoms; `jaccard` scores by Jaccard distance of the atom-mapping overlap; `dummy_atoms` scores by the number of dummy atoms.
 - `greedy_k_min_cut` (default `3`): minimum number of edges per ligand node, i.e. how many edges can be cut before the graph disconnects. Higher gives a more redundant, robust graph at the cost of more FEP edges to run. Must be greater than 0.
-- `refine_cutoff` (default none): optional maximum-common-substructure similarity cutoff for graph refinement.
+- `refine_cutoff` (default none): optional maximum-common-substructure similarity cutoff for single-topology graph refinement.
+- `separated_topology_planning_score` (default `"auto"`): flat cost for same-charge SepTop candidates during greedy graph construction. The SDK sends `25` for greedy submissions with omitted or `dummy_atoms` scoring and intermediate generation disabled; otherwise it sends `None`. Pass `None` to explicitly disable mixed planning; numeric values require greedy mode and dummy-atom scoring. Single topology wins ties; SepTop can also connect unmapped pairs. Topology selection precedes intermediate generation. Saved workflows with a missing or null value remain disabled.
 - `seed_graph` (default none): the RBFE graph from a prior run (`result.graph`) to extend. Its edges (and their computed results) are preserved; only edges for newly added ligands are built. See "Extending a graph with new ligands" above.
 - `generate_intermediate_ligands` (default `False`): split oversized edges by generating synthetic R-group intermediates. See "R-group intermediates" above.
 - `intermediate_max_dummy_atoms` (default `25`): dummy-atom threshold above which an edge is considered for splitting, and the ceiling both resulting legs must fall under.
@@ -85,6 +86,6 @@ When enabled, an oversized edge `a -> b` is split `a -> I -> b`, where `I` recom
 
 ## Result fields
 
-- `edges`: the graph edges (the ligand pairs FEP will transform between); each has `ligand_a`, `ligand_b`, and `score`.
+- `edges`: the graph edges (the ligand pairs FEP will transform between); each has `ligand_a`, `ligand_b`, `topology`, and `score`. The score is a dummy-atom count before optional mapping refinement for single topology, or the flat planning cost for SepTop.
 - `graph`: the constructed `RBFEGraph`; pass back as `seed_graph` to extend the study.
 - `ligands`: the input ligand molecules, keyed by identifier.

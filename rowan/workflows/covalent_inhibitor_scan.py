@@ -1,114 +1,127 @@
-"""Covalent inhibitor scan workflow - reactivity profile via ML/MM umbrella sampling."""
+"""Covalent reaction free-energy surfaces from ML/MM umbrella sampling."""
 
-from dataclasses import dataclass
-
-import stjames
+from pathlib import Path
 
 from rowan.folder import Folder
-from rowan.molecule import Molecule
-from rowan.protein import Protein
+from rowan.protein import Protein, retrieve_protein
 from rowan.types import ProteinUUID
-from rowan.utils import api_client
-
-from .base import Workflow, WorkflowResult, register_result
-
-
-@dataclass(frozen=True, slots=True)
-class CovalentInhibitorScanPoint:
-    """A point on the covalent inhibitor reactivity profile.
-
-    Attributes:
-        index: window index
-        distance: bias center for this window, in Å
-        force_constant: harmonic bias force constant, in kcal/mol/Å²
-        free_energy: unbiased free energy at this center, in kcal/mol, if available
-        mean_distance: mean sampled reactive-bond distance, in Å, if available
-        n_samples: production samples contributing to this window
-        molecule: final sampled geometry of the model region, if available
-    """
-
-    index: int
-    distance: float
-    force_constant: float
-    free_energy: float | None
-    mean_distance: float | None
-    n_samples: int
-    molecule: Molecule | None
-
-
-@dataclass(frozen=True, slots=True)
-class UmbrellaSamplingConvergence:
-    """Diagnostics saying whether a reactivity profile can be trusted.
-
-    Attributes:
-        overlap_matrix: MBAR overlap between windows; low overlap between neighbours
-            means the profile should not be trusted
-        round_trips: replicas that traversed the whole coordinate and returned
-        worst_pair_acceptance: lowest exchange acceptance over neighbouring pairs, if available
-    """
-
-    overlap_matrix: tuple[tuple[float, ...], ...]
-    round_trips: int
-    worst_pair_acceptance: float | None
+from rowan.utils import api_client, download_presigned_files
+from rowan.workflows.base import Message, Workflow, WorkflowResult, parse_messages, register_result
+from stjames.workflows.covalent_inhibitor_scan import (
+    CovalentInhibitorScanSettings,
+    CovalentInhibitorScanWorkflow,
+    FreeEnergySurface,
+    ResolvedScanSetup,
+    SurfaceDiagnostics,
+    UmbrellaWindowResult,
+)
 
 
 @register_result("covalent_inhibitor_scan")
 class CovalentInhibitorScanResult(WorkflowResult):
-    """Result from a covalent inhibitor scan workflow."""
+    """Reaction-coordinate windows, free-energy surface, and sampling diagnostics."""
 
-    _stjames_class = stjames.CovalentInhibitorScanWorkflow
+    _stjames_class = CovalentInhibitorScanWorkflow
 
     def __repr__(self) -> str:
-        return f"<CovalentInhibitorScanResult points={len(self.points)} barrier={self.barrier}>"
-
-    @property
-    def points(self) -> list[CovalentInhibitorScanPoint]:
-        """Points on the reactivity profile, in window-index order."""
-        return [
-            CovalentInhibitorScanPoint(
-                index=p.index,
-                distance=p.distance,
-                force_constant=p.force_constant,
-                free_energy=p.free_energy,
-                mean_distance=p.mean_distance,
-                n_samples=p.n_samples,
-                molecule=Molecule.from_stjames(p.molecule) if p.molecule is not None else None,
-            )
-            for p in self._workflow.points
-        ]
-
-    @property
-    def convergence(self) -> UmbrellaSamplingConvergence | None:
-        """Sampling convergence diagnostics, when available."""
-        c = self._workflow.convergence
-        if c is None:
-            return None
-        return UmbrellaSamplingConvergence(
-            overlap_matrix=tuple(tuple(row) for row in c.overlap_matrix),
-            round_trips=c.round_trips,
-            worst_pair_acceptance=c.worst_pair_acceptance,
+        return (
+            f"<CovalentInhibitorScanResult windows={len(self.windows)} "
+            f"surface={self.surface is not None}>"
         )
 
     @property
-    def barrier(self) -> float | None:
-        """Activation free energy for addition, in kcal/mol, or None without an interior maximum."""
-        return self._workflow.barrier
+    def settings(self) -> CovalentInhibitorScanSettings:
+        """Submitted reactive region, scan coordinates, and simulation settings."""
+        return self._workflow.settings
 
-    def get_energies(self) -> list[tuple[float, float | None]]:
-        """Get bias-center distances paired with free energies.
+    @property
+    def resolved_setup(self) -> ResolvedScanSetup | None:
+        """Input atom mappings, capped bonds, and reactive-region charge and spin."""
+        return getattr(self._workflow, "resolved_setup", None)
+
+    @property
+    def windows(self) -> list[UmbrellaWindowResult]:
+        """Window results in submitted grid order, including snapshots and DCD references.
+
+        Each `molecule` is a `rowan.StJamesMolecule`, or `None`. Use
+        `rowan.Molecule.from_stjames` for SDK molecule helpers.
+        """
+        return getattr(self._workflow, "windows", [])
+
+    @property
+    def surface(self) -> FreeEnergySurface | None:
+        """Free energies and uncertainties, in kcal/mol.
+
+        Flattened arrays follow ascending bin edges, with the last axis varying fastest.
+        Missing cell values remain `None`.
+        """
+        return getattr(self._workflow, "surface", None)
+
+    @property
+    def surface_diagnostics(self) -> SurfaceDiagnostics | None:
+        """Exchange counts and MBAR overlap in window-list order."""
+        return getattr(self._workflow, "surface_diagnostics", None)
+
+    @property
+    def topology_uuid(self) -> str | None:
+        """UUID of the shared solvated topology in DCD atom order."""
+        return getattr(self._workflow, "topology_uuid", None)
+
+    @property
+    def messages(self) -> list[Message]:
+        """Workflow warnings, errors, and informational messages."""
+        return parse_messages(getattr(self._workflow, "messages", None))
+
+    def get_topology(self) -> Protein | None:
+        """Fetch and cache the full-system topology shared by the window trajectories.
 
         Returns:
-            list of (distance, free_energy) tuples, in Å and kcal/mol respectively
+            Topology protein, or `None` before a topology is saved
         """
-        return [(p.distance, p.free_energy) for p in self.points]
+        if not (uuid := self.topology_uuid):
+            return None
+        if "topology" not in self._cache:
+            self._cache["topology"] = retrieve_protein(uuid, workflow_uuid=self.workflow_uuid)
+        return self._cache["topology"]
+
+    def download_trajectory_files(
+        self,
+        window_indices: list[int],
+        path: Path | str | None = None,
+    ) -> list[Path]:
+        """Download full-system DCDs for selected positions in `windows`.
+
+        Args:
+            window_indices: zero-based positions in the window list, not grid index tuples
+            path: output directory, defaulting to the current directory
+
+        Returns:
+            Downloaded paths in requested window order
+
+        Raises:
+            IndexError: window position is negative or outside the window list
+            ValueError: selected window has no saved trajectory
+            httpx.HTTPStatusError: API or storage request fails
+        """
+        windows = self.windows
+        for index in window_indices:
+            if index < 0 or index >= len(windows):
+                raise IndexError(f"Window position {index} out of range (0-{len(windows) - 1})")
+            if windows[index].trajectory is None:
+                raise ValueError(f"Window at position {index} has no saved trajectory")
+        if not window_indices:
+            return []
+        return download_presigned_files(
+            Path(path) if path is not None else Path.cwd(),
+            f"/trajectory/{self.workflow_uuid}/trajectory_dcd_urls",
+            json=window_indices,
+        )
 
 
 def submit_covalent_inhibitor_scan_workflow(
     protein: Protein | ProteinUUID,
-    protein_reactive_atom_index: int,
-    ligand_reactive_atom_index: int,
     reactant_smiles: str,
-    settings: stjames.UmbrellaSamplingScanSettings | None = None,
+    settings: CovalentInhibitorScanSettings,
     name: str = "Covalent Inhibitor Scan Workflow",
     folder_uuid: str | None = None,
     folder: Folder | None = None,
@@ -116,25 +129,19 @@ def submit_covalent_inhibitor_scan_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
 ) -> Workflow[CovalentInhibitorScanResult]:
-    """Submits a covalent inhibitor scan workflow to the API.
+    """Submit a covalent reaction free-energy scan in a prepared protein–ligand complex.
 
     Warning:
         This workflow is in beta. Its interface and behavior may change.
 
-    Seeds windows along the reactive bond distance with a steered pull, samples them via
-    ML/MM umbrella sampling, and combines them into a free energy profile.
+    One or two distance coordinates, including weighted distance combinations, define
+    the umbrella grid. Atom references use residue identifiers and input atom names.
+    The caller supplies explicit hydrogens and the intended protonation and connectivity.
 
     Args:
-        protein: covalently docked protein-ligand complex (protein plus the ligand as a
-            non-polymer residue). Can be a UUID or a Protein object
-        protein_reactive_atom_index: 0-based index of the reacting protein atom, in PDB
-            record order
-        ligand_reactive_atom_index: 0-based index of the reacting ligand atom, in PDB
-            record order
-        reactant_smiles: SMILES of the neutral reactant ligand, used to rebuild the ligand
-            as a separate non-covalent molecule at the MM level
-        settings: settings controlling the umbrella sampling. Defaults to
-            `stjames.UmbrellaSamplingScanSettings()`
+        protein: prepared protein–ligand complex, as a UUID or Protein object
+        reactant_smiles: ligand reactant SMILES matching the intended protonation and connectivity
+        settings: ligand selection, reactive region, scan coordinates, and simulation settings
         name: name of the workflow
         folder_uuid: UUID of the folder to place the workflow in
         folder: destination folder
@@ -143,9 +150,10 @@ def submit_covalent_inhibitor_scan_workflow(
         is_draft: save as a draft without starting execution
 
     Returns:
-        submitted workflow
+        Submitted workflow with typed surface results
 
     Raises:
+        ValueError: both folder arguments are supplied, or the shared schema rejects the inputs
         httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
@@ -155,14 +163,11 @@ def submit_covalent_inhibitor_scan_workflow(
     if isinstance(protein, Protein):
         protein = protein.uuid
 
-    workflow = stjames.CovalentInhibitorScanWorkflow(
+    workflow = CovalentInhibitorScanWorkflow(
         protein=protein,
-        protein_reactive_atom_index=protein_reactive_atom_index,
-        ligand_reactive_atom_index=ligand_reactive_atom_index,
         reactant_smiles=reactant_smiles,
-        settings=settings or stjames.UmbrellaSamplingScanSettings(),
+        settings=settings,
     )
-
     data = {
         "workflow_type": "covalent_inhibitor_scan",
         "workflow_data": workflow.model_dump(serialize_as_any=True, mode="json"),

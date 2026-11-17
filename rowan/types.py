@@ -2,8 +2,9 @@
 
 from typing import TypeAlias
 
-import stjames
 from rdkit import Chem
+
+import stjames
 
 from .molecule import Molecule as RowanMolecule
 

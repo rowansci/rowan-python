@@ -5,10 +5,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal, Protocol
 
-from stjames.pdb import PDB
-
 from rowan.protein import Protein, retrieve_protein
 from rowan.utils import api_client, download_file, download_presigned_files
+from stjames.pdb import PDB
 
 from .base import WorkflowResult
 

@@ -5,9 +5,10 @@ import random
 from pathlib import Path
 from typing import Any, Self
 
-import stjames
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 from rdkit import Chem
+
+import stjames
 
 
 class Molecule(BaseModel):
@@ -244,7 +245,7 @@ class Molecule(BaseModel):
 
     @property
     def thermal_free_energy_correction(self) -> float | None:
-        """Thermal correction to Gibbs free energy (Hartree)."""
+        """Thermal correction to Gibbs free energy at the thermochemistry temperature (Hartree)."""
         return self._stjames.thermal_free_energy_corr
 
     @property

@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-import stjames
 from pydantic import ValidationError
-from stjames import Engine, Method
 
+import stjames
 from rowan.folder import Folder
 from rowan.utils import api_client
+from stjames import Engine, Method
 
 from .base import (
     StructureInput,

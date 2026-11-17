@@ -19,7 +19,8 @@ md_workflow = rowan.submit_protein_md_workflow(
     protein=prepared_protein_uuid,
     num_trajectories=1,
     simulation_time_ns=1,
-    name="MD on crambin",
+    enhanced_sampling=rowan.REST2Settings(),
+    name="REST2 on crambin",
     folder=folder,
 )
 

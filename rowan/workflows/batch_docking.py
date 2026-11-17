@@ -1,7 +1,6 @@
 """Batch docking workflow - high-throughput molecular docking."""
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.protein import Protein
 from rowan.types import ProteinUUID

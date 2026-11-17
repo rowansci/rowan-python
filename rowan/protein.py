@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Literal, Self
 
 from pydantic import BaseModel, PrivateAttr
+
 from stjames.pdb import PDB, pdb_object_to_mmcif_filestring, pdb_object_to_pdb_filestring
 
 from .project import Project

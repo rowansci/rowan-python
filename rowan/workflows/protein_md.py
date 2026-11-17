@@ -4,19 +4,20 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 import stjames
+from rowan.folder import Folder
+from rowan.protein import Protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
 from stjames import (
     Binder,
     GreedyClusteringSettings,
     KMeansClusteringSettings,
     MDRestraints,
     ProteinForceField,
+    REST2Settings,
+    SolventModel,
     WaterForceField,
 )
-
-from rowan.folder import Folder
-from rowan.protein import Protein
-from rowan.types import ProteinUUID
-from rowan.utils import api_client
 
 from ._molecular_dynamics import _MolecularDynamicsResult
 from .base import Message, Workflow, parse_messages, register_result
@@ -134,15 +135,15 @@ def submit_protein_md_workflow(
     water_ff: WaterForceField | str = WaterForceField.TIP3P,
     equilibration_time_ns: float = 0.5,
     simulation_time_ns: float = 10,
-    temperature: float = 300,
-    pressure_atm: float = 1.0,
+    temperature: float = 298.15,
+    pressure_atm: float | None = 1.0,
     langevin_timescale_ps: float = 1.0,
     timestep_fs: float = 4,
     hydrogen_mass: float = 3,
     constrain_hydrogens: bool = True,
-    nonbonded_cutoff: float = 8.0,
+    nonbonded_cutoff: float | None = 8.0,
     ionic_strength_M: float = 0.0,
-    water_buffer: float = 8.0,
+    water_buffer: float | None = 8.0,
     frame_save_interval_ps: float = 10.0,
     save_solvent: bool = False,
     num_solvent_to_save: int | None = None,
@@ -160,27 +161,28 @@ def submit_protein_md_workflow(
     webhook_url: str | None = None,
     is_draft: bool = False,
     restraints: list[MDRestraints] | None = None,
+    enhanced_sampling: REST2Settings | None = None,
+    implicit_solvent: SolventModel | str | None = None,
 ) -> Workflow[ProteinMDResult]:
     """Submits a Protein Molecular Dynamics (MD) workflow to the API.
 
     Args:
-        protein: *holo* protein on which MD will be run.
-            Can be input as a UUID or a Protein object
+        protein: protein or protein–ligand complex, as a UUID or Protein object
         num_trajectories: number of trajectories to run
         small_molecule_ff: force field for small molecules
         protein_ff: force field for proteins
-        water_ff: force field for water
+        water_ff: force field for water and ions
         equilibration_time_ns: how long to equilibrate trajectories for, in ns
         simulation_time_ns: how long to run trajectories for, in ns
         temperature: temperature, in K
-        pressure_atm: pressure, in atm
+        pressure_atm: explicit-solvent pressure, in atm
         langevin_timescale_ps: timescale for the Langevin integrator, in ps^-1
         timestep_fs: timestep, in femtoseconds
         hydrogen_mass: hydrogen mass, in atomic mass units
         constrain_hydrogens: whether or not to use SHAKE to freeze bonds to hydrogen
-        nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald, in A
+        nonbonded_cutoff: nonbonded cutoff for particle-mesh Ewald in explicit solvent, in Å
         ionic_strength_M: ionic strength of the solution, in M (molar)
-        water_buffer: amount of water to add around the protein, in A
+        water_buffer: amount of explicit water to add around the protein, in Å
         frame_save_interval_ps: how often to save a frame to the trajectory, in ps; must be
             an integer multiple of timestep_fs
         save_solvent: whether solvent should be saved
@@ -215,11 +217,19 @@ def submit_protein_md_workflow(
         restraints: atom or whole-residue restraints applied during minimization,
             equilibration, and production. Atoms use their positions; residues use
             their centers of mass. Cannot be combined with protein_restraint_cutoff
+        enhanced_sampling: optional whole-solute REST2 settings. Each trajectory is an
+            independent exchange ensemble; simulation_time_ns applies to every replica.
+            Only physical-state frames are saved, for equilibrium structural sampling.
+            Their sequence does not represent continuous dynamics for kinetics
+        implicit_solvent: `gbn2` for nonperiodic implicit water. None uses explicit water.
+            Requires pressure_atm, nonbonded_cutoff, and water_buffer to be None.
+            Incompatible with REST2 and solvent-saving options
 
     Returns:
         submitted workflow
 
     Raises:
+        ValueError: incompatible workflow settings
         httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
@@ -242,6 +252,7 @@ def submit_protein_md_workflow(
         small_molecule_ff=small_molecule_ff,
         protein_ff=protein_ff,
         water_ff=water_ff,
+        implicit_solvent=implicit_solvent,
         num_trajectories=num_trajectories,
         equilibration_time_ns=equilibration_time_ns,
         simulation_time_ns=simulation_time_ns,
@@ -264,6 +275,7 @@ def submit_protein_md_workflow(
         restraints=restraints or [],
         analysis_interval_ps=analysis_interval_ps,
         clustering=clustering,
+        enhanced_sampling=enhanced_sampling,
     )
 
     data = {

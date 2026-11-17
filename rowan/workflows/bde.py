@@ -4,13 +4,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import stjames
+from rowan.folder import Folder
+from rowan.utils import api_client
 from stjames import MultiStageOptSettings
 from stjames.workflows.bde import find_AB_bonds as _find_AB_bonds
 from stjames.workflows.bde import find_CH_bonds as _find_CH_bonds
 from stjames.workflows.bde import find_CX_bonds as _find_CX_bonds
-
-from rowan.folder import Folder
-from rowan.utils import api_client
 
 from .base import (
     StructureInput,

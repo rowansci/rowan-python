@@ -54,9 +54,7 @@ from .binding_affinity import (
 )
 from .conformer_search import ConformerSearchResult, submit_conformer_search_workflow
 from .covalent_inhibitor_scan import (
-    CovalentInhibitorScanPoint,
     CovalentInhibitorScanResult,
-    UmbrellaSamplingConvergence,
     submit_covalent_inhibitor_scan_workflow,
 )
 from .descriptors import DescriptorsResult, submit_descriptors_workflow

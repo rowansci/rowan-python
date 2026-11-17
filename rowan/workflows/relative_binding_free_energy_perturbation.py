@@ -6,13 +6,12 @@ from pathlib import Path
 from typing import Literal
 
 import stjames
-from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, TMDRBFESettings
-
 from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.protein import Protein
 from rowan.types import ProteinUUID
 from rowan.utils import api_client, download_file, download_presigned_files
+from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph, TMDRBFESettings
 
 from .base import Workflow, WorkflowResult, molecule_to_dict, register_result
 from .rbfe_graph import RelativeBindingFreeEnergyGraphEdge, RelativeBindingFreeEnergyGraphResult
@@ -117,6 +116,7 @@ class RelativeBindingFreeEnergyPerturbationResult(WorkflowResult):
             RelativeBindingFreeEnergyGraphEdge(
                 ligand_a=e.ligand_a,
                 ligand_b=e.ligand_b,
+                topology=e.topology,
                 core=e.core,
                 score=e.score,
                 ddg=e.ddg,

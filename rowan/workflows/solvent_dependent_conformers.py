@@ -4,11 +4,10 @@ from dataclasses import dataclass
 from typing import Literal
 
 import stjames
-from stjames import ConformerGenSettingsUnion
-
 from rowan.folder import Folder
 from rowan.types import SMILES
 from rowan.utils import api_client
+from stjames import ConformerGenSettingsUnion
 
 from .base import (
     Solvent,

@@ -4,17 +4,16 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 import stjames
+from rowan.folder import Folder
+from rowan.protein import Protein
+from rowan.types import ProteinUUID
+from rowan.utils import api_client
 from stjames import (
     GreedyClusteringSettings,
     KMeansClusteringSettings,
     ProteinForceField,
     WaterForceField,
 )
-
-from rowan.folder import Folder
-from rowan.protein import Protein
-from rowan.types import ProteinUUID
-from rowan.utils import api_client
 
 from ._molecular_dynamics import _MolecularDynamicsResult
 from .base import Message, Workflow, parse_messages, register_result

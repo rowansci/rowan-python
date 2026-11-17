@@ -1,15 +1,15 @@
 """Tests for binding affinity workflow submission."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
 from pydantic import ValidationError
 
 import rowan
+import stjames
 from rowan.workflows import binding_affinity as binding_affinity_module
 from rowan.workflows.binding_affinity import BindingAffinityResult, BindingAffinityScore
 
@@ -38,7 +38,7 @@ def _mock_client(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     client_mock.post.return_value.json.return_value = _workflow_response()
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client_mock
 
     monkeypatch.setattr(binding_affinity_module, "api_client", mock_api_client)

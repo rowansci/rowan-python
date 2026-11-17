@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import stjames
-
 from rowan.calculation import Calculation, retrieve_calculation
 from rowan.folder import Folder
 from rowan.utils import api_client

@@ -5,11 +5,10 @@ from dataclasses import dataclass
 from typing import Literal
 
 import stjames
-from stjames.workflows.relative_binding_free_energy_perturbation import RBFEGraph
-
 from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.utils import api_client
+from stjames.workflows.relative_binding_free_energy_perturbation import RBFEEdgeTopology, RBFEGraph
 
 from .base import (
     StructureInput,
@@ -40,6 +39,7 @@ class RelativeBindingFreeEnergyGraphEdge:
     failed: bool = False
     complex_lambda_values: list[float] | None = None
     complex_overlap_matrix: list[list[float]] | None = None
+    topology: RBFEEdgeTopology = RBFEEdgeTopology.SINGLE_TOPOLOGY
 
 
 @register_result("rbfe_graph")
@@ -73,6 +73,7 @@ class RelativeBindingFreeEnergyGraphResult(WorkflowResult):
             RelativeBindingFreeEnergyGraphEdge(
                 ligand_a=e.ligand_a,
                 ligand_b=e.ligand_b,
+                topology=e.topology,
                 core=e.core,
                 score=e.score,
                 ddg=e.ddg,
@@ -95,7 +96,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     ligands: Mapping[str, StructureInput],
     mode: Literal["greedy", "star_map"] = "greedy",
     hub_compound_id: str | None = None,
-    greedy_scoring: Literal["best", "jaccard", "dummy_atoms"] = "best",
+    greedy_scoring: Literal["best", "jaccard", "dummy_atoms"] | None = None,
     greedy_k_min_cut: int = 3,
     refine_cutoff: float | None = None,
     seed_graph: RBFEGraph | None = None,
@@ -108,6 +109,7 @@ def submit_relative_binding_free_energy_graph_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    separated_topology_planning_score: float | Literal["auto"] | None = "auto",
 ) -> Workflow[RelativeBindingFreeEnergyGraphResult]:
     """Submits an RBFE graph construction workflow to the API.
 
@@ -119,7 +121,8 @@ def submit_relative_binding_free_energy_graph_workflow(
         mode: graph construction strategy: `"greedy"` or `"star_map"`
         hub_compound_id: ligand identifier for the hub when `mode="star_map"`
         greedy_scoring: edge scoring heuristic for greedy mode:
-            `"best"`, `"jaccard"`, or `"dummy_atoms"`
+            `"best"`, `"jaccard"`, or `"dummy_atoms"`. Defaults to `"dummy_atoms"`
+            with SepTop planning enabled, otherwise `"best"`
         greedy_k_min_cut: target edge-connectivity for greedy augmentation. Must be > 0
         refine_cutoff: optional MCS similarity cutoff for graph refinement
         seed_graph: RBFE graph from a prior run to extend, as returned by a
@@ -137,6 +140,9 @@ def submit_relative_binding_free_energy_graph_workflow(
         max_credits: maximum credits for the workflow
         webhook_url: URL that Rowan will POST to when the workflow completes
         is_draft: save as a draft without starting execution
+        separated_topology_planning_score: flat SepTop cost compared with dummy-atom counts.
+            `"auto"` uses `25` for greedy mode with default/dummy-atom scoring and no
+            intermediates; otherwise off. `None` explicitly disables SepTop planning
 
     Returns:
         submitted workflow
@@ -176,6 +182,17 @@ def submit_relative_binding_free_energy_graph_workflow(
             f"perturbations are not supported. Found multiple charge states ({summary})."
         )
 
+    if separated_topology_planning_score == "auto":
+        separated_topology_planning_score = (
+            25
+            if mode == "greedy"
+            and greedy_scoring in (None, "dummy_atoms")
+            and not generate_intermediate_ligands
+            else None
+        )
+    if greedy_scoring is None:
+        greedy_scoring = "dummy_atoms" if separated_topology_planning_score is not None else "best"
+
     workflow = stjames.RBFEGraphWorkflow(
         ligands=ligands_dict,
         mode=mode,
@@ -187,6 +204,7 @@ def submit_relative_binding_free_energy_graph_workflow(
         generate_intermediate_ligands=generate_intermediate_ligands,
         intermediate_max_dummy_atoms=intermediate_max_dummy_atoms,
         intermediate_min_dummy_atom_improvement=intermediate_min_dummy_atom_improvement,
+        separated_topology_planning_score=separated_topology_planning_score,
     )
 
     data = {

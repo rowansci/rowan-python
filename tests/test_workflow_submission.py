@@ -6,8 +6,8 @@ from typing import Any
 from unittest.mock import MagicMock, call
 
 import pytest
-import stjames
 
+import stjames
 from rowan.workflows import base
 from rowan.workflows import solubility as solubility_module
 

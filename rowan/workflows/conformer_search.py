@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import Any
 
 import stjames
-
 from rowan.calculation import Calculation, retrieve_calculation
 from rowan.folder import Folder
 from rowan.molecule import Molecule

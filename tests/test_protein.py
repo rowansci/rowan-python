@@ -4,9 +4,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 from rowan.protein import Protein
+from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 
 def test_get_atom_index_delegates_to_pdb() -> None:

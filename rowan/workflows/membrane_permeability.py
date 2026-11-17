@@ -3,7 +3,6 @@
 from typing import Any, Literal
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.utils import api_client
 

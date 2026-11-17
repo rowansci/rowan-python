@@ -7,9 +7,9 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Callable, ContextManager, Generator, Literal
 
 import httpx
-import stjames
 
 import rowan
+import stjames
 
 from .constants import API_URL
 

@@ -21,12 +21,17 @@ folder = rowan.get_folder("examples")
 protein = rowan.create_protein_from_pdb_id("1CRN", name="crambin")
 preparation_workflow = rowan.submit_protein_preparation_workflow(
     protein=protein.uuid,
+    add_missing_method="pdbfixer",
     folder=folder,
 )
 prepared_protein_uuid = preparation_workflow.result().prepared_protein_uuid
 
 wf = rowan.submit_protein_md_workflow(
     protein=prepared_protein_uuid,
+    implicit_solvent="gbn2",
+    pressure_atm=None,
+    nonbonded_cutoff=None,
+    water_buffer=None,
     num_trajectories=1,  # example uses 1 for speed; default 4
     simulation_time_ns=1,  # example uses 1 for speed; default 10
     folder=folder,
@@ -39,13 +44,15 @@ result.download_trajectories([0], path=".")  # save DCD trajectory files
 
 ## Settings
 
+- `implicit_solvent` (default `None`): `"gbn2"` for nonperiodic implicit water. Set `pressure_atm`, `nonbonded_cutoff`, and `water_buffer` to `None`. REST2 and solvent-saving options are incompatible. Omit for explicit water.
 - `num_trajectories` (default `4`): number of independent trajectories (replicates) to run. More replicates improve conformational sampling; reduce for a quick, cheaper run.
 - `small_molecule_ff` (default `off_sage_2_3_0`): force field for small molecules in the structure. `mango_1_0_0` generates ligand-specific parameters using machine learning. OpenFF Sage 2.0.0, 2.2.1, and 2.3.0 are also available.
 - `protein_ff` (default `rowan.ProteinForceField.FF14SB`): force field for the protein. Pass a `rowan.ProteinForceField` value.
 - `water_ff` (default `rowan.WaterForceField.TIP3P`): force field for water. Pass a `rowan.WaterForceField` value compatible with the protein force field.
 - `equilibration_time_ns` (default `0.5`): equilibration time per trajectory, in nanoseconds.
 - `simulation_time_ns` (default `10`): production simulation time per trajectory, in nanoseconds.
-- `temperature` (default `300`): temperature, in kelvin.
+- `temperature` (default `298.15`): temperature, in kelvin.
+- `enhanced_sampling` (default `None`): pass `rowan.REST2Settings()` for whole-solute REST2. The default ladder spans 298.15–450 K across eight states, with exchanges every 1 ps. Custom `effective_temperatures` must start at `temperature`. Each trajectory is an independent exchange ensemble, and `simulation_time_ns` applies to every replica, increasing cost with ladder size. Only physical-state (λ=1) frames are returned and analyzed; use them for equilibrium structures, not kinetics or residence times.
 - `pressure_atm` (default `1.0`): pressure, in atmospheres.
 - `langevin_timescale_ps` (default `1.0`): timescale for the Langevin integrator, in inverse picoseconds.
 - `timestep_fs` (default `4`): integration timestep, in femtoseconds.

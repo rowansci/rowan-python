@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.utils import api_client
 

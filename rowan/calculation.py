@@ -3,8 +3,9 @@
 from typing import Self
 
 import httpx
-import stjames
 from pydantic import BaseModel, ConfigDict, Field
+
+import stjames
 
 from .molecule import Molecule
 from .utils import api_client

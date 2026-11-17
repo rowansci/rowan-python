@@ -3,6 +3,10 @@
 from typing import Any, Literal, TypedDict
 
 import stjames
+from rowan.calculation import Calculation, retrieve_calculation
+from rowan.folder import Folder
+from rowan.molecule import Molecule
+from rowan.utils import api_client
 from stjames import (
     BasisSet,
     Correction,
@@ -13,12 +17,8 @@ from stjames import (
     Settings,
     SolventSettings,
     TDDFTSettings,
+    ThermochemistrySettings,
 )
-
-from rowan.calculation import Calculation, retrieve_calculation
-from rowan.folder import Folder
-from rowan.molecule import Molecule
-from rowan.utils import api_client
 
 from .base import (
     StructureInput,
@@ -219,6 +219,7 @@ def submit_basic_calculation_workflow(
     opt_settings: OptimizationSettings | dict[str, Any] | None = None,
     pbc_dft_settings: PBCDFTSettings | dict[str, Any] | None = None,
     excited_state_settings: TDDFTSettings | dict[str, Any] | None = None,
+    thermochem_settings: ThermochemistrySettings | dict[str, Any] | None = None,
     preset: PresetName | None = None,
     name: str = "Basic Calculation Workflow",
     folder_uuid: str | None = None,
@@ -244,6 +245,8 @@ def submit_basic_calculation_workflow(
             k-point grid, and optional smearing. When set, the engine is automatically
             set to Quantum ESPRESSO unless `engine` is explicitly provided
         excited_state_settings: excited-state settings for TDDFT calculations
+        thermochem_settings: thermochemistry settings for `frequencies` as a dict or
+            `ThermochemistrySettings`
         preset: named preset, mutually exclusive with method/engine/basis_set/corrections.
             - `general_nnp` – omol25_conserving_s on omol25
             - `organic_nnp` – aimnet2_wb97md3 on aimnet2
@@ -276,6 +279,9 @@ def submit_basic_calculation_workflow(
     if isinstance(pbc_dft_settings, dict):
         pbc_dft_settings = PBCDFTSettings(**pbc_dft_settings)
 
+    if isinstance(thermochem_settings, dict):
+        thermochem_settings = ThermochemistrySettings(**thermochem_settings)
+
     if preset is not None:
         if any(x is not None for x in [method, engine, corrections, basis_set]):
             raise ValueError(
@@ -291,6 +297,7 @@ def submit_basic_calculation_workflow(
             **(
                 {"excited_state_settings": excited_state_settings} if excited_state_settings else {}
             ),
+            **({"thermochem_settings": thermochem_settings} if thermochem_settings else {}),
         )
     else:
         if method is None:
@@ -323,6 +330,8 @@ def submit_basic_calculation_workflow(
             settings_kwargs["engine"] = engine
         if opt_settings is not None:
             settings_kwargs["opt_settings"] = opt_settings
+        if thermochem_settings is not None:
+            settings_kwargs["thermochem_settings"] = thermochem_settings
         settings = stjames.Settings(**settings_kwargs)
 
     mol_dict = molecule_to_dict(initial_molecule)

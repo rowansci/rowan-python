@@ -17,6 +17,7 @@ workflow = rowan.submit_relative_binding_free_energy_graph_workflow(
     ligands=ligands,
     folder=folder,
     name="TYK2 RBFE Graph",
+    separated_topology_planning_score=25,
 )
 
 print(
@@ -27,4 +28,4 @@ print(result)
 # <RelativeBindingFreeEnergyGraphResult edges=18 ligands=16>
 
 for edge in result.edges:
-    print(f"  {edge.ligand_a} -> {edge.ligand_b}  score={edge.score:.3f}")
+    print(f"  {edge.ligand_a} -> {edge.ligand_b}  topology={edge.topology}  score={edge.score}")

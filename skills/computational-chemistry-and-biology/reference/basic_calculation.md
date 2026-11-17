@@ -63,6 +63,7 @@ Instead of a preset, set settings directly. Run `help(rowan.submit_basic_calcula
 - `mode` (default `auto`): geometry optimization convergence. Use `careful` for the geometry optimizations you intend to trust and `rapid` for single points or rough/screening passes. `auto` resolves to `rapid`, so a default-mode `optimize` is loosely converged. Note `mode` sets the gradient and energy thresholds and overwrites any you pass in `opt_settings`.
 - `solvent_settings` (default gas phase): see Solvent below.
 - `opt_settings`: optimization options other than the gradient/energy thresholds (constraints, max steps, transition state). See Optimization settings below.
+- `thermochem_settings`: conditions for the `frequencies` thermochemistry, e.g. `rowan.ThermochemistrySettings(temperature=310)`.
 
 The named `mode` values set these convergence thresholds:
 

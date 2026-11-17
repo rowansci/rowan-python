@@ -3,9 +3,9 @@
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
 
 import rowan
+import stjames
 from rowan.workflows import admet, base
 
 

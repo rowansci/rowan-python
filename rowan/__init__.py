@@ -45,6 +45,7 @@ from stjames import (
     ProteinSequence,
     ProteinForceField,
     ResidueModification,
+    REST2Settings,
     RestraintType,
     RNASequence,
     ScanSettings,
@@ -53,17 +54,28 @@ from stjames import (
     SolventSettings,
     SinglePointEnergySettings,
     Task,
-    UmbrellaSamplingScanSettings,
     VibrationalMode,
     VinaSettings,
     WaterForceField,
 )
+from stjames.coordinate import DistanceCoordinate, LinearCombinationCoordinate
+from stjames.types import SimpleProteinMDTrajectory
+from stjames.workflows.covalent_inhibitor_scan import (
+    CovalentInhibitorScanSettings,
+    FreeEnergySurface,
+    ResolvedScanAtom,
+    ResolvedScanSetup,
+    SurfaceDiagnostics,
+    UmbrellaWindowResult,
+)
 from stjames.workflows.relative_binding_free_energy_perturbation import (
+    RBFEEdgeTopology,
     RBFEGraph,
     RBFEGraphEdge,
     TMDRBFESettings,
 )
 from stjames.excited_state_settings import TDDFTSettings
+from stjames.thermochem_settings import ThermochemistrySettings
 from stjames.pbc_dft_settings import PBCDFTSmearing
 from stjames.engine_compatibility import (
     ENGINE_METHODS,

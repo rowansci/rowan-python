@@ -1,21 +1,21 @@
 """Regression tests for molecular dynamics workflow updates."""
 
 import struct
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
-from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 import rowan
+import stjames
 from rowan.protein import Protein
 from rowan.workflows import pose_analysis_md as pose_analysis_md_module
 from rowan.workflows import protein_md as protein_md_module
 from rowan.workflows.protein_md import ProteinMDResult
+from stjames.pdb import pdb_from_mmcif_filestring, pdb_from_pdb_filestring
 
 
 def _workflow_response() -> dict[str, object]:
@@ -43,11 +43,34 @@ def _mock_submission(monkeypatch: pytest.MonkeyPatch, module: object) -> MagicMo
     client.post.return_value.json.return_value = _workflow_response()
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(module, "api_client", mock_api_client)
     return client
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        None,
+        rowan.REST2Settings(),
+        rowan.REST2Settings(effective_temperatures=[298.15, 350, 400], exchange_interval_ps=2),
+    ],
+)
+def test_protein_md_enhanced_sampling_round_trip(
+    monkeypatch: pytest.MonkeyPatch, settings: rowan.REST2Settings | None
+) -> None:
+    """Round-trip conventional MD and REST2 settings."""
+    client = _mock_submission(monkeypatch, protein_md_module)
+    rowan.submit_protein_md_workflow(
+        "protein-uuid", validate_forcefield=False, enhanced_sampling=settings
+    )
+    data = client.post.call_args.kwargs["json"]["workflow_data"]
+    assert data.get("enhanced_sampling") == (settings and settings.model_dump(mode="json"))
+    assert (
+        ProteinMDResult(data, "protein_md", "workflow-uuid")._workflow.enhanced_sampling == settings
+    )
 
 
 def test_md_forcefield_types_are_available_from_rowan() -> None:
@@ -375,7 +398,7 @@ def test_medoid_structure_download_combines_frame_and_topology(
     client.get.return_value = response
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr("rowan.workflows._molecular_dynamics.api_client", mock_api_client)

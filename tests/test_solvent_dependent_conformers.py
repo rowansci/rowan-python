@@ -1,13 +1,13 @@
 """Tests for solvent-dependent conformer workflow updates."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
 
 import rowan
+import stjames
 from rowan.workflows import solvent_dependent_conformers as sdc_module
 from rowan.workflows.solvent_dependent_conformers import SolventDependentConformersResult
 
@@ -37,7 +37,7 @@ def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     client.post.return_value.json.return_value = _workflow_response()
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(sdc_module, "api_client", mock_api_client)

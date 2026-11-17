@@ -4,13 +4,12 @@ from dataclasses import dataclass
 from typing import Any
 
 import stjames
-from stjames.optimization.band_method import NEBSettings
-from stjames.optimization.string_method import StringMethodSettings
-
 from rowan.calculation import Calculation, retrieve_calculation
 from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.utils import api_client
+from stjames.optimization.band_method import NEBSettings
+from stjames.optimization.string_method import StringMethodSettings
 
 from .base import (
     StructureInput,

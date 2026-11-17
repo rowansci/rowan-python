@@ -1,7 +1,6 @@
 """Fukui workflow - calculate Fukui indices for reactivity prediction."""
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.utils import api_client
 

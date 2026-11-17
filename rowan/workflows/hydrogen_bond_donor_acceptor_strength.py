@@ -4,7 +4,6 @@ import math
 from dataclasses import dataclass
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.utils import api_client
 

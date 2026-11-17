@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 import stjames
-
 from rowan.calculation import retrieve_calculation
 from rowan.folder import Folder
 from rowan.molecule import Molecule

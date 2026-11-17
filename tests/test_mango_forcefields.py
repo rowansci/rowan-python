@@ -1,20 +1,20 @@
 """Regression tests for opt-in Mango force-field support."""
 
 import inspect
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
+
 import stjames
+from rowan.workflows import pose_analysis_md as pose_analysis_md_module
+from rowan.workflows import protein_md as protein_md_module
+from rowan.workflows import relative_binding_free_energy_perturbation as rbfe_module
 from stjames.workflows.relative_binding_free_energy_perturbation import (
     RBFEGraph,
     RBFEGraphEdge,
 )
-
-from rowan.workflows import pose_analysis_md as pose_analysis_md_module
-from rowan.workflows import protein_md as protein_md_module
-from rowan.workflows import relative_binding_free_energy_perturbation as rbfe_module
 
 
 def _workflow_response(workflow_type: str) -> dict[str, object]:
@@ -44,7 +44,7 @@ def _mock_submission(
     client.post.return_value.json.return_value = _workflow_response(workflow_type)
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(module, "api_client", mock_api_client)

@@ -398,11 +398,18 @@ def get_folder(path: str, create: bool = True) -> Folder:
         current_uuid = default_project().root_folder_uuid
     folder = None
     for segment in segments:
-        matches = list_folders(parent_uuid=current_uuid, name_contains=segment, size=100)
-        folder = next(
-            (f for f in matches if f.name == segment and f.parent_uuid == current_uuid),
-            None,
-        )
+        page = 0
+        while True:
+            matches = list_folders(
+                parent_uuid=current_uuid, name_contains=segment, page=page, size=100
+            )
+            folder = next(
+                (f for f in matches if f.name == segment and f.parent_uuid == current_uuid),
+                None,
+            )
+            if folder is not None or not matches:
+                break
+            page += 1
         if folder is None:
             if not create:
                 raise ValueError(f"Folder {segment!r} not found")

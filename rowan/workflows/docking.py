@@ -4,14 +4,13 @@ import warnings
 from dataclasses import dataclass
 
 import stjames
-from stjames import InducedFitSettings
-
 from rowan.calculation import Calculation, retrieve_calculation
 from rowan.folder import Folder
 from rowan.molecule import Molecule
 from rowan.protein import Protein, retrieve_protein
 from rowan.types import ProteinUUID
 from rowan.utils import api_client
+from stjames import InducedFitSettings
 
 from .base import (
     StructureInput,

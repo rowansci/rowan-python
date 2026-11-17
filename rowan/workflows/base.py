@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Self, cast, overload
 
 import httpx
-import stjames
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from rdkit import Chem
 
+import stjames
 from rowan.folder import Folder
 from rowan.molecule import Molecule as RowanMolecule
 from rowan.project import default_project, retrieve_project
@@ -893,7 +893,7 @@ def retrieve_workflows(uuids: list[str]) -> list[Workflow[WorkflowResult]]:
     """
     workflows: list[Workflow[WorkflowResult]] = []
     with api_client() as client:
-        for batch in batched(uuids, 100):
+        for batch in batched(uuids, 100, strict=False):
             response = client.post("/workflow/batch_retrieve", json={"uuids": list(batch)})
             response.raise_for_status()
             workflows.extend(Workflow(**workflow_data) for workflow_data in response.json())

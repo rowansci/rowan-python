@@ -1,6 +1,6 @@
 """Tests for RBFE cofactor submission."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import MagicMock, call
 
@@ -49,7 +49,7 @@ def test_rbfe_submits_cofactors_and_validates_remaining_residues(
     }
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(rbfe, "api_client", mock_api_client)

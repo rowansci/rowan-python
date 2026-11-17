@@ -1,46 +1,84 @@
+"""Submit a surface scan for prepared cathepsin K/S2 with matching atom references."""
+
+import argparse
+from pathlib import Path
+
 import rowan
 
-# Set your API key or use the ROWAN_API_KEY environment variable
-# rowan.api_key = "rowan-sk..."
-folder = rowan.get_folder("examples")
 
-# BTK, catalytic Cys481. 4YHF already has a covalently-bound small-molecule inhibitor
-# (residue 4C9) linked to Cys481 SG via the ligand's C1 atom.
-ligand_smiles = "CC(C)(C)C[C@@H](C#N)C(=O)N1CCC[C@H](C1)n2nc(c3ccc(Oc4ccccc4)cc3)c5c(N)ncnc25"
+def main() -> None:
+    """Upload a prepared complex and create a draft, or run it with `--run`."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "pdb_path", type=Path, help="Prepared cathepsin K/S2 PDB with explicit hydrogens"
+    )
+    parser.add_argument("--two-dimensional", action="store_true", help="Include proton transfer")
+    parser.add_argument("--run", action="store_true", help="Submit and wait for the calculation")
+    args = parser.parse_args()
 
-protein = rowan.create_protein_from_pdb_id("4YHF")
-protein = protein.select_chains(["A"])
-preparation_workflow = rowan.submit_protein_preparation_workflow(
-    protein=protein.uuid,
-    retain_non_polymer={"4C9": ligand_smiles},
-    name="Prepare BTK inhibitor complex",
-    folder=folder,
-)
-preparation_result = preparation_workflow.result()
-protein = preparation_result.get_prepared_protein()
+    cysteine = rowan.ResidueRef("polymer", "A", "A.25")
+    ligand = rowan.ResidueRef("non_polymer", "A.300")
+    coordinates = [
+        rowan.ScanSettings(
+            coordinate=rowan.DistanceCoordinate(
+                atoms=(rowan.ResidueAtomRef(cysteine, "SG"), rowan.ResidueAtomRef(ligand, "C27"))
+            ),
+            start=1.6,
+            stop=4.6,
+            num=31,
+            force_constant=100,
+        )
+    ]
+    if args.two_dimensional:
+        histidine = rowan.ResidueRef("polymer", "A", "A.162")
+        hydrogen = rowan.ResidueAtomRef(histidine, "HD1")
+        coordinates.append(
+            rowan.ScanSettings(
+                coordinate=rowan.LinearCombinationCoordinate(
+                    coordinates=[
+                        rowan.DistanceCoordinate(
+                            atoms=(rowan.ResidueAtomRef(histidine, "ND1"), hydrogen)
+                        ),
+                        rowan.DistanceCoordinate(
+                            atoms=(rowan.ResidueAtomRef(ligand, "N35"), hydrogen)
+                        ),
+                    ],
+                    coefficients=[1, -1],
+                ),
+                start=-2,
+                stop=2,
+                num=21,
+            )
+        )
+    region = [
+        rowan.ResidueRef("polymer", "A", f"A.{number}")
+        for number in (18, 19, 20, 23, 24, 25, 26, 27, 160, 161, 162, 163, 164, 182, 183, 184, 185)
+    ]
+    settings = rowan.CovalentInhibitorScanSettings(
+        ligand=ligand, reactive_region=[*region, ligand], scan_coordinates=coordinates
+    )
+    protein = rowan.upload_protein("Prepared cathepsin K/S2", args.pdb_path)
+    workflow = rowan.submit_covalent_inhibitor_scan_workflow(
+        protein=protein,
+        reactant_smiles="Cn1cnc2cnc(C#N)nc21",
+        settings=settings,
+        name="Cathepsin K/S2 covalent surface",
+        is_draft=not args.run,
+    )
+    print(f"https://labs.rowansci.com/covalent-inhibitor-scan/{workflow.uuid}")
+    if not args.run:
+        return
+    result = workflow.result()
+    print(result)
+    for window in result.windows:
+        print(f"Grid index {window.index}: centers={window.centers}, samples={window.n_samples}")
+    if result.surface is not None:
+        print("Bin edges (Å):", result.surface.bin_edges)
+        print("Free energies (kcal/mol):", result.surface.free_energies)
+        print("Uncertainty (kcal/mol):", result.surface.uncertainty)
+    for message in result.messages:
+        print(f"{message.type}: {message.title}: {message.body}")
 
-# Protein preparation normalizes 4YHF's residue numbering: Cys481 becomes residue 101,
-# while the retained 4C9 ligand remains residue 701.
-protein_reactive_atom_index = protein.get_atom_index(chain="A", residue=101, atom="SG")
-ligand_reactive_atom_index = protein.get_atom_index(
-    chain="A", residue=701, atom="C1", entity_type="non_polymer"
-)
 
-workflow = rowan.submit_covalent_inhibitor_scan_workflow(
-    protein=protein.uuid,
-    protein_reactive_atom_index=protein_reactive_atom_index,
-    ligand_reactive_atom_index=ligand_reactive_atom_index,
-    reactant_smiles=ligand_smiles,
-    name="BTK covalent inhibitor scan (Cys481, 4YHF)",
-    folder=folder,
-)
-
-print(
-    f"View workflow privately at: https://labs.rowansci.com/covalent-inhibitor-scan/{workflow.uuid}"
-)
-
-result = workflow.result()
-print(result)
-
-for distance, free_energy in result.get_energies():
-    print(f"  distance={distance:.3f} Å  free_energy={free_energy} kcal/mol")
+if __name__ == "__main__":
+    main()

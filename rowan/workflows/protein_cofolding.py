@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 
 import stjames
-
 from rowan.folder import Folder
 from rowan.protein import Protein, retrieve_protein
 from rowan.utils import api_client

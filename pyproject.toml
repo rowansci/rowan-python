@@ -1,40 +1,35 @@
 [project]
 name = "rowan-python"
-version = "3.2.4"
+version = "3.3.2"
 description = "Rowan Python Library"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 authors = [
     { name = "Corin Wagen", email = "corin@rowansci.com" },
     { name = "Eli Mann", email = "eli@rowansci.com" },
 ]
 dependencies = [
+    "stjames>=0.0.297",
+    # External
     "httpx",
-    "stjames>=0.0.293",
-    "setuptools",
-    "rdkit",
     "nest-asyncio",
+    "rdkit",
+    "setuptools",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/rowansci/rowan-client"
-"Bug Tracker" = "https://github.com/rowansci/rowan-client/issues"
-
-[build-system]
-build-backend = "hatchling.build"
-requires = ["hatchling"]
+"Homepage" = "https://github.com/rowansci/rowan-python"
+"Documentation" = "https://docs.rowansci.com/python-api"
+"Bug Tracker" = "https://github.com/rowansci/rowan-python/issues"
 
 [dependency-groups]
 dev = [
     "ipython",
-    "prek>=0.3.13",
     "pytest>=9",
-    "pytest-cov>=7",
+    "pytest-cov>=7.1",
     "python-dotenv",
-    "ruff>=0.15",
-    "rumdl>=0.1.91",
     "ty>=0.0.81",
 ]
 docs = [
@@ -43,73 +38,25 @@ docs = [
     "mkdocstrings-python",
 ]
 
-[tool.ruff]
-line-length = 100
-extend-exclude = ["*.ipynb", "*.md"]
+[tool.uv]
+exclude-newer = "7 days"
+exclude-newer-package = { stjames = false }
 
-[tool.ruff.lint]
-select = [
-    "B",  # bugbear
-    "D",  # pydocstyle
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "I",  # isort
-    "N",  # pep8-naming conventions
-    "W",  # pycodestyle warnings
-    "C4", # comprehensions
-    "PL", # pylint
-    "PT",  # flake8-pytest-style
-    "PIE", # misc lints
-    "PYI", # flake8-pyi
-    "TID", # tidy imports
-    "TC",  # type-checking imports
-    "RUF", # Ruff-specific rules
-    "RSE", # flake8-raise
-    "ICN001", # unconventional-import-alias
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["rowan"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/AGENTS.md",
+    "/.agents",
+    "/.claude",
+    "/.envrc",
+    "/prek.toml",
 ]
-ignore = [
-    "E741",  # Ambiguous variable name
-    "N806", # Non-lowercase variable in function
-    "N816", # Non-lowercase global variables
-    "PLR2004", # Magic value used in comparison
-    "PLR0911", # Too many returns
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments to function call
-    "PLR0917", # Too many positional arguments
-    "PLR0914", # Too many locals
-    "PLR0915", # Too many statements
-    "PLR1702", # Too many nested-blocks
-    "PLW2901", # Redifined loop name
-    "PLW1514", # Unspecified text encoding
-    "RUF001",  # String contains ambiguous dash (en or em dash)
-    "RUF002",  # Docstring contains ambiguous dash (en or em dash)
-    "RUF003",  # String contains ambiguous unicode character
-    "PLC0206", # Extracting value from dictionary without calling `.items()`
-    "PLC0415",
-    # "PT013",  # Incorrect import of pytest (enable with PT rules)
-
-    # Missing-docstring checks deferred until documentation coverage is complete.
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    # Naming and environment-variable checks deferred until the code-style migration.
-    "N801",
-    "N802",
-    "N803",
-    "PLW1508",
-]
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "F403"]
-
-[tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
 
 [tool.pytest.ini_options]
 testpaths = ["rowan", "tests"]
@@ -118,9 +65,6 @@ doctest_optionflags = "NORMALIZE_WHITESPACE"
 markers = [
     "regression: tests to make sure bugs stay closed",
 ]
-# Keep all tests enabled until regression tests are classified in a follow-up.
-# addopts = "--doctest-modules --durations=5 -m 'not regression'"
-
 
 [tool.coverage.run]
 source = ["rowan"]
@@ -135,14 +79,4 @@ exclude_lines = [
     'if 0:',
     'if __name__ == .__main__.:',
     '^\s*\.\.\.',
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["rowan"]
-
-[tool.hatch.build.targets.sdist]
-exclude = [
-    "/AGENTS.md",
-    "/.agents",
-    "/.claude",
 ]

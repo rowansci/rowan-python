@@ -1,13 +1,13 @@
 """Tests for macropKa and NMR workflow features."""
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
-import stjames
 
 import rowan
+import stjames
 from rowan.workflows import macropka as macropka_module
 from rowan.workflows.nmr import NMRCoupling, NMRResult
 
@@ -37,7 +37,7 @@ def _mock_submission(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     client.post.return_value.json.return_value = _workflow_response()
 
     @contextmanager
-    def mock_api_client() -> Iterator[MagicMock]:
+    def mock_api_client() -> Generator[MagicMock]:
         yield client
 
     monkeypatch.setattr(macropka_module, "api_client", mock_api_client)

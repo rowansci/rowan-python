@@ -5,7 +5,6 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Downloads](https://img.shields.io/pypi/dm/rowan-python.svg)](https://pypi.python.org/pypi/rowan-python/)
 [![License](https://img.shields.io/github/license/rowansci/rowan-python)](LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/rowansci/rowan-python/test.yml?branch=master&logo=github-actions)](https://github.com/rowansci/rowan-python/actions)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 [![Markdown style: rumdl](https://img.shields.io/badge/md%20style-rumdl-000000.svg)](https://rumdl.dev)
 
@@ -65,8 +64,8 @@ and extract it into your agent's skills directory.
 ## Running examples
 
 To run the examples, you will need to set your ROWAN_API_KEY environment variable or set it directly in the script.
-If running the examples in a cloned version of the repository, you can add your api key to a local `.env` file, which will automatically be loaded into the environment by direnv (if installed).
 
 ## Issues
 
-To report issues, please use the "Issues" tab above.
+This repository is a read-only mirror, so pull requests are not merged here. To report bugs or
+request features, please use the "Issues" tab above.

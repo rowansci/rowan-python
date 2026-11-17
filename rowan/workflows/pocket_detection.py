@@ -3,12 +3,11 @@
 from dataclasses import dataclass
 
 import stjames
-from stjames import MixMDSettings, PocketeerSettings
-
 from rowan.folder import Folder
 from rowan.protein import Protein, retrieve_protein
 from rowan.types import ProteinUUID
 from rowan.utils import api_client
+from stjames import MixMDSettings, PocketeerSettings
 
 from .base import Message, Workflow, WorkflowResult, parse_messages, register_result
 

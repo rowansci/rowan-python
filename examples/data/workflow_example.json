@@ -31,8 +31,8 @@
     },
     "solvent_settings": null,
     "thermochem_settings": {
-      "temperature": 298,
-      "concentration": 0.0408740470708,
+      "temperature": 298.15,
+      "concentration": null,
       "scaling_factor": 1,
       "cutoff_frequency": 100
     }

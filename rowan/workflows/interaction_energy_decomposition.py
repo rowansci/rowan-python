@@ -2,10 +2,10 @@
 
 from typing import Literal
 
-import stjames
 from rdkit import Chem
 from rdkit.Chem import rdDetermineBonds
 
+import stjames
 from rowan.folder import Folder
 from rowan.utils import api_client
 
