@@ -284,6 +284,7 @@ def test_pose_analysis_md_uses_new_defaults_and_forcefields(
         protein_ff=rowan.ProteinForceField.FF19SB,
         water_ff=rowan.WaterForceField.OPC,
         validate_forcefield=False,
+        frame_save_interval_ps=50,
     )
     payload = client.post.call_args.kwargs["json"]["workflow_data"]
     assert payload["protein_ff"] == "ff19sb"
@@ -292,6 +293,7 @@ def test_pose_analysis_md_uses_new_defaults_and_forcefields(
     assert payload["timestep_fs"] == 4
     assert payload["hydrogen_mass"] == 3
     assert payload["water_buffer"] == 8
+    assert payload["frame_save_interval_ps"] == 50
 
 
 def test_pose_analysis_md_exposes_trajectory_analysis_results() -> None:

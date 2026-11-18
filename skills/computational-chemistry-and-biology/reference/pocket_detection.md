@@ -53,7 +53,7 @@ for i, pocket in enumerate(result.pockets):
 - `pocket_sides`: side lengths of the bounding box, in angstrom.
 - `residue_numbers`: residue numbers lining the pocket.
 - `sphere_centers`, `sphere_radii`: centers and radii of the detected spheres, in angstrom.
-- `mixmd`: for MixMD pockets, `density_center`, `peak_enrichment`, and `integrated_excess_density`; otherwise `None`.
+- `mixmd`: for MixMD pockets, `density_center`, `peak_enrichment`, `integrated_excess_density`, and an optional `receptor_uuid`; otherwise `None`. Retrieve the aligned docking receptor with `rowan.retrieve_protein(pocket.mixmd.receptor_uuid, workflow_uuid=workflow.uuid)` when the UUID is present.
 
 For MixMD runs, `result.mixmd` lists each replica (`seed`, `num_frames`, `num_probes`, `largest_probe_cluster_fraction`, and artifact UUIDs), and `result.get_reference_protein()` returns the protein that defines pocket coordinates. Reliability warnings, such as fewer than three replicas or disagreement between replicas, appear in `result.messages`.
 

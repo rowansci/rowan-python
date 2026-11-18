@@ -41,6 +41,7 @@ md_workflow = rowan.submit_pose_analysis_md_workflow(
     initial_smiles=ligand,
     num_trajectories=1,
     simulation_time_ns=1,
+    frame_save_interval_ps=50,
     name="Downstream molecular dynamics",
     folder=folder,
 )

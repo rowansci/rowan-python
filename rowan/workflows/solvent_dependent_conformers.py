@@ -1,6 +1,6 @@
 """Solvent-dependent conformers workflow - conformer search with multi-solvent scoring."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 import stjames
@@ -54,6 +54,9 @@ class SolventDependentConformer:
             (kcal/mol)
         population_by_solvent: Boltzmann population per solvent (0-1)
         smiles: canonical SMILES identifying the conformer's tautomer
+        singlepoint_energy: gas-phase electronic energy, in Hartree
+        rrho_correction: gas-phase thermal Gibbs free energy correction, in Hartree
+        solvation_free_energy_by_solvent: CPCM-X or COSMO-RS solvation free energy, in Hartree
     """
 
     calculation_uuid: str
@@ -61,6 +64,9 @@ class SolventDependentConformer:
     relative_free_energy_by_solvent: dict[Solvent, float]
     population_by_solvent: dict[Solvent, float]
     smiles: SMILES | None = None
+    singlepoint_energy: float | None = None
+    rrho_correction: float | None = None
+    solvation_free_energy_by_solvent: dict[Solvent, float] = field(default_factory=dict)
 
 
 @register_result("solvent_dependent_conformers")
@@ -92,6 +98,9 @@ class SolventDependentConformersResult(WorkflowResult):
             SolventDependentConformer(
                 calculation_uuid=str(c.calculation),
                 smiles=c.smiles,
+                singlepoint_energy=c.singlepoint_energy,
+                rrho_correction=c.rrho_correction,
+                solvation_free_energy_by_solvent=dict(c.solvation_free_energy_by_solvent),
                 free_energy_by_solvent=dict(c.free_energy_by_solvent),
                 relative_free_energy_by_solvent=dict(c.relative_free_energy_by_solvent),
                 population_by_solvent=dict(c.population_by_solvent),

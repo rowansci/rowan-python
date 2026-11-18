@@ -85,3 +85,32 @@ def test_solvent_dependent_conformer_exposes_tautomer_smiles() -> None:
     )
 
     assert result.conformers[0].smiles == "CC(=O)C"
+    assert result.conformers[0].singlepoint_energy is None
+    assert result.conformers[0].rrho_correction is None
+    assert result.conformers[0].solvation_free_energy_by_solvent == {}
+
+
+def test_conformer_energy_precision_and_components() -> None:
+    """Expose microhartree precision and the decomposition used for solvent scoring."""
+    workflow = stjames.SolventDependentConformersWorkflow(
+        initial_molecule=stjames.Molecule.from_xyz("2\nhydrogen\nH 0 0 0\nH 0 0 0.74"),
+        conformers=[
+            {
+                "calculation": "calculation-uuid",
+                "free_energy_by_solvent": {"water": -100.11790015},
+                "relative_free_energy_by_solvent": {"water": 0},
+                "population_by_solvent": {"water": 1},
+                "singlepoint_energy": -100.1234567,
+                "rrho_correction": 0.01234567,
+                "solvation_free_energy_by_solvent": {"water": -0.00678912},
+            }
+        ],
+    )
+    result = SolventDependentConformersResult(
+        workflow.model_dump(mode="json"), "solvent_dependent_conformers", "workflow-uuid"
+    )
+    conformer = result.conformers[0]
+    assert conformer.free_energy_by_solvent == {rowan.Solvent.WATER: -100.117900}
+    assert conformer.singlepoint_energy == -100.123457
+    assert conformer.rrho_correction == 0.012346
+    assert conformer.solvation_free_energy_by_solvent == {rowan.Solvent.WATER: -0.006789}

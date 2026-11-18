@@ -35,3 +35,11 @@ for i, conf in enumerate(result.conformers):
     pop = conf.population_by_solvent.get(rowan.Solvent.WATER, 0)
     dg = conf.relative_free_energy_by_solvent.get(rowan.Solvent.WATER, float("nan"))
     print(f"  Conformer {i + 1}: dG={dg:.2f} kcal/mol, population={pop * 100:.1f}% (water)")
+
+for i, conf in enumerate(result.conformers):
+    print(f"Conformer {i + 1}: E_SP={conf.singlepoint_energy} Eh, RRHO={conf.rrho_correction} Eh")
+    for solvent, correction in conf.solvation_free_energy_by_solvent.items():
+        print(
+            f"  {solvent.value}: solvation={correction:.6f} Eh, "
+            f"total={conf.free_energy_by_solvent[solvent]:.6f} Eh"
+        )

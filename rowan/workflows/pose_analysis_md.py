@@ -150,6 +150,7 @@ def submit_pose_analysis_md_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    frame_save_interval_ps: float = 10.0,
 ) -> Workflow[PoseAnalysisMDResult]:
     """Submits a Pose-Analysis Molecular Dynamics (MD) workflow to the API.
 
@@ -179,6 +180,7 @@ def submit_pose_analysis_md_workflow(
         save_solvent: whether to save solvent molecules
         num_solvent_to_save: number of solvent molecules to save (the N nearest the ligand each
             frame). None saves all solvent when save_solvent is True
+        frame_save_interval_ps: interval between saved trajectory frames, in ps
         analysis_interval_ps: interval at which to compute per-frame SASA and polar SASA, in ps.
             None disables those analyses
         clustering: how to cluster trajectory frames. None disables clustering; pass a
@@ -232,6 +234,7 @@ def submit_pose_analysis_md_workflow(
         protein_restraint_constant=protein_restraint_constant,
         save_solvent=save_solvent,
         num_solvent_to_save=num_solvent_to_save,
+        frame_save_interval_ps=frame_save_interval_ps,
         analysis_interval_ps=analysis_interval_ps,
         clustering=clustering,
     )

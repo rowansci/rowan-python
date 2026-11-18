@@ -98,7 +98,10 @@ def test_mixmd_result_exposes_pocket_and_replica_details() -> None:
                 pocket_sides=(15, 15, 15),
                 residue_numbers=[7, 9],
                 mixmd=stjames_pocket_detection.MixMDPocketDiagnostics(
-                    density_center=(1.5, 2, 3), peak_enrichment=8, integrated_excess_density=4.5
+                    density_center=(1.5, 2, 3),
+                    peak_enrichment=8,
+                    integrated_excess_density=4.5,
+                    receptor_uuid=REFERENCE_UUID,
                 ),
             )
         ],
@@ -120,7 +123,10 @@ def test_mixmd_result_exposes_pocket_and_replica_details() -> None:
     )
 
     assert result.pockets[0].mixmd == MixMDPocketDiagnostics(
-        density_center=(1.5, 2, 3), peak_enrichment=8, integrated_excess_density=4.5
+        density_center=(1.5, 2, 3),
+        peak_enrichment=8,
+        integrated_excess_density=4.5,
+        receptor_uuid=REFERENCE_UUID,
     )
     assert result.mixmd is not None
     assert result.mixmd.reference_uuid == REFERENCE_UUID

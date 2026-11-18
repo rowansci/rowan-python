@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.13"
 
 [options]
@@ -1214,7 +1214,7 @@ wheels = [
 
 [[package]]
 name = "rowan-python"
-version = "3.3.2"
+version = "3.3.3"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1244,7 +1244,7 @@ requires-dist = [
     { name = "nest-asyncio" },
     { name = "rdkit" },
     { name = "setuptools" },
-    { name = "stjames", specifier = ">=0.0.297" },
+    { name = "stjames", specifier = ">=0.0.301" },
 ]
 
 [package.metadata.requires-dev]
@@ -1295,7 +1295,7 @@ wheels = [
 
 [[package]]
 name = "stjames"
-version = "0.0.297"
+version = "0.0.301"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "more-itertools" },
@@ -1303,9 +1303,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2b/99/c59ec51dabe3f720728f47872180f524be752af2236fa346225d416c0490/stjames-0.0.297.tar.gz", hash = "sha256:e3ba7ff303a28a73cc7ca74d96ac0241d7eb0f1d21ad4d451c0f0e513c5cac7b", size = 1457908, upload-time = "2026-11-12T20:30:29.098Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/cb/c6ce3006038610bf8d4b90f25cf29cc1b55e15f1cd9296d0294b655a11e3/stjames-0.0.301.tar.gz", hash = "sha256:c9071dde71fa34f9131ce9ba24fe1461731b5cd3abecbede753e1143e153443d", size = 1461476, upload-time = "2026-11-17T20:10:41.234Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/dc/1b228e0c1153841b84db1428fd7fb205ec1bc80aa2ea4edff09157ae30a0/stjames-0.0.297-py3-none-any.whl", hash = "sha256:d620afd7716d1ba209bac2e263641e2eab576063fe438dc3a4cd0da75655c729", size = 211032, upload-time = "2026-11-12T20:30:27.546Z" },
+    { url = "https://files.pythonhosted.org/packages/de/6d/feb7a21ea1207024f819d7cd011b5da0220464fe1f0b8878464cb346d5ee/stjames-0.0.301-py3-none-any.whl", hash = "sha256:114af3edfc0644bd50f3b6fdc5fc2a8f7060210f7a815222982706f6ed3bb20b", size = 212614, upload-time = "2026-11-17T20:10:39.587Z" },
 ]
 
 [[package]]

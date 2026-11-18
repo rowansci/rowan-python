@@ -20,11 +20,13 @@ class MixMDPocketDiagnostics:
         density_center: density-weighted center of the enriched region, in Å
         peak_enrichment: maximum probe density relative to bulk solvent
         integrated_excess_density: probe molecules above bulk, integrated over the region
+        receptor_uuid: representative receptor aligned to the pocket coordinates
     """
 
     density_center: tuple[float, float, float]
     peak_enrichment: float
     integrated_excess_density: float
+    receptor_uuid: ProteinUUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +107,7 @@ def _mixmd_diagnostics(
         density_center=tuple(raw.density_center),
         peak_enrichment=raw.peak_enrichment,
         integrated_excess_density=raw.integrated_excess_density,
+        receptor_uuid=raw.receptor_uuid,
     )
 
 
