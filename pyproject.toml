@@ -1,6 +1,6 @@
 [project]
 name = "rowan-python"
-version = "3.3.3"
+version = "3.3.4"
 description = "Rowan Python Library"
 readme = "README.md"
 license = "MIT"
@@ -11,7 +11,7 @@ authors = [
     { name = "Eli Mann", email = "eli@rowansci.com" },
 ]
 dependencies = [
-    "stjames>=0.0.301",
+    "stjames>=0.0.302",
     # External
     "httpx",
     "nest-asyncio",

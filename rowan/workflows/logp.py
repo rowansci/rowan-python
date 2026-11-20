@@ -1,12 +1,20 @@
 """logP workflow - predict the octanol/water partition coefficient."""
 
-from typing import Literal
+from typing import Any, Literal
 
 import stjames
 from rowan.folder import Folder
+from rowan.types import SMILES, StructureInput
 from rowan.utils import api_client
 
-from .base import SMILES, Workflow, WorkflowResult, extract_smiles, register_result
+from .base import (
+    Workflow,
+    WorkflowResult,
+    extract_smiles,
+    molecule_to_stjames,
+    register_result,
+    require_coordinates,
+)
 
 
 @register_result("logp")
@@ -25,7 +33,7 @@ class LogPResult(WorkflowResult):
 
 
 def submit_logp_workflow(
-    initial_smiles: SMILES,
+    initial_smiles: SMILES | StructureInput | dict[str, Any] | None = None,
     method: Literal["chemprop_sangster2026", "crippen", "cosmors"] = "chemprop_sangster2026",
     name: str = "LogP Workflow",
     folder_uuid: str | None = None,
@@ -33,14 +41,15 @@ def submit_logp_workflow(
     max_credits: int | None = None,
     webhook_url: str | None = None,
     is_draft: bool = False,
+    *,
+    initial_molecule: StructureInput | dict[str, Any] | None = None,
 ) -> Workflow[LogPResult]:
     """Submits a logP workflow to the API.
 
     Args:
-        initial_smiles: molecule to predict logP for. Accepts a SMILES string or any
-            molecule type (RowanMolecule, stjames.Molecule, RDKit Mol, or dict). The molecule
-            must have a SMILES string associated with it, as this workflow is SMILES-based and
-            does not use 3D coordinates
+        initial_smiles: SMILES string or molecule with associated SMILES
+        initial_molecule: nonperiodic 3D molecule to optimize and score as a single conformer
+            with COSMO-RS. Provide exactly one of `initial_smiles` and `initial_molecule`
         method: logP prediction method:
             - "chemprop_sangster2026": chemprop v2 D-MPNN trained on experimental octanol/water
               logP from the Sangster dataset.
@@ -57,26 +66,36 @@ def submit_logp_workflow(
         submitted workflow
 
     Raises:
-        ValueError: molecule has no SMILES associated with it
+        ValueError: molecular input is missing, ambiguous, or incompatible with the method
         httpx.HTTPStatusError: request to the API fails
     """
     if folder and folder_uuid:
         raise ValueError("Provide either `folder` or `folder_uuid`, not both.")
     if folder:
         folder_uuid = folder.uuid
-    initial_smiles = extract_smiles(initial_smiles)
-    workflow = stjames.LogPWorkflow(initial_smiles=initial_smiles, logp_method=method)
-
+    smiles = extract_smiles(initial_smiles) if initial_smiles is not None else ""
+    molecule = None
+    if initial_molecule is not None:
+        if not isinstance(initial_molecule, dict):
+            require_coordinates(initial_molecule)
+        molecule = molecule_to_stjames(initial_molecule)
+    workflow = stjames.LogPWorkflow(
+        initial_smiles=smiles, initial_molecule=molecule, logp_method=method
+    )
+    workflow_data = workflow.model_dump(mode="json")
     data = {
         "workflow_type": "logp",
-        "workflow_data": workflow.model_dump(mode="json"),
-        "initial_smiles": initial_smiles,
+        "workflow_data": workflow_data,
         "name": name,
         "folder_uuid": folder_uuid,
         "max_credits": max_credits,
         "webhook_url": webhook_url,
         "is_draft": is_draft,
     }
+    if molecule is not None:
+        data["initial_molecule"] = workflow_data["initial_molecule"]
+    else:
+        data["initial_smiles"] = smiles
 
     with api_client() as client:
         response = client.post("/workflow", json=data)

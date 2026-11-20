@@ -4,7 +4,7 @@ logP, the octanol/water partition coefficient, is the standard measure of lipoph
 
 ## Input
 
-A SMILES string passed as `initial_smiles`. This workflow is SMILES-based: pass a SMILES string, not a 3D structure. To start from a `rowan.Molecule` or RDKit `Mol`, extract its SMILES first (`molecule.smiles` for a `rowan.Molecule`) and pass that string. The `cosmors` method generates its own conformers internally, so it also takes only a SMILES.
+Pass a SMILES string as `initial_smiles` for any method. For `method="cosmors"`, you can also pass a nonperiodic 3D structure as `initial_molecule`, including structures from XYZ files that have no SMILES. COSMO-RS optimizes and scores the supplied geometry as a single conformer.
 
 ## Example
 
